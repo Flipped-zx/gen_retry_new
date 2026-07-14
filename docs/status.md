@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Phase 1 — Protocol Freeze complete; ready for Phase 2 — Mock Replay Runtime.
+Phase 2 — Mock Replay Runtime in progress.
 
 ## Gate State
 
@@ -51,6 +51,15 @@ Phase 1 — Protocol Freeze complete; ready for Phase 2 — Mock Replay Runtime.
   - one `skill_returned` event is allowed per `query_skill` action;
   - Geneval2 results must include every TaskSpec constraint;
   - submission events must link to a validated `submit_attempt` action.
+- Phase 2 replay runtime slice implemented:
+  - append-only JSONL event store;
+  - deterministic event loading and trajectory validation;
+  - reducer reconstructing attempts, transitions, best-so-far, remaining budget,
+    and submission;
+  - planner-view builder;
+  - replay CLI;
+  - fake Qianwen-Image-Edit and fake Geneval2 adapters;
+  - five mock episode fixture directories.
 
 ## Tests And Results
 
@@ -58,8 +67,12 @@ Phase 1 — Protocol Freeze complete; ready for Phase 2 — Mock Replay Runtime.
 - External roots were inspected read-only; their working trees remain dirty as recorded in Phase 0 evidence.
 - Phase 1:
   - `python -m gen_retry.cli.validate_schemas` — passed, 5 schemas
-  - `python -m gen_retry.cli.validate_fixtures` — passed, 39 fixture records
+  - `python -m gen_retry.cli.validate_fixtures` — passed, 139 fixture records
   - `pytest tests/contract -q` — passed, 48 tests
+- Phase 2:
+  - `pytest tests/unit -q` — passed, 8 tests
+  - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl` — passed
+  - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl --planner-view` — passed
 
 ## Active Risks
 
@@ -69,10 +82,13 @@ Phase 1 — Protocol Freeze complete; ready for Phase 2 — Mock Replay Runtime.
 - Best-attempt tie-breaking, artifact URI portability, artifact-manifest closure,
   and raw-output retention are recorded as Phase 2 follow-ups, not Gate 1
   blockers.
+- The five mock episode fixtures currently share the same validated canonical
+  trajectory shape; Phase 2 still needs distinct case-specific trajectories
+  before exit criteria are fully satisfied.
 
 ## Unresolved Decisions
 
-- None for Phase 1.
+- None currently blocking Phase 2.
 
 ## Last Reviewer Verdict
 
@@ -89,4 +105,5 @@ Extra final Gate 1 Sol review verdict: `APPROVE`.
 
 ## Next Autonomous Action
 
-Checkpoint Phase 1 Protocol Freeze, then begin Phase 2 Mock Replay Runtime.
+Continue Phase 2 by making the five mock fixtures case-specific and broadening
+deterministic replay/provenance tests around branch recovery.

@@ -1,0 +1,30 @@
+{
+  "schema_version": "0.2",
+  "cases": [
+    {
+      "case_id": "direct_success",
+      "events": "tests/fixtures/mock_episodes/direct_success/events.jsonl",
+      "description": "Mock direct-success trajectory shape."
+    },
+    {
+      "case_id": "regenerate",
+      "events": "tests/fixtures/mock_episodes/regenerate/events.jsonl",
+      "description": "Mock regenerate trajectory shape."
+    },
+    {
+      "case_id": "local_edit",
+      "events": "tests/fixtures/mock_episodes/local_edit/events.jsonl",
+      "description": "Mock local-edit trajectory shape."
+    },
+    {
+      "case_id": "branch_recovery",
+      "events": "tests/fixtures/mock_episodes/branch_recovery/events.jsonl",
+      "description": "Mock non-monotonic branch recovery trajectory shape."
+    },
+    {
+      "case_id": "persistent_failure",
+      "events": "tests/fixtures/mock_episodes/persistent_failure/events.jsonl",
+      "description": "Mock persistent-failure trajectory shape."
+    }
+  ]
+}

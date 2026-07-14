@@ -73,6 +73,10 @@ def validate_fixture_tree(root: Path = PROJECT_ROOT) -> int:
     if example.exists():
         validated += _validate_jsonl(example, "episode_event_v0_2.schema.json")
 
+    mock_root = root / "tests" / "fixtures" / "mock_episodes"
+    for path in sorted(mock_root.glob("*/events.jsonl")):
+        validated += _validate_jsonl(path, "episode_event_v0_2.schema.json")
+
     return validated
 
 
