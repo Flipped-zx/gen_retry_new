@@ -120,6 +120,46 @@ local_adaptation: v3 exposes logical `generate_image` and `edit_image` through o
 copy_code: no
 notes: Do not vendor weights or store secrets in config.
 
+## Phase 3 Source Evidence
+
+### Legacy Gen-Retry Diagnostic/Action Records
+
+source_name: Legacy Gen-Retry Phase 3 counterfactual evidence
+repository_url: local only
+absolute_path: `/root/private_data/agentic_image/gen-retry`
+commit_hash: `2f03532e5f4685eafd2e47b23f14a3f2f8660aa3`
+evidence_type: repository-grounded via `source_researcher`
+exact_paths:
+- path: `data/trajectories/geneval2_balanced100x5_normal_round0_4_master_trajectories.jsonl`
+  fields: `trajectory_id`, `prompt_id`, `original_prompt`, `attempts`, `teacher_action`, `normalized_report`, `transition_from_previous`, `final_status`, `unresolved`
+- path: `data/trajectories/geneval2_balanced100x5_normal_round0_4_action_candidates.jsonl`
+  fields: `sample_id`, `task_type`, `input_state`, `target_action`, `outcome_after_action`, `include_in_clean_sft`
+- path: `data/exchange/gpu_to_api/*`
+  fields: `diagnostic_jobs`, `generation_manifest`, `normalized_reports`, atom rows
+- path: `data/exchange/api_to_gpu/*/generation_metadata.jsonl`
+  fields: `previous_action`, `previous_score`, `previous_failure_types`, `vqa_list`, `skills`, `skill_counts`
+borrowed_idea: Historical failure signatures, retry depth, unresolved status, and counterfactual edit-plausibility evidence for prompt selection and analysis.
+local_adaptation: Converted to `artifacts/phase3/legacy_diagnostic_action_analysis.jsonl` as counterfactual evidence only.
+copy_code: no
+notes: Legacy actions/images/attempts are not current-protocol positive SFT targets and are not imported into Phase 3 episodes.
+
+### Geneval2 Prompt Candidate Pool
+
+source_name: Geneval2 prompt metadata for Phase 3 fresh candidate pool
+repository_url: local checkout
+absolute_path: `/root/private_data/agentic_image/GenEval2`
+commit_hash: `a6e82d2289e8d418f27f0adee77908b07060eea3`
+evidence_type: repository-grounded via `source_researcher`
+exact_paths:
+- path: `geneval2_data.jsonl`
+  fields: `prompt`, `atom_count`, `vqa_list`, `skills`
+- path: `README.md`
+  fields: dataset field description
+borrowed_idea: Use all 800 Geneval2 prompts as fresh candidate prompts; preserve actual skill taxonomy as v0.2 `constraint_type`.
+local_adaptation: Built `artifacts/phase3/candidate_pool.jsonl`, then deterministic selected ten prompts before any live rollout.
+copy_code: no
+notes: Actual skill taxonomy is `attribute`, `count`, `object`, `position`, `verb`; no invented categories.
+
 ## Prior Broad Notes
 
 | Source | Evidence | Borrowed idea | Not reused directly | Status |

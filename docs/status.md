@@ -2,8 +2,8 @@
 
 ## Current Phase
 
-Phase 3A — Preflight stopped before live rollout execution pending teacher and
-Qianwen-Image endpoint configuration.
+Phase 3D — Ten-prompt selection complete; live rollout execution pending teacher
+and Qianwen-Image endpoint configuration.
 
 ## Gate State
 
@@ -74,6 +74,13 @@ Qianwen-Image endpoint configuration.
   - recorded a live-run stop condition in
     `docs/checkpoints/phase3a_preflight.md` and
     `docs/phase3/preflight_report.md`.
+- Phase 3B-C-D offline prerequisites completed:
+  - built read-only legacy diagnostic/action counterfactual analysis;
+  - built fresh Geneval2 candidate pool from 800 prompt rows;
+  - selected exactly ten high-difficulty, constraint-balanced prompts before
+    any live rollout;
+  - recorded source evidence in `docs/SOURCE_LEDGER.md`;
+  - wrote checkpoint `docs/checkpoints/phase3bcd_selection.md`.
 
 ## Tests And Results
 
@@ -86,7 +93,7 @@ Qianwen-Image endpoint configuration.
 - Phase 2:
   - `python -m gen_retry.cli.validate_schemas` — passed, 5 schemas
   - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records
-  - `pytest tests/contract -q` — passed, 48 tests
+  - `pytest tests/contract -q` — passed, 49 tests
   - `pytest tests/unit -q` — passed, 10 tests
   - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl` — passed
   - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl --planner-view` — passed
@@ -95,6 +102,17 @@ Qianwen-Image endpoint configuration.
   - `python -m gen_retry.cli.validate_schemas` — passed, 5 schemas
   - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records
   - `pytest tests/unit -q` — passed, 10 tests
+- Phase 3B-C-D:
+  - `python -m gen_retry.cli.analyze_phase3_legacy` — passed, 1,276 records
+  - `python -m gen_retry.cli.build_phase3_candidate_pool` — passed, 800 candidates
+  - `python -m gen_retry.cli.select_phase3_prompts` — passed, 10 selected prompts
+  - `pytest tests/contract/test_task_spec_builder.py -q` — passed, 3 tests
+  - `pytest tests/unit -q` — passed, 13 tests
+  - `pytest tests/contract -q` — passed, 49 tests
+  - Phase 3 artifact validation script — passed
+  - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl` — passed
+  - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl --planner-view` — passed
+  - `git diff --check` — passed
 
 ## Active Risks
 
@@ -127,6 +145,5 @@ Extra final Gate 1 Sol review verdict: `APPROVE`.
 
 ## Next Autonomous Action
 
-After the required environment variables are available, rerun Phase 3A live
-preflight checks, then continue to legacy diagnostic/action analysis and fresh
-Geneval2 candidate-pool construction before selecting ten prompts.
+After the required environment variables are available, rerun live preflight
+checks and execute the ten selected fresh natural multi-round trajectories.

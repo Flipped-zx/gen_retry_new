@@ -24,15 +24,21 @@ def task_spec_from_geneval2_row(
     constraints: list[dict[str, Any]] = []
     for index, item in enumerate(vqa_list, start=1):
         constraint_id = f"c_{index:03d}"
+        aligned_skill = _aligned_skill(row, index)
         if isinstance(item, dict):
             question = item.get("question") or item.get("vqa_question")
             expected = item.get("answer") or item.get("expected") or item.get("target")
-            constraint_type = item.get("type") or item.get("skill") or "geneval2_atom"
+            constraint_type = item.get("type") or item.get("skill") or aligned_skill or "geneval2_atom"
             requirement = item.get("requirement") or expected or question
+        elif _is_vqa_pair(item):
+            question = str(item[0])
+            expected = str(item[1])
+            requirement = f"Expected answer: {expected}"
+            constraint_type = aligned_skill or "geneval2_atom"
         else:
             question = str(item)
             requirement = str(item)
-            constraint_type = "geneval2_atom"
+            constraint_type = aligned_skill or "geneval2_atom"
 
         if not isinstance(requirement, str) or not requirement.strip():
             raise ValueError(f"Geneval2 atom {index} does not expose a requirement.")
@@ -56,3 +62,22 @@ def task_spec_from_geneval2_row(
     }
     validate_instance(task_spec, "task_spec_v0_2.schema.json")
     return task_spec
+
+
+def _is_vqa_pair(item: Any) -> bool:
+    return (
+        isinstance(item, (list, tuple))
+        and len(item) == 2
+        and all(isinstance(value, str) and value.strip() for value in item)
+    )
+
+
+def _aligned_skill(row: dict[str, Any], one_based_index: int) -> str | None:
+    skills = row.get("skills")
+    if not isinstance(skills, list):
+        return None
+    zero_based_index = one_based_index - 1
+    if zero_based_index >= len(skills):
+        return None
+    skill = skills[zero_based_index]
+    return skill if isinstance(skill, str) and skill.strip() else None

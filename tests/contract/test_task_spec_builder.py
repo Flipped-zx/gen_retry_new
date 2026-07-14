@@ -33,6 +33,29 @@ def test_task_spec_builder_from_geneval2_row() -> None:
     validate_instance(task_spec, "task_spec_v0_2.schema.json")
 
 
+def test_task_spec_builder_preserves_geneval2_list_pair_skills() -> None:
+    task_spec = task_spec_from_geneval2_row(
+        {
+            "prompt": "a green backpack and a pig",
+            "atom_count": 3,
+            "vqa_list": [
+                ["How many backpacks are in the image?", "one"],
+                ["Is the backpack green?", "Yes"],
+                ["Are there any pigs in the image?", "Yes"],
+            ],
+            "skills": ["count", "attribute", "object"],
+        },
+        episode_id="ep_builder_003",
+    )
+
+    assert [
+        constraint["constraint_type"] for constraint in task_spec["constraints"]
+    ] == ["count", "attribute", "object"]
+    assert task_spec["constraints"][0]["evaluator_question"] == "How many backpacks are in the image?"
+    assert task_spec["constraints"][0]["requirement"] == "Expected answer: one"
+    validate_instance(task_spec, "task_spec_v0_2.schema.json")
+
+
 def test_task_spec_builder_requires_vqa_list() -> None:
     with pytest.raises(ValueError):
         task_spec_from_geneval2_row({"prompt": "missing atoms"}, episode_id="ep_builder_002")
