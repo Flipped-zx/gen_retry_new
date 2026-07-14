@@ -1,0 +1,145 @@
+{
+  "schema_version": "0.2",
+  "episode_id": "ep_demo_001",
+  "task_spec_ref": "tests/fixtures/task_spec/geneval2_minimal.json",
+  "visible_images": [
+    {
+      "artifact_id": "img_000",
+      "display_id": "IMG_000",
+      "role": "latest",
+      "attempt_id": "a_000"
+    },
+    {
+      "artifact_id": "img_000",
+      "display_id": "IMG_000",
+      "role": "best",
+      "attempt_id": "a_000"
+    }
+  ],
+  "latest_attempt": {
+    "attempt_id": "a_000",
+    "parent_attempt_id": null,
+    "image_artifact_id": "img_000",
+    "action_type": "generate_image",
+    "passed_constraint_ids": [
+      "c_002",
+      "c_003",
+      "c_004"
+    ],
+    "failed_constraint_ids": [
+      "c_001"
+    ]
+  },
+  "best_attempt": {
+    "attempt_id": "a_000",
+    "parent_attempt_id": null,
+    "image_artifact_id": "img_000",
+    "action_type": "generate_image",
+    "passed_constraint_ids": [
+      "c_002",
+      "c_003",
+      "c_004"
+    ],
+    "failed_constraint_ids": [
+      "c_001"
+    ]
+  },
+  "latest_transition": {
+    "from_attempt_id": null,
+    "to_attempt_id": "a_000",
+    "fixed": [],
+    "regressed": [],
+    "persistent_failed": [
+      "c_001"
+    ],
+    "stable_pass": [
+      "c_002",
+      "c_003",
+      "c_004"
+    ]
+  },
+  "constraint_state": {
+    "c_001": {
+      "status": "fail",
+      "latest_observed": "two apples",
+      "attempt_ids": [
+        "a_000"
+      ]
+    },
+    "c_002": {
+      "status": "pass",
+      "attempt_ids": [
+        "a_000"
+      ]
+    },
+    "c_003": {
+      "status": "pass",
+      "attempt_ids": [
+        "a_000"
+      ]
+    },
+    "c_004": {
+      "status": "pass",
+      "attempt_ids": [
+        "a_000"
+      ]
+    }
+  },
+  "compact_history": [
+    {
+      "attempt_id": "a_000",
+      "parent_attempt_id": null,
+      "image_artifact_id": "img_000",
+      "action_type": "generate_image",
+      "passed_constraint_ids": [
+        "c_002",
+        "c_003",
+        "c_004"
+      ],
+      "failed_constraint_ids": [
+        "c_001"
+      ]
+    }
+  ],
+  "remaining_budget": 2,
+  "tool_manifest": [
+    {
+      "tool_id": "query_skill",
+      "action": "query_skill",
+      "description": "Retrieve short skills relevant to current failed constraints."
+    },
+    {
+      "tool_id": "generate_image",
+      "action": "generate_image",
+      "description": "Create an image from a generation instruction."
+    },
+    {
+      "tool_id": "edit_image",
+      "action": "edit_image",
+      "description": "Edit a historical source attempt with a targeted instruction."
+    },
+    {
+      "tool_id": "submit_attempt",
+      "action": "submit_attempt",
+      "description": "Submit a historical attempt."
+    }
+  ],
+  "skill_manifest": [
+    {
+      "skill_id": "counting_layout",
+      "version": "0.2",
+      "description": "Initial layout guidance for count constraints."
+    },
+    {
+      "skill_id": "counting_edit",
+      "version": "0.2",
+      "description": "Localized edit guidance for count corrections."
+    },
+    {
+      "skill_id": "spatial_relation",
+      "version": "0.2",
+      "description": "Spatial relationship preservation guidance."
+    }
+  ],
+  "retrieved_experiences": []
+}

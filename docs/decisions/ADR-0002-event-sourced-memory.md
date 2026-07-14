@@ -6,6 +6,10 @@
 
 Persistent Memory 由不可变事件和确定性 reducer 构建。Planner raw response 不进入 Memory。
 
+Event payloads may store canonical actions, environment-owned artifact
+references, evaluator observations, transitions, and raw-output references with
+hashes. They must not store raw assistant text as planner memory.
+
 ## Rationale
 
 保证每个 action 输入、原始输出、validated action、tool execution、Geneval2 result、transition、branch 和 submit 均可追溯和 replay。

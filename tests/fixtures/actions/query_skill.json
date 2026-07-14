@@ -1,0 +1,14 @@
+{
+  "schema_version": "0.2",
+  "action": "query_skill",
+  "arguments": {
+    "skill_ids": [
+      "counting_edit",
+      "spatial_relation"
+    ],
+    "target_constraint_ids": [
+      "c_001",
+      "c_004"
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "0.2",
+  "episode_id": "ep_demo_001",
+  "original_prompt": "Create an image with exactly three red apples on the left and one blue bowl on the right.",
+  "constraints": [
+    {
+      "constraint_id": "c_001",
+      "constraint_type": "count",
+      "requirement": "There are exactly three apples.",
+      "evaluator_question": "Are there exactly three apples?",
+      "priority": 3
+    },
+    {
+      "constraint_id": "c_002",
+      "constraint_type": "attribute",
+      "requirement": "All apples are red.",
+      "evaluator_question": "Are all apples red?",
+      "priority": 3
+    },
+    {
+      "constraint_id": "c_003",
+      "constraint_type": "object",
+      "requirement": "There is one blue bowl.",
+      "evaluator_question": "Is there exactly one blue bowl?",
+      "priority": 3
+    },
+    {
+      "constraint_id": "c_004",
+      "constraint_type": "spatial",
+      "requirement": "The apples are left of the bowl.",
+      "evaluator_question": "Are the apples left of the bowl?",
+      "priority": 3
+    }
+  ],
+  "max_image_attempts": 3
+}

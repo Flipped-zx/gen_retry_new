@@ -8,9 +8,11 @@
     "schema_version",
     "event_id",
     "episode_id",
+    "turn_id",
     "event_type",
     "created_at",
     "producer",
+    "input_refs",
     "payload"
   ],
   "properties": {
@@ -58,12 +60,748 @@
     "input_refs": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "default": []
     },
     "payload": {
       "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "task_created"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/taskCreatedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "planner_view_built"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/plannerViewBuiltPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "planner_output_recorded"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/plannerOutputRecordedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "action_validated"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/actionValidatedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "skill_returned"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "turn_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "input_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^evt_[0-9]{4,}$"
+            }
+          },
+          "payload": {
+            "$ref": "#/$defs/skillReturnedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "image_execution_started"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/imageExecutionStartedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "image_execution_completed"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/imageExecutionCompletedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "geneval2_completed"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/geneval2CompletedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "memory_reduced"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/memoryReducedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "attempt_submitted"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/attemptSubmittedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "enum": [
+              "tool_error",
+              "format_error"
+            ]
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/errorPayload"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "attemptId": {
+      "type": "string",
+      "pattern": "^a_[0-9]{3,}$"
+    },
+    "constraintIds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^c_[0-9]{3,}$"
+      }
+    },
+    "constraintIdsAllowEmpty": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^c_[0-9]{3,}$"
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "taskCreatedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_spec"
+      ],
+      "properties": {
+        "task_spec": {
+          "$ref": "https://local/gen-retry/task-spec-v0.2.schema.json"
+        }
+      }
+    },
+    "plannerViewBuiltPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planner_view_ref",
+        "planner_view_sha256"
+      ],
+      "properties": {
+        "planner_view_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planner_view_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "plannerOutputRecordedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_output_ref",
+        "raw_output_sha256"
+      ],
+      "properties": {
+        "raw_output_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "raw_output_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "actionValidatedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "action": {
+          "$ref": "https://local/gen-retry/action-protocol-v0.2.schema.json"
+        }
+      }
+    },
+    "skillReturnedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query_action_event_id",
+        "skill_ids",
+        "target_constraint_ids",
+        "skills"
+      ],
+      "properties": {
+        "query_action_event_id": {
+          "type": "string",
+          "pattern": "^evt_[0-9]{4,}$"
+        },
+        "skill_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "target_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "skills": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "skill_id",
+              "version",
+              "content_sha256"
+            ],
+            "properties": {
+              "skill_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "content_ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "content_sha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 400
+              }
+            }
+          }
+        }
+      }
+    },
+    "imageExecutionStartedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_id",
+        "operation",
+        "backend"
+      ],
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation": {
+          "enum": [
+            "generate",
+            "edit"
+          ]
+        },
+        "backend": {
+          "const": "qianwen_image_edit"
+        },
+        "source_attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "edit"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "source_attempt_id"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "generate"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "source_attempt_id"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "imageExecutionCompletedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_id",
+        "attempt_id",
+        "parent_attempt_id",
+        "operation",
+        "backend",
+        "image_artifact_id",
+        "artifact_manifest_ref",
+        "artifact_sha256"
+      ],
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "parent_attempt_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/attemptId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "operation": {
+          "enum": [
+            "generate",
+            "edit"
+          ]
+        },
+        "backend": {
+          "const": "qianwen_image_edit"
+        },
+        "source_attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "image_artifact_id": {
+          "type": "string",
+          "pattern": "^img_[0-9]{3,}$"
+        },
+        "artifact_manifest_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "edit"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "source_attempt_id"
+            ],
+            "properties": {
+              "parent_attempt_id": {
+                "$ref": "#/$defs/attemptId"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "generate"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "parent_attempt_id": {
+                "type": "null"
+              }
+            },
+            "not": {
+              "required": [
+                "source_attempt_id"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "constraintObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "constraint_id",
+        "status"
+      ],
+      "properties": {
+        "constraint_id": {
+          "type": "string",
+          "pattern": "^c_[0-9]{3,}$"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "uncertain"
+          ]
+        },
+        "expected": {
+          "type": "string"
+        },
+        "observed": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "geneval2CompletedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "constraint_results"
+      ],
+      "properties": {
+        "attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "constraint_results": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/constraintObservation"
+          }
+        },
+        "report_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "report_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixed",
+        "regressed",
+        "persistent_failed",
+        "stable_pass"
+      ],
+      "properties": {
+        "fixed": {
+          "$ref": "#/$defs/constraintIdsAllowEmpty"
+        },
+        "regressed": {
+          "$ref": "#/$defs/constraintIdsAllowEmpty"
+        },
+        "persistent_failed": {
+          "$ref": "#/$defs/constraintIdsAllowEmpty"
+        },
+        "stable_pass": {
+          "$ref": "#/$defs/constraintIdsAllowEmpty"
+        },
+        "new_failed": {
+          "$ref": "#/$defs/constraintIdsAllowEmpty"
+        }
+      }
+    },
+    "memoryReducedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "latest_attempt_id",
+        "best_attempt_id",
+        "transition",
+        "remaining_budget"
+      ],
+      "properties": {
+        "latest_attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "best_attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "remaining_budget": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "attemptSubmittedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "submit_action_event_id",
+        "selected_attempt_id",
+        "reason_code"
+      ],
+      "properties": {
+        "submit_action_event_id": {
+          "type": "string",
+          "pattern": "^evt_[0-9]{4,}$"
+        },
+        "selected_attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "reason_code": {
+          "enum": [
+            "all_constraints_passed",
+            "best_available_under_budget",
+            "no_productive_action_remaining"
+          ]
+        }
+      }
+    },
+    "errorPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "error_code",
+        "message"
+      ],
+      "properties": {
+        "error_code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "raw_output_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "observation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version",
+            "observation_type",
+            "error_code",
+            "message"
+          ],
+          "properties": {
+            "schema_version": {
+              "const": "0.2"
+            },
+            "observation_type": {
+              "enum": [
+                "format_error",
+                "reference_error",
+                "tool_error"
+              ]
+            },
+            "error_code": {
+              "type": "string",
+              "minLength": 1
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
     }
   }
 }

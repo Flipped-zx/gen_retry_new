@@ -1,0 +1,22 @@
+{
+  "schema_version": "0.2",
+  "action": "edit_image",
+  "arguments": {
+    "source_attempt_id": "a_000",
+    "target_constraint_ids": [
+      "c_001"
+    ],
+    "preserve_constraint_ids": [
+      "c_002",
+      "c_003",
+      "c_004"
+    ],
+    "strategy_tags": [
+      "localized_instance_addition"
+    ],
+    "skill_ids_used": [
+      "counting_edit"
+    ],
+    "edit_instruction": "Add one red apple only in the empty left region; preserve the existing apples, blue bowl, and left-right relation."
+  }
+}

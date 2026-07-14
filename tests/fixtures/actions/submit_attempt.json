@@ -1,0 +1,8 @@
+{
+  "schema_version": "0.2",
+  "action": "submit_attempt",
+  "arguments": {
+    "selected_attempt_id": "a_002",
+    "reason_code": "all_constraints_passed"
+  }
+}

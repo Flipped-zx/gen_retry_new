@@ -1,0 +1,25 @@
+{
+  "schema_version": "0.2",
+  "episode_id": "ep_demo_001",
+  "artifacts": [
+    {
+      "artifact_id": "img_000",
+      "attempt_id": "a_000",
+      "artifact_type": "image",
+      "uri": "artifacts/images/img_000.png",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "media_type": "image/png",
+      "producer": "fake_qianwen_image_edit_adapter",
+      "created_at": "2026-07-14T06:00:00Z"
+    },
+    {
+      "artifact_id": "raw_000",
+      "artifact_type": "raw_model_output",
+      "uri": "artifacts/raw_model_outputs/turn_000.txt",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "media_type": "text/plain",
+      "producer": "teacher",
+      "created_at": "2026-07-14T06:00:00Z"
+    }
+  ]
+}

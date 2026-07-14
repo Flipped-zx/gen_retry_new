@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gen-retry-v3"
+version = "0.2.0"
+description = "Verifier-grounded retry agent protocol and runtime scaffolding"
+requires-python = ">=3.11"
+dependencies = [
+  "jsonschema>=4.18"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

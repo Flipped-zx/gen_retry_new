@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/gen-retry/artifact-manifest-v0.2.schema.json",
+  "title": "Gen-Retry Artifact Manifest v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "episode_id",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.2"
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifacts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "artifact_id",
+          "artifact_type",
+          "uri",
+          "sha256",
+          "media_type",
+          "producer"
+        ],
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "pattern": "^(img|artifact|raw|planner_view|task_spec|geneval2_report)_[0-9]{3,}$"
+          },
+          "attempt_id": {
+            "type": "string",
+            "pattern": "^a_[0-9]{3,}$"
+          },
+          "artifact_type": {
+            "enum": [
+              "image",
+              "raw_model_output",
+              "planner_view",
+              "task_spec",
+              "geneval2_report",
+              "event_log"
+            ]
+          },
+          "uri": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "media_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "producer": {
+            "type": "string",
+            "minLength": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

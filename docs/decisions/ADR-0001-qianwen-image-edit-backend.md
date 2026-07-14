@@ -25,4 +25,6 @@ edit_image     → backend edit mode with source image
 - adapter 名称固定为 `QianwenImageEditAdapter`；
 - action schema 仍区分 generation/edit instruction；
 - 所有文档、fixtures、reports 的 backend ID 统一为 `qianwen_image_edit`；
+- image outputs are recorded through environment-owned artifact manifests, not
+  as planner-predicted paths;
 - 如未来增加第二后端，必须新 ADR，不得静默更改。
