@@ -2,8 +2,8 @@
 
 ## Current Phase
 
-Phase 3D — Ten-prompt selection complete; live rollout execution pending teacher
-and Qianwen-Image endpoint configuration.
+Phase 3E — Fresh rollout run directories prepared; live execution pending
+teacher and Qianwen-Image endpoint configuration.
 
 ## Gate State
 
@@ -81,6 +81,12 @@ and Qianwen-Image endpoint configuration.
     any live rollout;
   - recorded source evidence in `docs/SOURCE_LEDGER.md`;
   - wrote checkpoint `docs/checkpoints/phase3bcd_selection.md`.
+- Phase 3E run preparation completed without live calls:
+  - prepared ten replayable fresh run directories under `runs/phase3/`;
+  - wrote `artifacts/phase3/prepared_rollouts.json`;
+  - verified initial event logs, empty histories, no source images, no legacy
+    image paths, and manifest closure;
+  - wrote checkpoint `docs/checkpoints/phase3e_rollout_prep.md`.
 
 ## Tests And Results
 
@@ -113,6 +119,11 @@ and Qianwen-Image endpoint configuration.
   - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl` — passed
   - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl --planner-view` — passed
   - `git diff --check` — passed
+- Phase 3E:
+  - `python -m gen_retry.cli.prepare_phase3_rollouts` — passed, 10 prepared directories
+  - Prepared rollout directory validation script — passed, 10 directories
+  - `pytest tests/unit/test_phase3_rollout_prep.py -q` — passed, 1 test
+  - `pytest tests/unit -q` — passed, 14 tests
 
 ## Active Risks
 
