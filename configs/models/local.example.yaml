@@ -10,7 +10,7 @@ teacher:
 
 image_backend:
   backend_id: qianwen_image_edit
-  model_id: <your-qianwen-image-edit-model-id>
+  model_id: <qianwen-image-edit-model-id>
   api_key_env: QIANWEN_IMAGE_API_KEY
   base_url_env: QIANWEN_IMAGE_BASE_URL
   supports:

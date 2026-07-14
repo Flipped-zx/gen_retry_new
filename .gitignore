@@ -1,0 +1,16 @@
+# Local machine configuration
+configs/paths/local.yaml
+configs/models/local.yaml
+
+# Generated runtime outputs
+runs/
+reports/
+
+# Notebook/editor artifacts
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
