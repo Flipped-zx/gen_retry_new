@@ -59,7 +59,8 @@ Phase 2 — Mock Replay Runtime in progress.
   - planner-view builder;
   - replay CLI;
   - fake Qianwen-Image-Edit and fake Geneval2 adapters;
-  - five mock episode fixture directories.
+  - five distinct mock episode trajectories covering direct success,
+    regeneration, local edit, branch recovery, and persistent failure.
 
 ## Tests And Results
 
@@ -70,9 +71,13 @@ Phase 2 — Mock Replay Runtime in progress.
   - `python -m gen_retry.cli.validate_fixtures` — passed, 139 fixture records
   - `pytest tests/contract -q` — passed, 48 tests
 - Phase 2:
+  - `python -m gen_retry.cli.validate_schemas` — passed, 5 schemas
+  - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records
+  - `pytest tests/contract -q` — passed, 48 tests
   - `pytest tests/unit -q` — passed, 8 tests
   - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl` — passed
   - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl --planner-view` — passed
+  - `git diff --check` — passed
 
 ## Active Risks
 
@@ -82,9 +87,6 @@ Phase 2 — Mock Replay Runtime in progress.
 - Best-attempt tie-breaking, artifact URI portability, artifact-manifest closure,
   and raw-output retention are recorded as Phase 2 follow-ups, not Gate 1
   blockers.
-- The five mock episode fixtures currently share the same validated canonical
-  trajectory shape; Phase 2 still needs distinct case-specific trajectories
-  before exit criteria are fully satisfied.
 
 ## Unresolved Decisions
 
@@ -105,5 +107,5 @@ Extra final Gate 1 Sol review verdict: `APPROVE`.
 
 ## Next Autonomous Action
 
-Continue Phase 2 by making the five mock fixtures case-specific and broadening
-deterministic replay/provenance tests around branch recovery.
+Continue Phase 2 by tightening artifact/cache replay behavior around the fake
+adapters and persisted event artifacts.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 
 
@@ -51,4 +52,4 @@ class FakeQianwenImageEditAdapter:
 
 
 def _fake_hash(value: str) -> str:
-    return (value.replace("_", "") + "0" * 64)[:64]
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()

@@ -187,11 +187,12 @@ def reduce_events(events: list[dict[str, Any]]) -> EpisodeState:
                 image_artifact_id=completion["payload"]["image_artifact_id"],
                 constraint_results=constraint_results,
             )
-            previous = (
-                state.attempts[attempt.parent_attempt_id]
-                if attempt.parent_attempt_id is not None
-                else None
-            )
+            if attempt.parent_attempt_id is not None:
+                previous = state.attempts[attempt.parent_attempt_id]
+            elif state.latest_attempt_id is not None:
+                previous = state.attempts[state.latest_attempt_id]
+            else:
+                previous = None
             state.attempts[attempt.attempt_id] = attempt
             state.attempt_order.append(attempt.attempt_id)
             state.latest_attempt_id = attempt.attempt_id
