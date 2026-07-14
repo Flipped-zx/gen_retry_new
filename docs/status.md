@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Phase 2 — Mock Replay Runtime in progress.
+Phase 2 — Mock Replay Runtime complete.
 
 ## Gate State
 
@@ -61,6 +61,8 @@ Phase 2 — Mock Replay Runtime in progress.
   - fake Qianwen-Image-Edit and fake Geneval2 adapters;
   - five distinct mock episode trajectories covering direct success,
     regeneration, local edit, branch recovery, and persistent failure.
+  - deterministic run-relative artifact helpers for idempotent fake image and
+    evaluator report artifacts, including manifest hash-closure tests.
 
 ## Tests And Results
 
@@ -74,7 +76,7 @@ Phase 2 — Mock Replay Runtime in progress.
   - `python -m gen_retry.cli.validate_schemas` — passed, 5 schemas
   - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records
   - `pytest tests/contract -q` — passed, 48 tests
-  - `pytest tests/unit -q` — passed, 8 tests
+  - `pytest tests/unit -q` — passed, 10 tests
   - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl` — passed
   - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl --planner-view` — passed
   - `git diff --check` — passed
@@ -84,8 +86,8 @@ Phase 2 — Mock Replay Runtime in progress.
 - External source roots have pre-existing dirty working trees; reuse decisions must rely on recorded commit/path/license evidence.
 - Legacy Gen-Retry has no root license found, so copying code remains disallowed until file-level license evidence is recorded.
 - Geneval2 is CC BY-NC 4.0 and should remain an external evaluator/runtime unless licensing is explicitly reviewed.
-- Best-attempt tie-breaking, artifact URI portability, artifact-manifest closure,
-  and raw-output retention are recorded as Phase 2 follow-ups, not Gate 1
+- Raw-output retention/redaction and manifest closure for future materialized
+  planner-view/raw-output/event-log artifacts remain follow-ups, not Gate 1
   blockers.
 
 ## Unresolved Decisions
@@ -107,5 +109,6 @@ Extra final Gate 1 Sol review verdict: `APPROVE`.
 
 ## Next Autonomous Action
 
-Continue Phase 2 by tightening artifact/cache replay behavior around the fake
-adapters and persisted event artifacts.
+Prepare Phase 3 live-pilot readiness checks without running external APIs until
+model paths, credentials, budget limits, and artifact cache locations are
+confirmed.
