@@ -2,7 +2,8 @@
 
 ## Current Phase
 
-Phase 2 — Mock Replay Runtime complete.
+Phase 3A — Preflight stopped before live rollout execution pending teacher and
+Qianwen-Image endpoint configuration.
 
 ## Gate State
 
@@ -15,6 +16,7 @@ Phase 2 — Mock Replay Runtime complete.
 - Current version: draft v0.2
 - Live APIs run: no
 - External roots configured: yes
+- Active Phase 3 plan: `MASTER_PHASE3_TEN_FRESH_ROLLOUTS.md`
 
 ## Completed Deliverables
 
@@ -63,6 +65,15 @@ Phase 2 — Mock Replay Runtime complete.
     regeneration, local edit, branch recovery, and persistent failure.
   - deterministic run-relative artifact helpers for idempotent fake image and
     evaluator report artifacts, including manifest hash-closure tests.
+- Phase 3A preflight completed for local repository state:
+  - confirmed the ten-fresh-rollout master plan supersedes the older five-pilot
+    task for unexecuted Phase 3 work;
+  - confirmed all Phase 3 episodes must start from fresh generation and must not
+    import or parent from legacy images or attempts;
+  - confirmed local external source roots exist;
+  - recorded a live-run stop condition in
+    `docs/checkpoints/phase3a_preflight.md` and
+    `docs/phase3/preflight_report.md`.
 
 ## Tests And Results
 
@@ -80,6 +91,10 @@ Phase 2 — Mock Replay Runtime complete.
   - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl` — passed
   - `python -m gen_retry.cli.replay_episode examples/one_episode_trajectory.jsonl --planner-view` — passed
   - `git diff --check` — passed
+- Phase 3A:
+  - `python -m gen_retry.cli.validate_schemas` — passed, 5 schemas
+  - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records
+  - `pytest tests/unit -q` — passed, 10 tests
 
 ## Active Risks
 
@@ -89,10 +104,13 @@ Phase 2 — Mock Replay Runtime complete.
 - Raw-output retention/redaction and manifest closure for future materialized
   planner-view/raw-output/event-log artifacts remain follow-ups, not Gate 1
   blockers.
+- Live Phase 3 execution is blocked until the configured teacher and
+  Qianwen-Image endpoint environment variables are set.
 
 ## Unresolved Decisions
 
-- None currently blocking Phase 2.
+- None currently blocking protocol design. Live execution has an operational
+  configuration blocker recorded above.
 
 ## Last Reviewer Verdict
 
@@ -109,6 +127,6 @@ Extra final Gate 1 Sol review verdict: `APPROVE`.
 
 ## Next Autonomous Action
 
-Prepare Phase 3 live-pilot readiness checks without running external APIs until
-model paths, credentials, budget limits, and artifact cache locations are
-confirmed.
+After the required environment variables are available, rerun Phase 3A live
+preflight checks, then continue to legacy diagnostic/action analysis and fresh
+Geneval2 candidate-pool construction before selecting ten prompts.
