@@ -1,0 +1,11 @@
+# Copy to local.yaml. This file contains paths only; never put API keys here.
+# All external roots are read-only evidence sources.
+
+legacy_gen_retry_root: /absolute/path/to/legacy-gen-retry
+gen_searcher_root: /absolute/path/to/Gen-Searcher
+gen_evolve_root: /absolute/path/to/GenEvolve
+geneval2_root: /absolute/path/to/Geneval2
+
+# Optional roots
+qianwen_image_edit_runtime_root: null
+legacy_data_root: null

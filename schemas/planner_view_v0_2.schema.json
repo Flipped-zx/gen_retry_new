@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/gen-retry/planner-view-v0.2.schema.json",
+  "title": "Gen-Retry Planner View v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "episode_id",
+    "task_spec_ref",
+    "latest_attempt",
+    "best_attempt",
+    "latest_transition",
+    "compact_history",
+    "remaining_budget",
+    "tool_manifest",
+    "skill_manifest"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.2"
+    },
+    "episode_id": {
+      "type": "string"
+    },
+    "task_spec_ref": {
+      "type": "string"
+    },
+    "visible_images": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "latest_attempt": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "best_attempt": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "latest_transition": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "constraint_state": {
+      "type": "object"
+    },
+    "compact_history": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "remaining_budget": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tool_manifest": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "skill_manifest": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "retrieved_experiences": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/gen-retry/episode-event-v0.2.schema.json",
+  "title": "Gen-Retry Episode Event Envelope v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "episode_id",
+    "event_type",
+    "created_at",
+    "producer",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.2"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[0-9]{4,}$"
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "turn_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "event_type": {
+      "enum": [
+        "task_created",
+        "planner_view_built",
+        "planner_output_recorded",
+        "action_validated",
+        "skill_returned",
+        "image_execution_started",
+        "image_execution_completed",
+        "geneval2_completed",
+        "memory_reduced",
+        "attempt_submitted",
+        "tool_error",
+        "format_error"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "producer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

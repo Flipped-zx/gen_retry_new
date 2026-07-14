@@ -1,0 +1,22 @@
+# Copy to local.yaml and fill local deployment details. Never commit secrets.
+policy:
+  model_id: Qwen3-VL-8B-Instruct
+
+teacher:
+  provider: openai_compatible
+  model_id: <teacher-model-id>
+  api_key_env: TEACHER_API_KEY
+  base_url_env: TEACHER_BASE_URL
+
+image_backend:
+  backend_id: qianwen_image_edit
+  model_id: <your-qianwen-image-edit-model-id>
+  api_key_env: QIANWEN_IMAGE_API_KEY
+  base_url_env: QIANWEN_IMAGE_BASE_URL
+  supports:
+    generate: true
+    edit: true
+
+evaluator:
+  backend_id: geneval2
+  config_path: <local-geneval2-config>
