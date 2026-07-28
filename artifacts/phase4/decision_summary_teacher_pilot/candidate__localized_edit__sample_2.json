@@ -1,0 +1,34 @@
+{
+  "profile": "candidate",
+  "case_id": "localized_edit",
+  "sample_index": 2,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"edit_image\",\"arguments\":{\"source_attempt_id\":\"a_001\",\"target_constraint_ids\":[\"c_001\",\"c_004\",\"c_008\"],\"preserve_constraint_ids\":[\"c_002\",\"c_003\",\"c_005\",\"c_006\",\"c_007\",\"c_009\",\"c_010\",\"c_011\"],\"instruction\":\"Edit attempt a_001 to make the scene clearly show exactly six distinct glass lions, with no extra or hidden lions. Keep exactly three red cats, keep exactly one brown donut, and preserve all existing glass-lion, red-cat, and brown-donut identities. Arrange the three red cats clearly behind the single brown donut from the viewer's perspective, and pose all six glass lions as actively chasing the cats, with their bodies, faces, gaze, and running direction oriented toward the cats. Do not add any additional cats, donuts, or other lion-like figures.\",\"decision_summary\":\"The latest attempt is best but misses lion count, chasing action, and cat-behind-donut placement.\"}}",
+  "raw_output_sha256": "c7cfd8fed588429d35b43edbf636d33217b6342357d4964c5db340a9c62d908c",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 275,
+    "prompt_tokens": 1181,
+    "total_tokens": 1456,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 51,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": false,
+    "summary_future_leakage": false,
+    "errors": [],
+    "summary": "The latest attempt is best but misses lion count, chasing action, and cat-behind-donut placement.",
+    "summary_characters": 97,
+    "summary_words": 14
+  }
+}

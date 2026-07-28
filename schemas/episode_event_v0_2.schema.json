@@ -37,6 +37,7 @@
       "enum": [
         "task_created",
         "planner_view_built",
+        "planner_context_built",
         "planner_output_recorded",
         "action_validated",
         "skill_returned",
@@ -44,6 +45,7 @@
         "image_execution_completed",
         "geneval2_completed",
         "memory_reduced",
+        "round_record_persisted",
         "attempt_submitted",
         "tool_error",
         "format_error"
@@ -104,6 +106,25 @@
         "properties": {
           "payload": {
             "$ref": "#/$defs/plannerViewBuiltPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "planner_context_built"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/plannerContextBuiltPayload"
           }
         }
       }
@@ -257,6 +278,25 @@
       "if": {
         "properties": {
           "event_type": {
+            "const": "round_record_persisted"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/roundRecordPersistedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
             "const": "attempt_submitted"
           }
         },
@@ -350,6 +390,30 @@
         }
       }
     },
+    "plannerContextBuiltPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planner_context_ref",
+        "planner_context_sha256"
+      ],
+      "properties": {
+        "planner_context_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planner_context_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "planner_view_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planner_view_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
     "plannerOutputRecordedPayload": {
       "type": "object",
       "additionalProperties": false,
@@ -375,7 +439,20 @@
       ],
       "properties": {
         "action": {
-          "$ref": "https://local/gen-retry/action-protocol-v0.2.schema.json"
+          "anyOf": [
+            {
+              "$ref": "https://local/gen-retry/action-protocol-v0.2.schema.json"
+            },
+            {
+              "$ref": "https://local/gen-retry/action-protocol-v0.3.schema.json"
+            },
+            {
+              "$ref": "https://local/gen-retry/action-protocol-v0.4.schema.json"
+            },
+            {
+              "$ref": "https://local/gen-retry/action-protocol-v0.5.schema.json"
+            }
+          ]
         }
       }
     },
@@ -745,6 +822,32 @@
             "best_available_under_budget",
             "no_productive_action_remaining"
           ]
+        }
+      }
+    },
+    "roundRecordPersistedPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "round_id",
+        "result_attempt_id",
+        "round_record_ref",
+        "round_record_sha256"
+      ],
+      "properties": {
+        "round_id": {
+          "type": "string",
+          "pattern": "^r_[0-9]{3,}$"
+        },
+        "result_attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "round_record_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "round_record_sha256": {
+          "$ref": "#/$defs/sha256"
         }
       }
     },

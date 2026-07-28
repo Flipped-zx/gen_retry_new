@@ -2,6 +2,11 @@
 
 Date: 2026-07-14
 
+Supersession note: the live configuration blocker recorded in this Phase 3A
+preflight was later resolved. The passing live preflight is recorded in
+`docs/checkpoints/phase3_live_preflight.md` and
+`artifacts/phase3/live_preflight_summary.json`.
+
 ## Scope
 
 This preflight follows `MASTER_PHASE3_TEN_FRESH_ROLLOUTS.md`, which replaces
@@ -38,9 +43,9 @@ No source-of-truth conflict was found during preflight.
 
 ## Live-Run Blocker
 
-Live rollouts are blocked before any paid or external call because the configured
-teacher and Qianwen-Image endpoint environment variables are not set in the
-current process.
+Historical blocker: live rollouts were blocked at this Phase 3A checkpoint
+because the configured teacher and Qianwen-Image endpoint environment variables
+were not set in the current process.
 
 No API keys, authorization headers, private endpoint values, or provider payloads
 were printed, persisted, or committed.
@@ -62,6 +67,5 @@ Results:
 ## Stop Condition
 
 `MASTER_PHASE3_TEN_FRESH_ROLLOUTS.md` lists absent required credentials or
-endpoints as a documented stop condition. Ten fresh live rollouts, Gate 2, and
-Phase 4 cannot proceed until the teacher and Qianwen-Image endpoint
-configuration is available in the environment.
+endpoints as a documented stop condition. This stop condition was superseded by
+the later live preflight and completed ten-trajectory rollout.

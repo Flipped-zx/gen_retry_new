@@ -1,0 +1,34 @@
+{
+  "profile": "candidate",
+  "case_id": "broad_failure_regenerate",
+  "sample_index": 2,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"generate_image\",\"arguments\":{\"target_constraint_ids\":[\"c_001\",\"c_002\",\"c_004\",\"c_005\",\"c_008\"],\"preserve_constraint_ids\":[\"c_003\",\"c_006\",\"c_007\",\"c_009\",\"c_010\",\"c_011\"],\"instruction\":\"Create a clear scene with exactly six separate glass lions and exactly three separate red cats. Show the lions actively chasing the cats with the lions behind or pursuing toward the cats, using running poses, gaze direction, and spacing to make the chase unambiguous. Place exactly one brown donut in the foreground, and put all three red cats clearly behind the donut from the viewer's perspective. Keep the existing required objects and attributes: lions present, cats present and red, one donut present and brown. Avoid extra lions, cats, or donuts.\",\"decision_summary\":\"A new generation targets the failed and uncertain atoms while preserving the passed object and attribute requirements.\"}}",
+  "raw_output_sha256": "35c4419c2c93008dfa58fba583f8a67e6f1334e81a86e76b37fc59e73a569982",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 308,
+    "prompt_tokens": 1190,
+    "total_tokens": 1498,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 101,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": true,
+    "summary_future_leakage": false,
+    "errors": [],
+    "summary": "A new generation targets the failed and uncertain atoms while preserving the passed object and attribute requirements.",
+    "summary_characters": 118,
+    "summary_words": 17
+  }
+}

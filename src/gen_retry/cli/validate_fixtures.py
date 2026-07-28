@@ -14,7 +14,7 @@ from gen_retry.protocol.trajectory_validator import (
 
 FIXTURE_SCHEMA_MAP = {
     "tests/fixtures/task_spec": "task_spec_v0_2.schema.json",
-    "tests/fixtures/actions": "action_protocol_v0_2.schema.json",
+    "tests/fixtures/actions": "action_protocol_v0_5.schema.json",
     "tests/fixtures/events": "episode_event_v0_2.schema.json",
     "tests/fixtures/planner_views": "planner_view_v0_2.schema.json",
     "tests/fixtures/artifacts": "artifact_manifest_v0_2.schema.json",
@@ -51,7 +51,14 @@ def validate_nested_event_payload(event: dict[str, Any]) -> None:
     if event.get("event_type") == "task_created":
         validate_instance(payload["task_spec"], "task_spec_v0_2.schema.json")
     if event.get("event_type") == "action_validated":
-        validate_instance(payload["action"], "action_protocol_v0_2.schema.json")
+        action_schema_by_version = {
+            "0.2": "action_protocol_v0_2.schema.json",
+            "0.3": "action_protocol_v0_3.schema.json",
+            "0.4": "action_protocol_v0_4.schema.json",
+            "0.5": "action_protocol_v0_5.schema.json",
+        }
+        schema_name = action_schema_by_version[payload["action"].get("schema_version")]
+        validate_instance(payload["action"], schema_name)
 
 
 def validate_fixture_tree(root: Path = PROJECT_ROOT) -> int:

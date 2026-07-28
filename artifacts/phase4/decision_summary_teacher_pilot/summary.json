@@ -1,0 +1,24 @@
+{
+  "experiment": "decision_summary_teacher_only_ab",
+  "model_id": "gpt-5.5",
+  "credentials_persisted_in_artifacts": false,
+  "profiles": {
+    "control": {
+      "sample_count": 10,
+      "schema_valid": 10,
+      "reference_valid": 10,
+      "decision_correct": 10
+    },
+    "candidate": {
+      "sample_count": 10,
+      "schema_valid": 10,
+      "reference_valid": 10,
+      "decision_correct": 10,
+      "summary_contract_valid": 10,
+      "summary_state_to_decision": 5,
+      "summary_future_leakage": 0
+    }
+  },
+  "automatic_pass": false,
+  "manual_sol_review_required": true
+}

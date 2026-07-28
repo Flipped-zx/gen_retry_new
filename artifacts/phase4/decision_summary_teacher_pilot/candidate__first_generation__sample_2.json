@@ -1,0 +1,34 @@
+{
+  "profile": "candidate",
+  "case_id": "first_generation",
+  "sample_index": 2,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"generate_image\",\"arguments\":{\"target_constraint_ids\":[\"c_001\",\"c_002\",\"c_003\",\"c_004\",\"c_005\",\"c_006\",\"c_007\",\"c_008\",\"c_009\",\"c_010\",\"c_011\"],\"preserve_constraint_ids\":[],\"instruction\":\"Create a clear scene with exactly six distinct glass lions, exactly three distinct red cats, and exactly one brown donut. Place the single brown donut in the foreground, with the three red cats clearly behind it. Show all six glass lions behind or to the side of the cats, actively chasing the cats with forward-running poses, bodies and gazes directed toward the cats, and visible spacing so no animal is merged or duplicated. Keep every lion transparent and glass-like, every cat red, and make all objects fully visible and countable.\",\"decision_summary\":\"No prior attempts exist, so generate an initial image covering all required constraints.\"}}",
+  "raw_output_sha256": "1353c0c1f5f558716ce97cdcb3812d5424d9eab51ef994dba1f242750042bbf2",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 243,
+    "prompt_tokens": 771,
+    "total_tokens": 1014,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 40,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": false,
+    "summary_future_leakage": false,
+    "errors": [],
+    "summary": "No prior attempts exist, so generate an initial image covering all required constraints.",
+    "summary_characters": 88,
+    "summary_words": 13
+  }
+}

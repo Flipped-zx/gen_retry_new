@@ -1,0 +1,34 @@
+{
+  "profile": "candidate",
+  "case_id": "broad_failure_regenerate",
+  "sample_index": 1,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"generate_image\",\"arguments\":{\"target_constraint_ids\":[\"c_001\",\"c_002\",\"c_004\",\"c_005\",\"c_008\"],\"preserve_constraint_ids\":[\"c_003\",\"c_006\",\"c_007\",\"c_009\",\"c_010\",\"c_011\"],\"instruction\":\"Create a scene with exactly six distinct glass lions chasing exactly three distinct red cats. Place one brown donut prominently in the foreground, and position all three red cats clearly behind that donut from the viewer's perspective. Keep the cats visibly red, keep the donut brown, include no extra lions, cats, or donuts, and make the pursuit direction obvious with the lions oriented and moving toward the cats.\",\"decision_summary\":\"Retry targets the failed and uncertain constraints while preserving the passed objects and attributes.\"}}",
+  "raw_output_sha256": "8bb58b9f62328715fe1b1227bdeb585542474f24b9851bbbca43b65d1232e940",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 237,
+    "prompt_tokens": 1190,
+    "total_tokens": 1427,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 62,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": true,
+    "summary_future_leakage": false,
+    "errors": [],
+    "summary": "Retry targets the failed and uncertain constraints while preserving the passed objects and attributes.",
+    "summary_characters": 102,
+    "summary_words": 14
+  }
+}

@@ -44,6 +44,26 @@ def test_event_fixture_validates_with_nested_payloads() -> None:
     for event in events:
         validate_instance(event, "episode_event_v0_2.schema.json")
         validate_nested_event_payload(event)
+
+
+def test_event_schema_accepts_nested_v0_5_action_without_breaking_v0_2() -> None:
+    events = load_events(ROOT / "tests" / "fixtures" / "events" / "one_attempt_events.jsonl")
+    action_event = copy.deepcopy(
+        next(event for event in events if event["event_type"] == "action_validated")
+    )
+    action_event["payload"]["action"] = json.loads(
+        (ROOT / "tests" / "fixtures" / "actions" / "generate_image.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    validate_instance(action_event, "episode_event_v0_2.schema.json")
+    validate_nested_event_payload(action_event)
+    legacy_action_event = next(
+        event for event in events if event["event_type"] == "action_validated"
+    )
+    validate_instance(legacy_action_event, "episode_event_v0_2.schema.json")
+    validate_nested_event_payload(legacy_action_event)
     validate_trajectory_events(events)
 
 

@@ -4,23 +4,39 @@ from typing import Any
 
 from gen_retry.protocol.schema_loader import validate_instance
 from gen_retry.runtime.reducer import EpisodeState, AttemptRecord, default_tool_manifest
+from gen_retry.tools.skill_store import SKILL_VERSIONS
 
 
 DEFAULT_SKILL_MANIFEST = [
     {
-        "skill_id": "counting_layout",
-        "version": "0.2",
-        "description": "Initial layout guidance for count constraints.",
+        "skill_id": "counting_and_instance_layout",
+        "version": SKILL_VERSIONS["counting_and_instance_layout"],
+        "description": "Exact cardinality for generation and local count repair.",
     },
     {
-        "skill_id": "counting_edit",
-        "version": "0.2",
-        "description": "Localized edit guidance for count corrections.",
+        "skill_id": "spatial_relation_layout",
+        "version": SKILL_VERSIONS["spatial_relation_layout"],
+        "description": "Static frame, depth, support, containment, and occlusion relations.",
     },
     {
-        "skill_id": "spatial_relation",
-        "version": "0.2",
-        "description": "Spatial relationship preservation guidance.",
+        "skill_id": "attribute_entity_binding",
+        "version": SKILL_VERSIONS["attribute_entity_binding"],
+        "description": "Bind color, material, texture, and identity attributes to the correct entity.",
+    },
+    {
+        "skill_id": "local_edit_preservation",
+        "version": SKILL_VERSIONS["local_edit_preservation"],
+        "description": "Four-part local edit instructions that preserve passed evidence.",
+    },
+    {
+        "skill_id": "action_pose_relation",
+        "version": SKILL_VERSIONS["action_pose_relation"],
+        "description": "Pose, orientation, contact, and motion evidence for verb relations.",
+    },
+    {
+        "skill_id": "object_identity_presence",
+        "version": SKILL_VERSIONS["object_identity_presence"],
+        "description": "Recognizable object identity, presence, full visibility, and no substitutions.",
     },
 ]
 
@@ -30,6 +46,7 @@ def build_planner_view(
     *,
     task_spec_ref: str = "embedded:task_spec",
     skill_manifest: list[dict[str, Any]] | None = None,
+    retrieved_experiences: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     latest_attempt = (
         state.attempts[state.latest_attempt_id] if state.latest_attempt_id else None
@@ -59,7 +76,7 @@ def build_planner_view(
         "remaining_budget": state.remaining_budget,
         "tool_manifest": default_tool_manifest(),
         "skill_manifest": skill_manifest if skill_manifest is not None else DEFAULT_SKILL_MANIFEST,
-        "retrieved_experiences": [],
+        "retrieved_experiences": retrieved_experiences or [],
     }
     validate_instance(view, "planner_view_v0_2.schema.json")
     return view

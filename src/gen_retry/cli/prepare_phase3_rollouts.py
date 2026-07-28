@@ -25,6 +25,11 @@ def main() -> None:
     )
     parser.add_argument("--max-image-attempts", type=int, default=5)
     parser.add_argument("--created-at", default="2026-07-14T00:00:00Z")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="Prepare only the first N already-selected prompts without rerunning selection.",
+    )
     args = parser.parse_args()
 
     summary = prepare_rollout_runs(
@@ -33,6 +38,7 @@ def main() -> None:
         summary_output=args.summary_output,
         max_image_attempts=args.max_image_attempts,
         created_at=args.created_at,
+        limit=args.limit,
     )
     print(f"prepared {summary['prepared_count']} Phase 3 rollout directories")
 

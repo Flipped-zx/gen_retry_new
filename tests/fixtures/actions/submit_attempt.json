@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.5",
   "action": "submit_attempt",
   "arguments": {
     "selected_attempt_id": "a_002",

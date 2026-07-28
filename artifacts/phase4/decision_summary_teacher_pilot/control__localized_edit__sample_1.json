@@ -1,0 +1,31 @@
+{
+  "profile": "control",
+  "case_id": "localized_edit",
+  "sample_index": 1,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"edit_image\",\"arguments\":{\"source_attempt_id\":\"a_001\",\"target_constraint_ids\":[\"c_001\",\"c_004\",\"c_008\"],\"preserve_constraint_ids\":[\"c_002\",\"c_003\",\"c_005\",\"c_006\",\"c_007\",\"c_009\",\"c_010\",\"c_011\"],\"instruction\":\"Edit the existing image to clearly show exactly six separate glass lions chasing the cats. Keep the lions visibly made of glass. Arrange the six glass lions in pursuit poses facing and moving toward exactly three red cats, with clear chase spacing and direction. Place all three red cats behind the single brown donut from the viewer's perspective, so the donut is in front of the cats and the cats remain visible behind it. Preserve exactly three red cats, exactly one brown donut, and all existing object identities and attributes.\"}}",
+  "raw_output_sha256": "a6db81849cc8e91172489481585d0a5e81735e8aad9a5d20c598b4289683517f",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 235,
+    "prompt_tokens": 1111,
+    "total_tokens": 1346,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 48,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": true,
+    "summary_future_leakage": false,
+    "errors": []
+  }
+}

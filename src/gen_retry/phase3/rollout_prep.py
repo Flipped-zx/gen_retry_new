@@ -14,7 +14,7 @@ from gen_retry.protocol.schema_loader import validate_instance
 from gen_retry.protocol.trajectory_validator import validate_artifact_manifest_semantics
 from gen_retry.runtime.event_io import load_events_jsonl
 from gen_retry.runtime.json_canonical import canonical_json
-from gen_retry.runtime.planner_view import build_planner_view
+from gen_retry.runtime.planner_context import build_planner_context_from_events
 from gen_retry.runtime.reducer import reduce_events
 
 
@@ -28,9 +28,14 @@ def prepare_rollout_runs(
     summary_output: Path,
     max_image_attempts: int = 5,
     created_at: str = DEFAULT_CREATED_AT,
+    limit: int | None = None,
 ) -> dict[str, Any]:
     selected_payload = json.loads(selected_prompts_path.read_text(encoding="utf-8"))
     selected = selected_payload["selected_prompts"]
+    if limit is not None:
+        if limit <= 0:
+            raise ValueError("limit must be positive")
+        selected = selected[:limit]
     prepared = [
         _prepare_one_run(
             candidate=candidate,
@@ -44,6 +49,7 @@ def prepare_rollout_runs(
         "schema_version": "0.2",
         "prepared_count": len(prepared),
         "selected_prompts_ref": str(selected_prompts_path),
+        "selected_prompt_limit": limit,
         "max_image_attempts": max_image_attempts,
         "created_at": created_at,
         "fresh_start_policy": {
@@ -69,6 +75,10 @@ def _prepare_one_run(
 ) -> dict[str, Any]:
     episode_id = f"phase3_ep_{int(candidate['selection_rank']):03d}"
     run_dir = output_root / episode_id
+    if run_dir.exists() and any(run_dir.iterdir()):
+        raise FileExistsError(
+            f"refusing to overwrite non-empty rollout directory: {run_dir}"
+        )
     run_dir.mkdir(parents=True, exist_ok=True)
 
     task_spec = _task_spec_from_selected_candidate(
@@ -91,32 +101,32 @@ def _prepare_one_run(
         "payload": {"task_spec": task_spec},
     }
     state = reduce_events([task_event])
-    planner_view = build_planner_view(state, task_spec_ref="task_spec.json")
-    planner_view_bytes = canonical_json(planner_view).encode("utf-8")
-    planner_view_sha = write_artifact_bytes(
+    planner_context = build_planner_context_from_events([task_event], task_spec_ref="task_spec.json")
+    planner_context_bytes = canonical_json(planner_context).encode("utf-8")
+    planner_context_sha = write_artifact_bytes(
         run_dir,
-        "planner_views/planner_view_000.json",
-        planner_view_bytes,
+        "planner_contexts/planner_context_000.json",
+        planner_context_bytes,
     )
 
-    planner_view_event = {
+    planner_context_event = {
         "schema_version": "0.2",
         "event_id": "evt_0002",
         "episode_id": episode_id,
         "turn_id": "turn_000",
-        "event_type": "planner_view_built",
+        "event_type": "planner_context_built",
         "created_at": created_at,
-        "producer": "planner_view_builder",
+        "producer": "planner_context_builder",
         "input_refs": ["evt_0001"],
         "payload": {
-            "planner_view_ref": "planner_views/planner_view_000.json",
-            "planner_view_sha256": planner_view_sha,
+            "planner_context_ref": "planner_contexts/planner_context_000.json",
+            "planner_context_sha256": planner_context_sha,
         },
     }
     events_bytes = (
         canonical_json(task_event)
         + "\n"
-        + canonical_json(planner_view_event)
+        + canonical_json(planner_context_event)
         + "\n"
     ).encode("utf-8")
     events_sha = write_artifact_bytes(run_dir, "events.jsonl", events_bytes)
@@ -147,12 +157,12 @@ def _prepare_one_run(
                 created_at=created_at,
             ),
             artifact_manifest_entry(
-                artifact_id="planner_view_000",
-                artifact_type="planner_view",
-                uri="planner_views/planner_view_000.json",
-                sha256=planner_view_sha,
+                artifact_id="planner_context_000",
+                artifact_type="planner_context",
+                uri="planner_contexts/planner_context_000.json",
+                sha256=planner_context_sha,
                 media_type="application/json",
-                producer="planner_view_builder",
+                producer="planner_context_builder",
                 created_at=created_at,
             ),
             artifact_manifest_entry(
@@ -185,7 +195,7 @@ def _prepare_one_run(
         "constraint_type_histogram": candidate["constraint_type_histogram"],
         "task_spec_sha256": task_spec_sha,
         "events_sha256": events_sha,
-        "planner_view_sha256": planner_view_sha,
+        "planner_context_sha256": planner_context_sha,
         "manifest_sha256": manifest_sha,
         "first_live_turn_id": "turn_000",
         "first_live_action_must_not_be_edit": True,

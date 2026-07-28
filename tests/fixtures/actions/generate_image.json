@@ -1,8 +1,7 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.5",
   "action": "generate_image",
   "arguments": {
-    "mode": "initial",
     "target_constraint_ids": [
       "c_001",
       "c_002",
@@ -10,13 +9,6 @@
       "c_004"
     ],
     "preserve_constraint_ids": [],
-    "strategy_tags": [
-      "explicit_count_layout"
-    ],
-    "skill_ids_used": [
-      "counting_layout",
-      "spatial_relation"
-    ],
-    "generation_instruction": "Place exactly three fully visible red apples in the left third and one blue bowl in the right third with a clear gap."
+    "instruction": "Place exactly three fully visible red apples in the left third and one blue bowl in the right third with a clear gap."
   }
 }

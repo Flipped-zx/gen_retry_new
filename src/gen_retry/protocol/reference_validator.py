@@ -50,7 +50,6 @@ def validate_action_references(
     problems: list[ReferenceProblem] = []
     arguments = action.get("arguments", {})
     action_type = action.get("action")
-
     _ensure_known_ids(
         problems,
         "target_constraint_ids",
@@ -65,6 +64,18 @@ def validate_action_references(
         known_constraints,
         "constraint_id",
     )
+    overlap = sorted(
+        set(arguments.get("target_constraint_ids", []))
+        & set(arguments.get("preserve_constraint_ids", []))
+    )
+    for constraint_id in overlap:
+        problems.append(
+            ReferenceProblem(
+                "target_constraint_ids/preserve_constraint_ids",
+                constraint_id,
+                "constraint cannot be both targeted and preserved",
+            )
+        )
 
     if action_type == "edit_image":
         source_attempt_id = arguments.get("source_attempt_id")
@@ -81,14 +92,14 @@ def validate_action_references(
             )
 
     if check_skills:
-        skill_field = "skill_ids" if action_type == "query_skill" else "skill_ids_used"
-        _ensure_known_ids(
-            problems,
-            skill_field,
-            arguments.get(skill_field, []),
-            known_skills,
-            "skill_id",
-        )
+        if action_type == "query_skill":
+            _ensure_known_ids(
+                problems,
+                "skill_ids",
+                arguments.get("skill_ids", []),
+                known_skills,
+                "skill_id",
+            )
 
     if problems:
         raise ActionReferenceError(problems)

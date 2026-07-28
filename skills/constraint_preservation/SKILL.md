@@ -1,18 +1,11 @@
 # Skill: constraint_preservation
 
-## Applicable when
+## Status
 
-- TODO
+- Deprecated compatibility ID. Do not expose or query.
+- Use `local_edit_preservation`.
 
-## Avoid when
+## Compatibility
 
-- TODO
-
-## Operators
-
-- TODO
-
-## Output constraints
-
-- Keep the final execution instruction concise and renderable.
-- Do not invent image observations.
+- Historical events may retain this ID, version, and hash for replay.
+- New manifests must not advertise this ID.

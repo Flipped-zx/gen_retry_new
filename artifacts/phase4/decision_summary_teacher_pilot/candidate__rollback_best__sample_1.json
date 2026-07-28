@@ -1,0 +1,34 @@
+{
+  "profile": "candidate",
+  "case_id": "rollback_best",
+  "sample_index": 1,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"edit_image\",\"arguments\":{\"source_attempt_id\":\"a_002\",\"target_constraint_ids\":[\"c_004\",\"c_008\"],\"preserve_constraint_ids\":[\"c_001\",\"c_002\",\"c_003\",\"c_005\",\"c_006\",\"c_007\",\"c_009\",\"c_010\",\"c_011\"],\"instruction\":\"Starting from a_002, keep exactly six glass lions, exactly three red cats, and exactly one brown donut. Reposition the scene so the three red cats are clearly behind the single brown donut, and pose all six glass lions as visibly chasing the cats with forward-facing bodies, gaze, stride, and spacing directed toward the cats. Do not add or remove lions, cats, or donuts, and preserve all listed passed constraints.\",\"decision_summary\":\"Use the historical best as source because the latest edit regressed glass lions while not fixing the remaining failures.\"}}",
+  "raw_output_sha256": "667d5e24bf95106952a565d00ce8bae4265884d7f1e695c3da917a1817c9e30f",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 275,
+    "prompt_tokens": 1612,
+    "total_tokens": 1887,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 78,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": true,
+    "summary_future_leakage": false,
+    "errors": [],
+    "summary": "Use the historical best as source because the latest edit regressed glass lions while not fixing the remaining failures.",
+    "summary_characters": 120,
+    "summary_words": 19
+  }
+}

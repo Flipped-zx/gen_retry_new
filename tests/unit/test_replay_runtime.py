@@ -22,6 +22,7 @@ def test_replay_is_byte_deterministic() -> None:
 
     assert canonical_json(first["state"]) == canonical_json(second["state"])
     assert canonical_json(first["planner_view"]) == canonical_json(second["planner_view"])
+    assert canonical_json(first["planner_context"]) == canonical_json(second["planner_context"])
 
 
 def test_reducer_reconstructs_non_monotonic_best_and_branch() -> None:
@@ -50,6 +51,15 @@ def test_planner_view_builder_outputs_schema_valid_compact_view() -> None:
         "a_002",
     ]
     assert {image["role"] for image in view["visible_images"]} == {"latest", "best"}
+
+
+def test_replay_outputs_planner_context() -> None:
+    result = replay(EXAMPLE)
+    context = result["planner_context"]
+
+    assert context["latest_attempt"]["attempt_id"] == "a_002"
+    assert context["episode_memory"]["best_attempt"]["attempt_id"] == "a_002"
+    assert context["episode_memory"]["best_attempt"]["constraint_results_ref"] == "latest_attempt"
 
 
 def test_append_only_event_store_deduplicates_event_ids(tmp_path: Path) -> None:

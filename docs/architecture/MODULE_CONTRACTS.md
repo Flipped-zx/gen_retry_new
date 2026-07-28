@@ -12,25 +12,25 @@
 
 ---
 
-## 2. Planner View Builder
+## 2. PlannerContext Builder
 
 **输入**：TaskSpec、canonical episode state、artifact refs、tool/skill manifest。
 
-**输出**：短的 `PlannerView`。
+**输出**：短的 `PlannerContext`；完成图像 round 后可派生并持久化 `RoundRecord` artifact。
 
-**负责**：latest/best image refs、latest feedback、compact history、budget。
+**负责**：task context、latest attempt、active planning round、last/prior completed image-round memory、deduplicated best/latest refs、budget/control state、source-based outcome comparison。
 
-**不得做**：调用 LLM；重写 action；生成新环境事实。
+**不得做**：调用 LLM；重写 action；生成新环境事实；把 future evaluator outcome 注入当前 action target。
 
 ---
 
 ## 3. Retry Planner（Qwen3-VL / Teacher）
 
-**输入**：system policy + PlannerView + 可见图片 + tool/skill responses。
+**输入**：system policy + PlannerContext + 可见图片 + tool/skill responses。
 
-**输出**：一个符合 `action_protocol_v0_2` 的 JSON action。
+**输出**：一个符合 `action_protocol_v0_5` 的 JSON action。
 
-**不得输出**：score、fixed/regressed、best-so-far、路径、seed、API metadata、长诊断报告。
+**不得输出**：`decision_summary`、`diagnosis_summary`、score、fixed/regressed、best-so-far、路径、seed、API metadata、长诊断报告。
 
 ---
 

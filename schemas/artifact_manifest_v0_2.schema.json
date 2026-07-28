@@ -34,7 +34,7 @@
         "properties": {
           "artifact_id": {
             "type": "string",
-            "pattern": "^(img|artifact|raw|planner_view|task_spec|geneval2_report)_[0-9]{3,}$"
+            "pattern": "^(img|artifact|raw|planner_view|planner_context|task_spec|geneval2_report|round_record)_[0-9]{3,}$"
           },
           "attempt_id": {
             "type": "string",
@@ -45,6 +45,8 @@
               "image",
               "raw_model_output",
               "planner_view",
+              "planner_context",
+              "round_record",
               "task_spec",
               "geneval2_report",
               "event_log"

@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from gen_retry.domain.artifacts import validate_artifact_manifest_closure
 from gen_retry.phase3.rollout_prep import prepare_rollout_runs
 from gen_retry.runtime.event_io import load_events_jsonl
@@ -50,6 +52,36 @@ def _selected_payload() -> dict:
     }
 
 
+def test_prepare_rollout_runs_can_limit_existing_selection(tmp_path: Path) -> None:
+    payload = _selected_payload()
+    second = dict(payload["selected_prompts"][0])
+    second.update(
+        {
+            "candidate_id": "cand_002",
+            "prompt_id": "prompt_002",
+            "selection_rank": 2,
+            "original_prompt": "a green sphere above a red cube",
+        }
+    )
+    payload["selected_prompts"].append(second)
+    payload["selected_count"] = 2
+    selected_path = tmp_path / "selected_ten_prompts.json"
+    selected_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    summary = prepare_rollout_runs(
+        selected_prompts_path=selected_path,
+        output_root=tmp_path / "runs",
+        summary_output=tmp_path / "prepared_rollouts.json",
+        limit=1,
+    )
+
+    assert summary["prepared_count"] == 1
+    assert summary["selected_prompt_limit"] == 1
+    assert [episode["episode_id"] for episode in summary["episodes"]] == ["phase3_ep_001"]
+    assert (tmp_path / "runs" / "phase3_ep_001" / "task_spec.json").is_file()
+    assert not (tmp_path / "runs" / "phase3_ep_002").exists()
+
+
 def test_prepare_rollout_runs_materializes_fresh_replayable_episode(tmp_path: Path) -> None:
     selected_path = tmp_path / "selected_ten_prompts.json"
     selected_path.write_text(json.dumps(_selected_payload()), encoding="utf-8")
@@ -69,7 +101,7 @@ def test_prepare_rollout_runs_materializes_fresh_replayable_episode(tmp_path: Pa
     run_dir = Path(episode["run_dir"])
     assert (run_dir / "task_spec.json").is_file()
     assert (run_dir / "events.jsonl").is_file()
-    assert (run_dir / "planner_views" / "planner_view_000.json").is_file()
+    assert (run_dir / "planner_contexts" / "planner_context_000.json").is_file()
     assert (run_dir / "manifest.json").is_file()
 
     task_spec = json.loads((run_dir / "task_spec.json").read_text(encoding="utf-8"))
@@ -80,21 +112,38 @@ def test_prepare_rollout_runs_materializes_fresh_replayable_episode(tmp_path: Pa
     events = load_events_jsonl(run_dir / "events.jsonl")
     assert [event["event_type"] for event in events] == [
         "task_created",
-        "planner_view_built",
+        "planner_context_built",
     ]
     state = reduce_events(events)
     assert state.attempt_order == []
     assert state.best_attempt_id is None
     assert state.remaining_budget == 5
 
-    planner_view = json.loads(
-        (run_dir / "planner_views" / "planner_view_000.json").read_text(encoding="utf-8")
+    planner_context = json.loads(
+        (run_dir / "planner_contexts" / "planner_context_000.json").read_text(encoding="utf-8")
     )
-    assert planner_view["latest_attempt"] is None
-    assert planner_view["best_attempt"] is None
-    assert planner_view["visible_images"] == []
-    assert planner_view["remaining_budget"] == 5
+    assert planner_context["latest_attempt"] is None
+    assert planner_context["episode_memory"]["best_attempt"] is None
+    assert planner_context["runtime_state"]["remaining_image_budget"] == 5
+    assert planner_context["runtime_state"]["available_actions"] == ["query_skill", "generate_image"]
 
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     validate_artifact_manifest_closure(manifest, run_dir)
     assert summary_path.is_file()
+
+
+def test_prepare_rollout_runs_refuses_non_empty_episode_directory(tmp_path: Path) -> None:
+    selected_path = tmp_path / "selected_ten_prompts.json"
+    selected_path.write_text(json.dumps(_selected_payload()), encoding="utf-8")
+    occupied = tmp_path / "runs" / "phase3_ep_001"
+    occupied.mkdir(parents=True)
+    (occupied / "keep.txt").write_text("user-owned", encoding="utf-8")
+
+    with pytest.raises(FileExistsError, match="refusing to overwrite"):
+        prepare_rollout_runs(
+            selected_prompts_path=selected_path,
+            output_root=tmp_path / "runs",
+            summary_output=tmp_path / "prepared_rollouts.json",
+        )
+
+    assert (occupied / "keep.txt").read_text(encoding="utf-8") == "user-owned"

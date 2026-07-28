@@ -1,0 +1,34 @@
+{
+  "profile": "candidate",
+  "case_id": "budget_exhausted_submit",
+  "sample_index": 2,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"submit_attempt\",\"arguments\":{\"selected_attempt_id\":\"a_002\",\"reason_code\":\"best_available_under_budget\",\"decision_summary\":\"No image budget remains, so the historical best attempt is selected over the latest regressed attempt.\"}}",
+  "raw_output_sha256": "8a93a7d12f0c3c93b4901a4f275f400763a085a11a5cb718c3692ecc4105da2d",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 102,
+    "prompt_tokens": 1609,
+    "total_tokens": 1711,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 42,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": false,
+    "summary_future_leakage": false,
+    "errors": [],
+    "summary": "No image budget remains, so the historical best attempt is selected over the latest regressed attempt.",
+    "summary_characters": 102,
+    "summary_words": 16
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "profile": "control",
+  "case_id": "rollback_best",
+  "sample_index": 2,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"edit_image\",\"arguments\":{\"source_attempt_id\":\"a_002\",\"target_constraint_ids\":[\"c_004\",\"c_008\"],\"preserve_constraint_ids\":[\"c_001\",\"c_002\",\"c_003\",\"c_005\",\"c_006\",\"c_007\",\"c_009\",\"c_010\",\"c_011\"],\"instruction\":\"Starting from attempt a_002, make a localized edit so the scene clearly shows exactly six glass lions actively chasing exactly three red cats, with all three cats positioned behind the single brown donut. Make the chasing action unambiguous: the glass lions should be oriented toward the cats with forward running poses, gaze, spacing, and motion cues indicating pursuit. Place the three red cats visibly behind the one brown donut from the viewer's perspective. Preserve the existing correct elements: six total lions, glass material for the lions, lions present, three total cats, red cats, cats present, one donut, brown donut, and donut present. Do not add or remove any lions, cats, or donuts.\"}}",
+  "raw_output_sha256": "085225b5e8779ef2b5ae5f9d21d997b795c675818b51902ef7e0e3bd92485df7",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 290,
+    "prompt_tokens": 1542,
+    "total_tokens": 1832,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 64,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": true,
+    "summary_future_leakage": false,
+    "errors": []
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "profile": "control",
+  "case_id": "budget_exhausted_submit",
+  "sample_index": 1,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"submit_attempt\",\"arguments\":{\"selected_attempt_id\":\"a_002\",\"reason_code\":\"best_available_under_budget\"}}",
+  "raw_output_sha256": "1e729cc7307afd243d5ee90e2e057b2f808be17fa6ab5d54c889f64e18f597f9",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 66,
+    "prompt_tokens": 1539,
+    "total_tokens": 1605,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 29,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": true,
+    "summary_future_leakage": false,
+    "errors": []
+  }
+}

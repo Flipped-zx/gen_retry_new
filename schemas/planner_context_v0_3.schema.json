@@ -1,0 +1,878 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/gen-retry/planner-context-v0.3.schema.json",
+  "title": "Gen-Retry Planner Context v0.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "episode_id",
+    "task_context",
+    "latest_observation",
+    "active_round",
+    "episode_memory",
+    "control"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.3"
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_context": {
+      "$ref": "#/$defs/taskContext"
+    },
+    "latest_observation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/observation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "active_round": {
+      "$ref": "#/$defs/activeRound"
+    },
+    "episode_memory": {
+      "$ref": "#/$defs/episodeMemory"
+    },
+    "control": {
+      "$ref": "#/$defs/control"
+    }
+  },
+  "$defs": {
+    "attemptId": {
+      "type": "string",
+      "pattern": "^a_[0-9]{3,}$"
+    },
+    "artifactId": {
+      "type": "string",
+      "pattern": "^img_[0-9]{3,}$"
+    },
+    "constraintId": {
+      "type": "string",
+      "pattern": "^c_[0-9]{3,}$"
+    },
+    "constraintIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/constraintId"
+      }
+    },
+    "eventId": {
+      "type": "string",
+      "pattern": "^evt_[0-9]{4,}$"
+    },
+    "roundId": {
+      "type": "string",
+      "pattern": "^r_[0-9]{3,}$"
+    },
+    "stepId": {
+      "type": "string",
+      "pattern": "^s_[0-9]{3,}$"
+    },
+    "taskContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_spec_ref",
+        "original_prompt",
+        "max_image_attempts",
+        "constraints"
+      ],
+      "properties": {
+        "task_spec_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "original_prompt": {
+          "type": "string"
+        },
+        "max_image_attempts": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "constraint_id",
+              "constraint_type",
+              "requirement"
+            ],
+            "properties": {
+              "constraint_id": {
+                "$ref": "#/$defs/constraintId"
+              },
+              "constraint_type": {
+                "type": "string",
+                "minLength": 1
+              },
+              "requirement": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evaluator_question": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "imageRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "display_id",
+        "role",
+        "attempt_id"
+      ],
+      "properties": {
+        "artifact_id": {
+          "$ref": "#/$defs/artifactId"
+        },
+        "display_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "enum": [
+            "latest",
+            "best",
+            "source",
+            "submitted"
+          ]
+        },
+        "attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "image_ref",
+        "passed_constraint_ids",
+        "failed_constraint_ids",
+        "uncertain_constraint_ids",
+        "constraint_results"
+      ],
+      "properties": {
+        "attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "image_ref": {
+          "$ref": "#/$defs/imageRef"
+        },
+        "passed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "failed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "uncertain_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "constraint_results": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^c_[0-9]{3,}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/constraintResultSummary"
+          }
+        }
+      }
+    },
+    "constraintResultSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "uncertain"
+          ]
+        },
+        "observed": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "expected": {
+          "type": "string",
+          "maxLength": 400
+        }
+      }
+    },
+    "activeRound": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "round_id",
+        "start_attempt_id",
+        "planning_actions",
+        "tool_responses",
+        "active_capability_skills"
+      ],
+      "properties": {
+        "round_id": {
+          "$ref": "#/$defs/roundId"
+        },
+        "start_attempt_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/attemptId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "planning_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/planningAction"
+          }
+        },
+        "tool_responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/toolResponse"
+          }
+        },
+        "active_capability_skills": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/activeCapabilitySkill"
+          }
+        }
+      }
+    },
+    "planningAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_id",
+        "turn_id",
+        "action_event_id",
+        "action",
+        "requested_skill_ids",
+        "target_constraint_ids"
+      ],
+      "properties": {
+        "step_id": {
+          "$ref": "#/$defs/stepId"
+        },
+        "turn_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action_event_id": {
+          "$ref": "#/$defs/eventId"
+        },
+        "action": {
+          "const": "query_skill"
+        },
+        "requested_skill_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96
+          }
+        },
+        "target_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "tool_response_ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_id"
+          ],
+          "properties": {
+            "event_id": {
+              "$ref": "#/$defs/eventId"
+            }
+          }
+        }
+      }
+    },
+    "toolResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "query_action_event_id",
+        "returned_skill_ids",
+        "skills"
+      ],
+      "properties": {
+        "event_id": {
+          "$ref": "#/$defs/eventId"
+        },
+        "query_action_event_id": {
+          "$ref": "#/$defs/eventId"
+        },
+        "returned_skill_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96
+          }
+        },
+        "skills": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/activeCapabilitySkill"
+          }
+        }
+      }
+    },
+    "activeCapabilitySkill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "skill_id",
+        "version",
+        "content_sha256",
+        "summary"
+      ],
+      "properties": {
+        "skill_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 96
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 400
+        }
+      }
+    },
+    "episodeMemory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recent_round",
+        "earlier_rounds",
+        "best_attempt"
+      ],
+      "properties": {
+        "recent_round": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/roundRecord"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "earlier_rounds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/roundSummary"
+          }
+        },
+        "best_attempt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/bestAttemptMemory"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "roundRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "round_id",
+        "start_observation_ref",
+        "planning_actions",
+        "tool_responses",
+        "image_action",
+        "result_attempt_id",
+        "outcome_comparison_ref",
+        "observed_outcome",
+        "value"
+      ],
+      "properties": {
+        "round_id": {
+          "$ref": "#/$defs/roundId"
+        },
+        "start_observation_ref": {
+          "$ref": "#/$defs/attemptRefNullable"
+        },
+        "planning_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/planningAction"
+          }
+        },
+        "tool_responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/toolResponse"
+          }
+        },
+        "image_action": {
+          "$ref": "#/$defs/imageActionRecord"
+        },
+        "result_attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "outcome_comparison_ref": {
+          "$ref": "#/$defs/comparisonRef"
+        },
+        "observed_outcome": {
+          "$ref": "#/$defs/observedOutcome"
+        },
+        "value": {
+          "$ref": "#/$defs/roundValue"
+        }
+      }
+    },
+    "attemptRefNullable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id"
+      ],
+      "properties": {
+        "attempt_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/attemptId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "imageActionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_id",
+        "turn_id",
+        "action_event_id",
+        "action",
+        "decision_summary",
+        "diagnostic_hypotheses",
+        "interventions",
+        "target_constraint_ids",
+        "preserve_constraint_ids",
+        "skill_ids_used",
+        "execution_instruction"
+      ],
+      "properties": {
+        "step_id": {
+          "$ref": "#/$defs/stepId"
+        },
+        "turn_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action_event_id": {
+          "$ref": "#/$defs/eventId"
+        },
+        "action": {
+          "enum": [
+            "generate_image",
+            "edit_image"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "initial",
+            "regenerate"
+          ]
+        },
+        "source_attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "decision_summary": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "diagnostic_hypotheses": {
+          "type": "array"
+        },
+        "interventions": {
+          "type": "array"
+        },
+        "target_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "preserve_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "skill_ids_used": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96
+          }
+        },
+        "execution_instruction": {
+          "type": "string",
+          "maxLength": 2400
+        }
+      }
+    },
+    "comparisonRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "reason"
+      ],
+      "properties": {
+        "attempt_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/attemptId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "enum": [
+            "initial_generation",
+            "previous_latest_generate",
+            "edit_source"
+          ]
+        }
+      }
+    },
+    "observedOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixed_constraint_ids",
+        "regressed_constraint_ids",
+        "persistent_failed_constraint_ids",
+        "preserved_constraint_ids",
+        "initial_passed_constraint_ids",
+        "initial_failed_constraint_ids",
+        "initial_uncertain_constraint_ids",
+        "new_uncertain_constraint_ids",
+        "resolved_uncertain_constraint_ids"
+      ],
+      "properties": {
+        "fixed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "regressed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "persistent_failed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "preserved_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "initial_passed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "initial_failed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "initial_uncertain_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "new_uncertain_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "resolved_uncertain_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        }
+      }
+    },
+    "roundValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score_delta",
+        "net_atom_gain",
+        "became_best"
+      ],
+      "properties": {
+        "score_delta": {
+          "type": "number"
+        },
+        "net_atom_gain": {
+          "type": "integer"
+        },
+        "became_best": {
+          "type": "boolean"
+        }
+      }
+    },
+    "roundSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "round_id",
+        "queried_skill_ids",
+        "image_action",
+        "source_attempt_id",
+        "result_attempt_id",
+        "decision_summary",
+        "operations",
+        "target_constraint_ids",
+        "preserve_constraint_ids",
+        "fixed_constraint_ids",
+        "regressed_constraint_ids",
+        "persistent_failed_constraint_ids",
+        "became_best"
+      ],
+      "properties": {
+        "round_id": {
+          "$ref": "#/$defs/roundId"
+        },
+        "queried_skill_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "image_action": {
+          "enum": [
+            "generate_image",
+            "edit_image"
+          ]
+        },
+        "source_attempt_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/attemptId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "result_attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "decision_summary": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "target_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "preserve_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "fixed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "regressed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "persistent_failed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "became_best": {
+          "type": "boolean"
+        }
+      }
+    },
+    "bestAttemptMemory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_id",
+        "image_ref",
+        "round_id",
+        "passed_constraint_ids",
+        "failed_constraint_ids",
+        "uncertain_constraint_ids",
+        "decision_summary",
+        "operations",
+        "instruction_summary"
+      ],
+      "properties": {
+        "attempt_id": {
+          "$ref": "#/$defs/attemptId"
+        },
+        "image_ref": {
+          "$ref": "#/$defs/imageRef"
+        },
+        "round_id": {
+          "$ref": "#/$defs/roundId"
+        },
+        "passed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "failed_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "uncertain_constraint_ids": {
+          "$ref": "#/$defs/constraintIds"
+        },
+        "decision_summary": {
+          "type": "string",
+          "maxLength": 320
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "instruction_summary": {
+          "type": "string",
+          "maxLength": 360
+        }
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_action_step_index",
+        "current_round_index",
+        "image_attempts_used",
+        "remaining_image_budget",
+        "legal_actions",
+        "latest_attempt_id",
+        "best_attempt_id",
+        "submit_eligibility",
+        "visible_images"
+      ],
+      "properties": {
+        "current_action_step_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_round_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "image_attempts_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "remaining_image_budget": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "legal_actions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "query_skill",
+              "generate_image",
+              "edit_image",
+              "submit_attempt"
+            ]
+          }
+        },
+        "latest_attempt_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/attemptId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "best_attempt_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/attemptId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "submit_eligibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "can_submit",
+            "eligible_attempt_ids",
+            "reason"
+          ],
+          "properties": {
+            "can_submit": {
+              "type": "boolean"
+            },
+            "eligible_attempt_ids": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/attemptId"
+              }
+            },
+            "reason": {
+              "type": "string"
+            }
+          }
+        },
+        "visible_images": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/imageRef"
+          }
+        }
+      }
+    }
+  }
+}

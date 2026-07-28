@@ -23,8 +23,11 @@ class ParsedAction:
     action: dict[str, Any]
 
 
-def parse_action(raw_text: str) -> ParsedAction:
-    """Parse a raw assistant turn as one strict v0.2 action JSON object."""
+DEFAULT_ACTION_SCHEMA = "action_protocol_v0_5.schema.json"
+
+
+def parse_action(raw_text: str, *, schema_name: str = DEFAULT_ACTION_SCHEMA) -> ParsedAction:
+    """Parse a raw assistant turn as one strict canonical action JSON object."""
 
     try:
         parsed = json.loads(raw_text)
@@ -35,7 +38,7 @@ def parse_action(raw_text: str) -> ParsedAction:
         raise ActionParseError("not_json_object", "Planner output must be a JSON object.")
 
     try:
-        validate_instance(parsed, "action_protocol_v0_2.schema.json")
+        validate_instance(parsed, schema_name)
     except ValidationError as exc:
         raise ActionParseError("schema_validation_failed", str(exc)) from exc
 

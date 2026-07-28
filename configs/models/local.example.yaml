@@ -1,4 +1,6 @@
 # Copy to local.yaml and fill local deployment details. Never commit secrets.
+# Teacher credentials may be exported by the shell or stored in the
+# Git-ignored project file `.env.teacher.local` as KEY=VALUE entries.
 policy:
   model_id: Qwen3-VL-8B-Instruct
 

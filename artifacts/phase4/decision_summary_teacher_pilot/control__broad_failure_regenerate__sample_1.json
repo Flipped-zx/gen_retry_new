@@ -1,0 +1,31 @@
+{
+  "profile": "control",
+  "case_id": "broad_failure_regenerate",
+  "sample_index": 1,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"generate_image\",\"arguments\":{\"target_constraint_ids\":[\"c_001\",\"c_002\",\"c_004\",\"c_005\",\"c_008\"],\"preserve_constraint_ids\":[\"c_003\",\"c_006\",\"c_007\",\"c_009\",\"c_010\",\"c_011\"],\"instruction\":\"Create a clear scene with exactly six lions made of transparent glass, visibly reflective and translucent. Arrange the six glass lions in a single separated group, each fully visible and not duplicated or hidden, all running and looking toward exactly three red cats as if chasing them. Include exactly three red cats, fully visible and separated, all positioned behind a single large brown donut from the viewer's perspective. Preserve the presence of lions, the presence of cats, the cats being red, exactly one donut, the donut being brown, and the donut being clearly visible.\"}}",
+  "raw_output_sha256": "aed20f1c93ce7c8b4946f8002796f06f78c678264c1596d808652dde8311effc",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 271,
+    "prompt_tokens": 1120,
+    "total_tokens": 1391,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 83,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": true,
+    "summary_future_leakage": false,
+    "errors": []
+  }
+}

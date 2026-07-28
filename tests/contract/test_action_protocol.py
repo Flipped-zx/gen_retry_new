@@ -41,7 +41,7 @@ def load_task_spec() -> dict:
     ],
 )
 def test_action_fixtures_validate(filename: str) -> None:
-    validate_instance(load_action(filename), "action_protocol_v0_2.schema.json")
+    validate_instance(load_action(filename), "action_protocol_v0_5.schema.json")
 
 
 def test_parser_accepts_exact_json_action() -> None:
@@ -63,7 +63,7 @@ def test_generate_image_does_not_accept_source_attempt() -> None:
     action = load_action("generate_image.json")
     action["arguments"]["source_attempt_id"] = "a_000"
     with pytest.raises(ValidationError):
-        validate_instance(action, "action_protocol_v0_2.schema.json")
+        validate_instance(action, "action_protocol_v0_5.schema.json")
 
 
 def test_edit_image_requires_existing_source_attempt() -> None:
@@ -73,11 +73,16 @@ def test_edit_image_requires_existing_source_attempt() -> None:
         action,
         task_spec,
         known_attempt_ids=["a_000"],
-        available_skill_ids=["counting_edit", "spatial_relation"],
+        available_skill_ids=["counting_and_instance_layout", "spatial_relation_layout"],
     )
 
     with pytest.raises(ActionReferenceError) as excinfo:
-        validate_action_references(action, task_spec, known_attempt_ids=[], available_skill_ids=["counting_edit"])
+        validate_action_references(
+            action,
+            task_spec,
+            known_attempt_ids=[],
+            available_skill_ids=["counting_and_instance_layout"],
+        )
 
     observation = reference_error_observation(excinfo.value)
     assert observation["observation_type"] == "reference_error"
@@ -90,11 +95,15 @@ def test_reference_validator_rejects_unknown_constraint_and_skill() -> None:
     action["arguments"]["target_constraint_ids"] = ["c_999"]
 
     with pytest.raises(ActionReferenceError) as excinfo:
-        validate_action_references(action, task_spec, available_skill_ids=["counting_edit"])
+        validate_action_references(
+            action,
+            task_spec,
+            available_skill_ids=["counting_and_instance_layout"],
+        )
 
     message = str(excinfo.value)
     assert "c_999" in message
-    assert "spatial_relation" in message
+    assert "spatial_relation_layout" in message
 
 
 @pytest.mark.parametrize(
@@ -114,4 +123,57 @@ def test_environment_owned_facts_are_not_valid_action_arguments(field: str, valu
     action["arguments"][field] = value
 
     with pytest.raises(ValidationError):
-        validate_instance(action, "action_protocol_v0_2.schema.json")
+        validate_instance(action, "action_protocol_v0_5.schema.json")
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("mode", "initial"),
+        ("strategy_tags", ["legacy_tag"]),
+        ("skill_ids_used", ["counting_layout"]),
+        ("decision_summary", "Post-hoc rationale"),
+        ("diagnosis_summary", None),
+        ("diagnostic_hypotheses", []),
+        ("interventions", []),
+        ("repair_plan", []),
+        ("change", "add objects"),
+    ],
+)
+def test_v0_5_rejects_removed_image_action_fields(field: str, value) -> None:
+    action = load_action("generate_image.json")
+    action["arguments"][field] = value
+
+    with pytest.raises(ValidationError):
+        validate_instance(action, "action_protocol_v0_5.schema.json")
+
+
+def test_v0_5_submit_rejects_decision_summary() -> None:
+    action = load_action("submit_attempt.json")
+    action["arguments"]["decision_summary"] = "Submit the best attempt."
+
+    with pytest.raises(ValidationError):
+        validate_instance(action, "action_protocol_v0_5.schema.json")
+
+
+def test_v0_5_rejects_legacy_instruction_field_names() -> None:
+    for action_name, legacy_field in (
+        ("generate_image.json", "generation_instruction"),
+        ("edit_image.json", "edit_instruction"),
+    ):
+        action = load_action(action_name)
+        action["arguments"][legacy_field] = action["arguments"].pop("instruction")
+        with pytest.raises(ValidationError):
+            validate_instance(action, "action_protocol_v0_5.schema.json")
+
+
+def test_reference_validator_rejects_target_preserve_overlap() -> None:
+    action = load_action("edit_image.json")
+    action["arguments"]["preserve_constraint_ids"].append("c_001")
+
+    with pytest.raises(ActionReferenceError, match="both targeted and preserved"):
+        validate_action_references(
+            action,
+            load_task_spec(),
+            known_attempt_ids=["a_000"],
+        )

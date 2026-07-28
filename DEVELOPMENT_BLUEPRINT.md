@@ -75,14 +75,14 @@ edit_image     → Qianwen-Image-Edit(mode=edit, source_image=...)
 Prompt P
 → Constraint/Rubric Builder
 → TaskSpec(P, C={c1...cn})
-→ Planner View S0
+→ PlannerContext S0
 → Planner emits one action A0
 → Environment validates A0
 → Qianwen-Image-Edit executes A0
 → Image I0
 → Geneval2 evaluates every ci
 → Reducer creates Attempt a0, transition, best-so-far, compact memory
-→ Planner View S1 (image + V0 + M0 + budget)
+→ PlannerContext S1 (image + V0 + round memory + budget)
 → Planner emits A1
 → ...
 → submit_attempt(selected historical attempt)
@@ -92,7 +92,7 @@ Prompt P
 
 ```text
 [Agent Input]
-TaskSpec + visible images + latest feedback + compact history
+TaskSpec + visible images + latest feedback + active round + round memory
 + tool/skill manifest + budget
         ↓
 [Agent Output]
@@ -101,7 +101,7 @@ TaskSpec + visible images + latest feedback + compact history
 - target constraints
 - preserve constraints
 - source attempt（edit 时）
-- strategy tags
+- decision summary / diagnostic hypotheses / interventions
 - 本轮 generation/edit instruction
         ↓
 [Environment]
@@ -121,7 +121,7 @@ fixed / regressed / persistent / stable pass
 
 ## 4. 动作集合
 
-正式 Schema：`schemas/action_protocol_v0_2.schema.json`。
+新 rollout / SFT 正式 Schema：`schemas/action_protocol_v0_5.schema.json`。v0.2-v0.4 仅保留历史事件兼容。
 
 ### query_skill
 
@@ -148,9 +148,8 @@ fixed / regressed / persistent / stable pass
 - action type；
 - source attempt 选择；
 - target/preserve constraint IDs；
-- strategy tags；
 - skill 查询；
-- generation/edit instruction；
+- target/preserve constraint IDs 与统一的 generation/edit `instruction`；
 - submit 选择。
 
 ### Environment 拥有
@@ -177,7 +176,7 @@ Planner 不得把环境事实当成待预测 target。
 所有事实先写不可变事件 `events.jsonl`，再由纯函数 reducer 生成：
 
 - `episode_state.json`
-- `planner_view.json`
+- `planner_context.json`
 
 禁止 Planner 直接写 Memory；禁止 raw assistant response 进入持久 Memory。
 
@@ -317,7 +316,7 @@ Harmful action：作为环境历史事实保留，默认不作为正向 target�
 
 1. 一个 discriminated action union，不再多套大 JSON。
 2. action-only target，不生成长诊断报告。
-3. raw output 先 parse/canonicalize，禁止进入 Memory。
+3. raw output 只做 parse + schema/reference/runtime validation；通过者按原 JSON 作为 canonical action 记录；不得补字段、改 action、改引用，且 raw 禁止进入 Memory。
 4. 环境事实与模型决策严格分离。
 5. Skill 必须是真实 query/tool response。
 6. Schema、parser、prompt、fixtures、exporter 版本一致并有 contract tests。

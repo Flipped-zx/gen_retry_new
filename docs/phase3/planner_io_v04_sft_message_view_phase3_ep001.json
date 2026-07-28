@@ -1,0 +1,2104 @@
+{
+  "schema_version": "sft_message_view_v0_4",
+  "source_trace": "docs/phase3/planner_io_v04_round_io_phase3_ep001.json",
+  "_note": "This file converts the real trajectory JSON into an SFT-style message view. It is for readability and supervision-boundary confirmation, not a new live trajectory.",
+  "records": [
+    {
+      "sample_id": "phase3_ep001_s_000",
+      "source_step_id": "s_000",
+      "round_id": "r_000",
+      "name": "Round 1A - query skills before first image",
+      "_note": "SFT message view: only assistant action is a trainable target. environment_observation is context for the next sample, not part of this assistant target.",
+      "messages": [
+        {
+          "role": "system",
+          "content": {
+            "system_prompt_summary": {
+              "_note": "The real system prompt is fixed and repeated every planner call.",
+              "role": "verifier-grounded multimodal image retry planner",
+              "output_rule": "output exactly one canonical action JSON object and no prose",
+              "legal_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ],
+              "source_rules": {
+                "generate_image": "no source image",
+                "edit_image": "requires source_attempt_id from known historical attempts",
+                "submit_attempt": "may submit a non-latest historical best attempt"
+              },
+              "forbidden_outputs": [
+                "environment facts",
+                "scores",
+                "fixed/regressed predictions",
+                "image paths",
+                "markdown",
+                "chain-of-thought"
+              ]
+            },
+            "action_space": {
+              "query_skill": {
+                "arguments": {
+                  "skill_ids": [
+                    "string"
+                  ],
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ]
+                }
+              },
+              "generate_image": {
+                "arguments": {
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "generation_instruction": "string"
+                }
+              },
+              "edit_image": {
+                "arguments": {
+                  "source_attempt_id": "attempt_id",
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "edit_instruction": "string"
+                }
+              },
+              "submit_attempt": {
+                "arguments": {
+                  "selected_attempt_id": "attempt_id",
+                  "reason_code": "all_constraints_passed|best_available_under_budget|no_productive_action_remaining"
+                }
+              }
+            }
+          },
+          "loss_weight": 0,
+          "token_source": "fixed_system_protocol"
+        },
+        {
+          "role": "user",
+          "content": {
+            "planner_context": {
+              "_note": "task_context is fixed and equals #/global_input/planner_context_task_context.",
+              "task_context_ref": "#/global_input/planner_context_task_context",
+              "latest_observation": null,
+              "skill_context": {
+                "active_skills": []
+              },
+              "episode_memory": {
+                "recent_round": null,
+                "earlier_rounds": [],
+                "best_attempt": null
+              },
+              "runtime_state": {
+                "remaining_image_budget": 5,
+                "available_actions": [
+                  "query_skill",
+                  "generate_image"
+                ]
+              }
+            },
+            "visible_images": []
+          },
+          "loss_weight": 0,
+          "token_source": "planner_input"
+        },
+        {
+          "role": "assistant",
+          "content": {
+            "schema_version": "0.4",
+            "action": "query_skill",
+            "arguments": {
+              "skill_ids": [
+                "counting_and_instance_layout",
+                "spatial_relation_layout"
+              ],
+              "target_constraint_ids": [
+                "c_001",
+                "c_004",
+                "c_005",
+                "c_008",
+                "c_009"
+              ]
+            }
+          },
+          "loss_weight": 1,
+          "token_source": "canonical_planner_action"
+        }
+      ],
+      "environment_observation_after_assistant": {
+        "loss_weight": 0,
+        "content": {
+          "image_attempt_created": false,
+          "budget_consumed": 0,
+          "writes_to_next_planner_context": {
+            "skill_context": {
+              "active_skills": [
+                {
+                  "skill_id": "counting_and_instance_layout",
+                  "target_constraint_ids": [
+                    "c_001",
+                    "c_005",
+                    "c_009"
+                  ],
+                  "guidance": "[full Skill text]",
+                  "guidance_level": "full"
+                },
+                {
+                  "skill_id": "spatial_relation_layout",
+                  "target_constraint_ids": [
+                    "c_004",
+                    "c_008"
+                  ],
+                  "guidance": "[full Skill text]",
+                  "guidance_level": "full"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "sample_id": "phase3_ep001_s_001",
+      "source_step_id": "s_001",
+      "round_id": "r_000",
+      "name": "Round 1B - first generation",
+      "_note": "SFT message view: only assistant action is a trainable target. environment_observation is context for the next sample, not part of this assistant target.",
+      "messages": [
+        {
+          "role": "system",
+          "content": {
+            "system_prompt_summary": {
+              "_note": "The real system prompt is fixed and repeated every planner call.",
+              "role": "verifier-grounded multimodal image retry planner",
+              "output_rule": "output exactly one canonical action JSON object and no prose",
+              "legal_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ],
+              "source_rules": {
+                "generate_image": "no source image",
+                "edit_image": "requires source_attempt_id from known historical attempts",
+                "submit_attempt": "may submit a non-latest historical best attempt"
+              },
+              "forbidden_outputs": [
+                "environment facts",
+                "scores",
+                "fixed/regressed predictions",
+                "image paths",
+                "markdown",
+                "chain-of-thought"
+              ]
+            },
+            "action_space": {
+              "query_skill": {
+                "arguments": {
+                  "skill_ids": [
+                    "string"
+                  ],
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ]
+                }
+              },
+              "generate_image": {
+                "arguments": {
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "generation_instruction": "string"
+                }
+              },
+              "edit_image": {
+                "arguments": {
+                  "source_attempt_id": "attempt_id",
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "edit_instruction": "string"
+                }
+              },
+              "submit_attempt": {
+                "arguments": {
+                  "selected_attempt_id": "attempt_id",
+                  "reason_code": "all_constraints_passed|best_available_under_budget|no_productive_action_remaining"
+                }
+              }
+            }
+          },
+          "loss_weight": 0,
+          "token_source": "fixed_system_protocol"
+        },
+        {
+          "role": "user",
+          "content": {
+            "planner_context": {
+              "_note": "task_context is fixed and equals #/global_input/planner_context_task_context.",
+              "task_context_ref": "#/global_input/planner_context_task_context",
+              "latest_observation": null,
+              "skill_context": {
+                "active_skills": [
+                  {
+                    "skill_id": "counting_and_instance_layout",
+                    "target_constraint_ids": [
+                      "c_001",
+                      "c_005",
+                      "c_009"
+                    ],
+                    "guidance": "[full Skill text]",
+                    "guidance_level": "full"
+                  },
+                  {
+                    "skill_id": "spatial_relation_layout",
+                    "target_constraint_ids": [
+                      "c_004",
+                      "c_008"
+                    ],
+                    "guidance": "[full Skill text]",
+                    "guidance_level": "full"
+                  }
+                ]
+              },
+              "episode_memory": {
+                "recent_round": null,
+                "earlier_rounds": [],
+                "best_attempt": null
+              },
+              "runtime_state": {
+                "remaining_image_budget": 5,
+                "available_actions": [
+                  "query_skill",
+                  "generate_image"
+                ]
+              }
+            },
+            "visible_images": []
+          },
+          "loss_weight": 0,
+          "token_source": "planner_input"
+        },
+        {
+          "role": "assistant",
+          "content": {
+            "_note": "decision_summary is empty because this source action predates v0.4. In new v0.4 runs, the teacher should fill this field.",
+            "schema_version": "0.4",
+            "action": "generate_image",
+            "arguments": {
+              "decision_summary": "",
+              "diagnosis_summary": null,
+              "target_constraint_ids": [
+                "c_001",
+                "c_002",
+                "c_003",
+                "c_004",
+                "c_005",
+                "c_006",
+                "c_007",
+                "c_008",
+                "c_009",
+                "c_010",
+                "c_011"
+              ],
+              "preserve_constraint_ids": [],
+              "generation_instruction": "Create a single scene with exactly one brown donut in the foreground. Place exactly three red cats fully visible and separated behind the donut in the midground. Place exactly six glass lions fully visible and separated in the background, chasing the cats, with the lions oriented toward the cats in a clear pursuit pose. Keep all lions glass-like and transparent, keep the cats red, keep the donut brown, and do not add any other animals or objects. Do not create extra, cropped, fused, reflected, duplicate, or partially hidden lions, cats, or donuts."
+            }
+          },
+          "loss_weight": 1,
+          "token_source": "canonical_planner_action"
+        }
+      ],
+      "environment_observation_after_assistant": {
+        "loss_weight": 0,
+        "content": {
+          "image_attempt_created": true,
+          "result_attempt_id": "a_000",
+          "writes_to_next_planner_context": {
+            "latest_observation": {
+              "attempt_id": "a_000",
+              "constraint_results": {
+                "passed_constraint_ids": [
+                  "c_003",
+                  "c_006",
+                  "c_007",
+                  "c_009",
+                  "c_010",
+                  "c_011"
+                ],
+                "failed_constraint_ids": [
+                  "c_001",
+                  "c_004",
+                  "c_005",
+                  "c_008"
+                ],
+                "uncertain_constraint_ids": [
+                  "c_002"
+                ],
+                "observations": [
+                  {
+                    "constraint_id": "c_001",
+                    "observed_value": "2"
+                  },
+                  {
+                    "constraint_id": "c_002",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_003",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_004",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_005",
+                    "observed_value": "0"
+                  },
+                  {
+                    "constraint_id": "c_006",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_007",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_008",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_009",
+                    "observed_value": "1"
+                  },
+                  {
+                    "constraint_id": "c_010",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_011",
+                    "observed_value": " yes"
+                  }
+                ]
+              }
+            },
+            "episode_memory": {
+              "recent_round": {
+                "skill_queries": [
+                  {
+                    "skill_id": "counting_and_instance_layout",
+                    "target_constraint_ids": [
+                      "c_001",
+                      "c_005",
+                      "c_009"
+                    ]
+                  },
+                  {
+                    "skill_id": "spatial_relation_layout",
+                    "target_constraint_ids": [
+                      "c_004",
+                      "c_008"
+                    ]
+                  }
+                ],
+                "image_action": {
+                  "action": "generate_image",
+                  "source_attempt_id": null,
+                  "decision_summary": "",
+                  "diagnosis_summary": null,
+                  "target_constraint_ids": [
+                    "c_001",
+                    "c_002",
+                    "c_003",
+                    "c_004",
+                    "c_005",
+                    "c_006",
+                    "c_007",
+                    "c_008",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "preserve_constraint_ids": [],
+                  "instruction": "[same as planner_output.arguments.generation_instruction]"
+                },
+                "result_attempt_id": "a_000",
+                "observed_outcome": {
+                  "comparison_attempt_id": null,
+                  "initial_passed_constraint_ids": [
+                    "c_003",
+                    "c_006",
+                    "c_007",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "initial_failed_constraint_ids": [
+                    "c_001",
+                    "c_004",
+                    "c_005",
+                    "c_008"
+                  ],
+                  "initial_uncertain_constraint_ids": [
+                    "c_002"
+                  ],
+                  "fixed_constraint_ids": [],
+                  "regressed_constraint_ids": [],
+                  "persistent_failed_constraint_ids": [],
+                  "preserved_constraint_ids": [],
+                  "new_uncertain_constraint_ids": [],
+                  "became_best": true
+                }
+              },
+              "earlier_rounds": [],
+              "best_attempt": {
+                "attempt_id": "a_000",
+                "same_as_latest": true,
+                "constraint_results_ref": "#/steps/1/environment_update/writes_to_next_planner_context/latest_observation/constraint_results"
+              }
+            },
+            "runtime_state": {
+              "remaining_image_budget": 4,
+              "available_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ]
+            },
+            "visible_images": [
+              {
+                "role": "latest",
+                "attempt_id": "a_000",
+                "artifact_id": "img_000"
+              }
+            ]
+          }
+        }
+      },
+      "_decision_summary_note": "Empty because this source trajectory predates v0.4. In new v0.4 live trajectories, decision_summary should be filled by the teacher and trained as part of the assistant action."
+    },
+    {
+      "sample_id": "phase3_ep001_s_002",
+      "source_step_id": "s_002",
+      "round_id": "r_001",
+      "name": "Round 2 - regenerate from scratch",
+      "_note": "SFT message view: only assistant action is a trainable target. environment_observation is context for the next sample, not part of this assistant target.",
+      "messages": [
+        {
+          "role": "system",
+          "content": {
+            "system_prompt_summary": {
+              "_note": "The real system prompt is fixed and repeated every planner call.",
+              "role": "verifier-grounded multimodal image retry planner",
+              "output_rule": "output exactly one canonical action JSON object and no prose",
+              "legal_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ],
+              "source_rules": {
+                "generate_image": "no source image",
+                "edit_image": "requires source_attempt_id from known historical attempts",
+                "submit_attempt": "may submit a non-latest historical best attempt"
+              },
+              "forbidden_outputs": [
+                "environment facts",
+                "scores",
+                "fixed/regressed predictions",
+                "image paths",
+                "markdown",
+                "chain-of-thought"
+              ]
+            },
+            "action_space": {
+              "query_skill": {
+                "arguments": {
+                  "skill_ids": [
+                    "string"
+                  ],
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ]
+                }
+              },
+              "generate_image": {
+                "arguments": {
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "generation_instruction": "string"
+                }
+              },
+              "edit_image": {
+                "arguments": {
+                  "source_attempt_id": "attempt_id",
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "edit_instruction": "string"
+                }
+              },
+              "submit_attempt": {
+                "arguments": {
+                  "selected_attempt_id": "attempt_id",
+                  "reason_code": "all_constraints_passed|best_available_under_budget|no_productive_action_remaining"
+                }
+              }
+            }
+          },
+          "loss_weight": 0,
+          "token_source": "fixed_system_protocol"
+        },
+        {
+          "role": "user",
+          "content": {
+            "planner_context": {
+              "_note": "Only the changing context fields are expanded here; task_context remains global.",
+              "task_context_ref": "#/global_input/planner_context_task_context",
+              "latest_observation": {
+                "attempt_id": "a_000",
+                "constraint_results_summary": {
+                  "passed_constraint_ids": [
+                    "c_003",
+                    "c_006",
+                    "c_007",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "failed_constraint_ids": [
+                    "c_001",
+                    "c_004",
+                    "c_005",
+                    "c_008"
+                  ],
+                  "uncertain_constraint_ids": [
+                    "c_002"
+                  ]
+                }
+              },
+              "skill_context": {
+                "active_skills": [
+                  "counting_and_instance_layout",
+                  "spatial_relation_layout"
+                ]
+              },
+              "episode_memory": {
+                "recent_round": {
+                  "result_attempt_id": "a_000",
+                  "image_action": {
+                    "action": "generate_image",
+                    "source_attempt_id": null
+                  },
+                  "observed_outcome": {
+                    "comparison_attempt_id": null,
+                    "initial_failed_constraint_ids": [
+                      "c_001",
+                      "c_004",
+                      "c_005",
+                      "c_008"
+                    ],
+                    "became_best": true
+                  }
+                },
+                "earlier_rounds": [],
+                "best_attempt": {
+                  "attempt_id": "a_000",
+                  "same_as_latest": true
+                }
+              },
+              "runtime_state": {
+                "remaining_image_budget": 4,
+                "available_actions": [
+                  "query_skill",
+                  "generate_image",
+                  "edit_image",
+                  "submit_attempt"
+                ]
+              }
+            },
+            "visible_images": [
+              {
+                "role": "latest",
+                "attempt_id": "a_000",
+                "artifact_id": "img_000"
+              }
+            ]
+          },
+          "loss_weight": 0,
+          "token_source": "planner_input"
+        },
+        {
+          "role": "assistant",
+          "content": {
+            "_note": "decision_summary is empty because this source action predates v0.4. In new v0.4 runs, the teacher should fill this field.",
+            "schema_version": "0.4",
+            "action": "generate_image",
+            "arguments": {
+              "decision_summary": "",
+              "diagnosis_summary": null,
+              "target_constraint_ids": [
+                "c_001",
+                "c_002",
+                "c_003",
+                "c_004",
+                "c_005",
+                "c_006",
+                "c_007",
+                "c_008",
+                "c_009",
+                "c_010",
+                "c_011"
+              ],
+              "preserve_constraint_ids": [],
+              "generation_instruction": "Create a clean white seamless studio scene with exactly one large brown donut in the foreground at the bottom center. Place exactly three red cats fully visible and separated in the middle ground behind the donut. Place exactly six glass lions fully visible and separated behind the cats in the background, arranged in a loose arc and leaning forward toward the cats so they clearly appear to be chasing them. Make all six lions translucent cyan glass; make all three cats solid red; make the donut brown. Keep every animal fully visible with no cropping, no fused bodies, no duplicates, no reflections, no extra animals, no text, and no extra objects."
+            }
+          },
+          "loss_weight": 1,
+          "token_source": "canonical_planner_action"
+        }
+      ],
+      "environment_observation_after_assistant": {
+        "loss_weight": 0,
+        "content": {
+          "image_attempt_created": true,
+          "result_attempt_id": "a_001",
+          "comparison_attempt_id": "a_000",
+          "fixed_constraint_ids": [
+            "c_002",
+            "c_005"
+          ],
+          "regressed_constraint_ids": [],
+          "persistent_failed_constraint_ids": [
+            "c_001",
+            "c_004",
+            "c_008"
+          ],
+          "became_best": true,
+          "writes_to_next_planner_context": {
+            "latest_observation": {
+              "attempt_id": "a_001",
+              "constraint_results": {
+                "passed_constraint_ids": [
+                  "c_002",
+                  "c_003",
+                  "c_005",
+                  "c_006",
+                  "c_007",
+                  "c_009",
+                  "c_010",
+                  "c_011"
+                ],
+                "failed_constraint_ids": [
+                  "c_001",
+                  "c_004",
+                  "c_008"
+                ],
+                "uncertain_constraint_ids": [],
+                "observations": [
+                  {
+                    "constraint_id": "c_001",
+                    "observed_value": "4"
+                  },
+                  {
+                    "constraint_id": "c_002",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_003",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_004",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_005",
+                    "observed_value": "3"
+                  },
+                  {
+                    "constraint_id": "c_006",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_007",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_008",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_009",
+                    "observed_value": "one"
+                  },
+                  {
+                    "constraint_id": "c_010",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_011",
+                    "observed_value": " yes"
+                  }
+                ]
+              }
+            },
+            "episode_memory": {
+              "recent_round": {
+                "skill_queries": [],
+                "image_action": {
+                  "action": "generate_image",
+                  "source_attempt_id": null,
+                  "decision_summary": "",
+                  "diagnosis_summary": null,
+                  "target_constraint_ids": [
+                    "c_001",
+                    "c_002",
+                    "c_003",
+                    "c_004",
+                    "c_005",
+                    "c_006",
+                    "c_007",
+                    "c_008",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "preserve_constraint_ids": [],
+                  "instruction": "[same as planner_output.arguments.generation_instruction]"
+                },
+                "result_attempt_id": "a_001",
+                "observed_outcome": {
+                  "comparison_attempt_id": "a_000",
+                  "initial_passed_constraint_ids": [],
+                  "initial_failed_constraint_ids": [],
+                  "initial_uncertain_constraint_ids": [],
+                  "fixed_constraint_ids": [
+                    "c_002",
+                    "c_005"
+                  ],
+                  "regressed_constraint_ids": [],
+                  "persistent_failed_constraint_ids": [
+                    "c_001",
+                    "c_004",
+                    "c_008"
+                  ],
+                  "preserved_constraint_ids": [
+                    "c_003",
+                    "c_006",
+                    "c_007",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "new_uncertain_constraint_ids": [],
+                  "became_best": true
+                }
+              },
+              "earlier_rounds": [
+                {
+                  "action": "generate_image",
+                  "source_attempt_id": null,
+                  "result_attempt_id": "a_000",
+                  "decision_summary": "",
+                  "target_constraint_ids": [
+                    "c_001",
+                    "c_002",
+                    "c_003",
+                    "c_004",
+                    "c_005",
+                    "c_006",
+                    "c_007",
+                    "c_008",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "preserve_constraint_ids": [],
+                  "outcome_summary": {
+                    "fixed_constraint_ids": [],
+                    "regressed_constraint_ids": [],
+                    "persistent_failed_constraint_ids": [],
+                    "became_best": true
+                  }
+                }
+              ],
+              "best_attempt": {
+                "attempt_id": "a_001",
+                "same_as_latest": true
+              }
+            },
+            "runtime_state": {
+              "remaining_image_budget": 3,
+              "available_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ]
+            },
+            "visible_images": [
+              {
+                "role": "latest",
+                "attempt_id": "a_001",
+                "artifact_id": "img_001"
+              }
+            ]
+          }
+        }
+      },
+      "_decision_summary_note": "Empty because this source trajectory predates v0.4. In new v0.4 live trajectories, decision_summary should be filled by the teacher and trained as part of the assistant action."
+    },
+    {
+      "sample_id": "phase3_ep001_s_003",
+      "source_step_id": "s_003",
+      "round_id": "r_002",
+      "name": "Round 3 - edit current best a_001",
+      "_note": "SFT message view: only assistant action is a trainable target. environment_observation is context for the next sample, not part of this assistant target.",
+      "messages": [
+        {
+          "role": "system",
+          "content": {
+            "system_prompt_summary": {
+              "_note": "The real system prompt is fixed and repeated every planner call.",
+              "role": "verifier-grounded multimodal image retry planner",
+              "output_rule": "output exactly one canonical action JSON object and no prose",
+              "legal_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ],
+              "source_rules": {
+                "generate_image": "no source image",
+                "edit_image": "requires source_attempt_id from known historical attempts",
+                "submit_attempt": "may submit a non-latest historical best attempt"
+              },
+              "forbidden_outputs": [
+                "environment facts",
+                "scores",
+                "fixed/regressed predictions",
+                "image paths",
+                "markdown",
+                "chain-of-thought"
+              ]
+            },
+            "action_space": {
+              "query_skill": {
+                "arguments": {
+                  "skill_ids": [
+                    "string"
+                  ],
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ]
+                }
+              },
+              "generate_image": {
+                "arguments": {
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "generation_instruction": "string"
+                }
+              },
+              "edit_image": {
+                "arguments": {
+                  "source_attempt_id": "attempt_id",
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "edit_instruction": "string"
+                }
+              },
+              "submit_attempt": {
+                "arguments": {
+                  "selected_attempt_id": "attempt_id",
+                  "reason_code": "all_constraints_passed|best_available_under_budget|no_productive_action_remaining"
+                }
+              }
+            }
+          },
+          "loss_weight": 0,
+          "token_source": "fixed_system_protocol"
+        },
+        {
+          "role": "user",
+          "content": {
+            "planner_context": {
+              "task_context_ref": "#/global_input/planner_context_task_context",
+              "latest_observation": {
+                "attempt_id": "a_001",
+                "constraint_results_summary": {
+                  "failed_constraint_ids": [
+                    "c_001",
+                    "c_004",
+                    "c_008"
+                  ]
+                }
+              },
+              "skill_context": {
+                "active_skills": [
+                  "counting_and_instance_layout",
+                  "spatial_relation_layout"
+                ]
+              },
+              "episode_memory": {
+                "recent_round": {
+                  "result_attempt_id": "a_001",
+                  "observed_outcome": {
+                    "comparison_attempt_id": "a_000",
+                    "fixed_constraint_ids": [
+                      "c_002",
+                      "c_005"
+                    ],
+                    "persistent_failed_constraint_ids": [
+                      "c_001",
+                      "c_004",
+                      "c_008"
+                    ],
+                    "became_best": true
+                  }
+                },
+                "earlier_rounds": [
+                  {
+                    "result_attempt_id": "a_000",
+                    "action": "generate_image"
+                  }
+                ],
+                "best_attempt": {
+                  "attempt_id": "a_001",
+                  "same_as_latest": true
+                }
+              },
+              "runtime_state": {
+                "remaining_image_budget": 3,
+                "available_actions": [
+                  "query_skill",
+                  "generate_image",
+                  "edit_image",
+                  "submit_attempt"
+                ]
+              }
+            },
+            "visible_images": [
+              {
+                "role": "latest",
+                "attempt_id": "a_001",
+                "artifact_id": "img_001"
+              }
+            ]
+          },
+          "loss_weight": 0,
+          "token_source": "planner_input"
+        },
+        {
+          "role": "assistant",
+          "content": {
+            "_note": "decision_summary is empty because this source action predates v0.4. In new v0.4 runs, the teacher should fill this field.",
+            "schema_version": "0.4",
+            "action": "edit_image",
+            "arguments": {
+              "source_attempt_id": "a_001",
+              "decision_summary": "",
+              "diagnosis_summary": null,
+              "target_constraint_ids": [
+                "c_001",
+                "c_004",
+                "c_008"
+              ],
+              "preserve_constraint_ids": [
+                "c_002",
+                "c_003",
+                "c_005",
+                "c_006",
+                "c_007",
+                "c_009",
+                "c_010",
+                "c_011"
+              ],
+              "edit_instruction": "Target operation: edit attempt a_001 by adding exactly two additional transparent glass lions so there are exactly six glass lions total, and adjust the lion poses and gaze so the six lions are clearly chasing the three red cats. Spatial grounding: keep the single brown donut large in the foreground at the bottom/front; keep all three red cats in the middle ground behind the donut with the donut visibly in front of them; place the six glass lions in a separated back row behind the cats, oriented forward toward the cats as if pursuing them. Preservation lock: preserve the existing three red cats, their red color, the single brown donut, the donut color, the clean white background, and the glass material of all lions. Forbidden changes: do not add or remove cats, do not add any extra donuts, do not create more or fewer than six lions, do not crop, fuse, hide, mirror, or overlap animal instances, and do not redraw unrelated parts of the scene."
+            }
+          },
+          "loss_weight": 1,
+          "token_source": "canonical_planner_action"
+        }
+      ],
+      "environment_observation_after_assistant": {
+        "loss_weight": 0,
+        "content": {
+          "image_attempt_created": true,
+          "result_attempt_id": "a_002",
+          "comparison_attempt_id": "a_001",
+          "fixed_constraint_ids": [
+            "c_001"
+          ],
+          "regressed_constraint_ids": [],
+          "persistent_failed_constraint_ids": [
+            "c_004",
+            "c_008"
+          ],
+          "became_best": true,
+          "writes_to_next_planner_context": {
+            "latest_observation": {
+              "attempt_id": "a_002",
+              "constraint_results": {
+                "passed_constraint_ids": [
+                  "c_001",
+                  "c_002",
+                  "c_003",
+                  "c_005",
+                  "c_006",
+                  "c_007",
+                  "c_009",
+                  "c_010",
+                  "c_011"
+                ],
+                "failed_constraint_ids": [
+                  "c_004",
+                  "c_008"
+                ],
+                "uncertain_constraint_ids": [],
+                "observations": [
+                  {
+                    "constraint_id": "c_001",
+                    "observed_value": "6"
+                  },
+                  {
+                    "constraint_id": "c_002",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_003",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_004",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_005",
+                    "observed_value": "3"
+                  },
+                  {
+                    "constraint_id": "c_006",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_007",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_008",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_009",
+                    "observed_value": "one"
+                  },
+                  {
+                    "constraint_id": "c_010",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_011",
+                    "observed_value": " yes"
+                  }
+                ]
+              }
+            },
+            "episode_memory": {
+              "recent_round": {
+                "skill_queries": [],
+                "image_action": {
+                  "action": "edit_image",
+                  "source_attempt_id": "a_001",
+                  "decision_summary": "",
+                  "diagnosis_summary": null,
+                  "target_constraint_ids": [
+                    "c_001",
+                    "c_004",
+                    "c_008"
+                  ],
+                  "preserve_constraint_ids": [
+                    "c_002",
+                    "c_003",
+                    "c_005",
+                    "c_006",
+                    "c_007",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "instruction": "[same as planner_output.arguments.edit_instruction]"
+                },
+                "result_attempt_id": "a_002",
+                "observed_outcome": {
+                  "comparison_attempt_id": "a_001",
+                  "initial_passed_constraint_ids": [],
+                  "initial_failed_constraint_ids": [],
+                  "initial_uncertain_constraint_ids": [],
+                  "fixed_constraint_ids": [
+                    "c_001"
+                  ],
+                  "regressed_constraint_ids": [],
+                  "persistent_failed_constraint_ids": [
+                    "c_004",
+                    "c_008"
+                  ],
+                  "preserved_constraint_ids": [
+                    "c_002",
+                    "c_003",
+                    "c_005",
+                    "c_006",
+                    "c_007",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "new_uncertain_constraint_ids": [],
+                  "became_best": true
+                }
+              },
+              "earlier_rounds": [
+                {
+                  "result_attempt_id": "a_000",
+                  "action": "generate_image"
+                },
+                {
+                  "result_attempt_id": "a_001",
+                  "action": "generate_image"
+                }
+              ],
+              "best_attempt": {
+                "attempt_id": "a_002",
+                "same_as_latest": true
+              }
+            },
+            "runtime_state": {
+              "remaining_image_budget": 2,
+              "available_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ]
+            },
+            "visible_images": [
+              {
+                "role": "latest",
+                "attempt_id": "a_002",
+                "artifact_id": "img_002"
+              }
+            ]
+          }
+        }
+      },
+      "_decision_summary_note": "Empty because this source trajectory predates v0.4. In new v0.4 live trajectories, decision_summary should be filled by the teacher and trained as part of the assistant action."
+    },
+    {
+      "sample_id": "phase3_ep001_s_004",
+      "source_step_id": "s_004",
+      "round_id": "r_003",
+      "name": "Round 4 - edit a_002 and regress c_002",
+      "_note": "SFT message view: only assistant action is a trainable target. environment_observation is context for the next sample, not part of this assistant target.",
+      "messages": [
+        {
+          "role": "system",
+          "content": {
+            "system_prompt_summary": {
+              "_note": "The real system prompt is fixed and repeated every planner call.",
+              "role": "verifier-grounded multimodal image retry planner",
+              "output_rule": "output exactly one canonical action JSON object and no prose",
+              "legal_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ],
+              "source_rules": {
+                "generate_image": "no source image",
+                "edit_image": "requires source_attempt_id from known historical attempts",
+                "submit_attempt": "may submit a non-latest historical best attempt"
+              },
+              "forbidden_outputs": [
+                "environment facts",
+                "scores",
+                "fixed/regressed predictions",
+                "image paths",
+                "markdown",
+                "chain-of-thought"
+              ]
+            },
+            "action_space": {
+              "query_skill": {
+                "arguments": {
+                  "skill_ids": [
+                    "string"
+                  ],
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ]
+                }
+              },
+              "generate_image": {
+                "arguments": {
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "generation_instruction": "string"
+                }
+              },
+              "edit_image": {
+                "arguments": {
+                  "source_attempt_id": "attempt_id",
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "edit_instruction": "string"
+                }
+              },
+              "submit_attempt": {
+                "arguments": {
+                  "selected_attempt_id": "attempt_id",
+                  "reason_code": "all_constraints_passed|best_available_under_budget|no_productive_action_remaining"
+                }
+              }
+            }
+          },
+          "loss_weight": 0,
+          "token_source": "fixed_system_protocol"
+        },
+        {
+          "role": "user",
+          "content": {
+            "planner_context": {
+              "task_context_ref": "#/global_input/planner_context_task_context",
+              "latest_observation": {
+                "attempt_id": "a_002",
+                "constraint_results_summary": {
+                  "failed_constraint_ids": [
+                    "c_004",
+                    "c_008"
+                  ]
+                }
+              },
+              "skill_context": {
+                "active_skills": [
+                  "counting_and_instance_layout",
+                  "spatial_relation_layout"
+                ]
+              },
+              "episode_memory": {
+                "recent_round": {
+                  "result_attempt_id": "a_002",
+                  "observed_outcome": {
+                    "comparison_attempt_id": "a_001",
+                    "fixed_constraint_ids": [
+                      "c_001"
+                    ],
+                    "persistent_failed_constraint_ids": [
+                      "c_004",
+                      "c_008"
+                    ],
+                    "became_best": true
+                  }
+                },
+                "best_attempt": {
+                  "attempt_id": "a_002",
+                  "same_as_latest": true
+                }
+              },
+              "runtime_state": {
+                "remaining_image_budget": 2,
+                "available_actions": [
+                  "query_skill",
+                  "generate_image",
+                  "edit_image",
+                  "submit_attempt"
+                ]
+              }
+            },
+            "visible_images": [
+              {
+                "role": "latest",
+                "attempt_id": "a_002",
+                "artifact_id": "img_002"
+              }
+            ]
+          },
+          "loss_weight": 0,
+          "token_source": "planner_input"
+        },
+        {
+          "role": "assistant",
+          "content": {
+            "_note": "decision_summary is empty because this source action predates v0.4. In new v0.4 runs, the teacher should fill this field.",
+            "schema_version": "0.4",
+            "action": "edit_image",
+            "arguments": {
+              "source_attempt_id": "a_002",
+              "decision_summary": "",
+              "diagnosis_summary": null,
+              "target_constraint_ids": [
+                "c_004",
+                "c_008"
+              ],
+              "preserve_constraint_ids": [
+                "c_001",
+                "c_002",
+                "c_003",
+                "c_005",
+                "c_006",
+                "c_007",
+                "c_009",
+                "c_010",
+                "c_011"
+              ],
+              "edit_instruction": "Target operation: adjust only the depth and motion cues so the scene clearly shows six glass lions chasing three red cats, and the three red cats are clearly behind the single brown donut. Spatial grounding: keep the one brown donut large in the bottom foreground, overlapping and occluding the lower front paws of the three red cats so all three cats are visibly behind the donut; place all six transparent glass lions in a rear row behind the cats, running toward the cats with forward-leaning bodies, raised paws, focused eyes, and pursuit spacing that makes the lions clearly chasing the cats from behind. Preservation lock: preserve exactly six lions total, all glass and fully visible as separate lion instances; preserve exactly three red cats total, fully visible above the donut and separated; preserve exactly one brown donut; preserve the white background and overall centered composition. Forbidden changes: do not add or remove any lions, cats, or donuts; do not change lion material from glass, cat color from red, or donut color from brown; do not place cats in front of the donut; do not crop, fuse, duplicate, reflect, or redraw unrelated objects."
+            }
+          },
+          "loss_weight": 1,
+          "token_source": "canonical_planner_action"
+        }
+      ],
+      "environment_observation_after_assistant": {
+        "loss_weight": 0,
+        "content": {
+          "image_attempt_created": true,
+          "result_attempt_id": "a_003",
+          "comparison_attempt_id": "a_002",
+          "fixed_constraint_ids": [],
+          "regressed_constraint_ids": [
+            "c_002"
+          ],
+          "persistent_failed_constraint_ids": [
+            "c_004",
+            "c_008"
+          ],
+          "became_best": false,
+          "writes_to_next_planner_context": {
+            "latest_observation": {
+              "attempt_id": "a_003",
+              "constraint_results": {
+                "passed_constraint_ids": [
+                  "c_001",
+                  "c_003",
+                  "c_005",
+                  "c_006",
+                  "c_007",
+                  "c_009",
+                  "c_010",
+                  "c_011"
+                ],
+                "failed_constraint_ids": [
+                  "c_002",
+                  "c_004",
+                  "c_008"
+                ],
+                "uncertain_constraint_ids": [],
+                "observations": [
+                  {
+                    "constraint_id": "c_001",
+                    "observed_value": "6"
+                  },
+                  {
+                    "constraint_id": "c_002",
+                    "observed_value": "no"
+                  },
+                  {
+                    "constraint_id": "c_003",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_004",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_005",
+                    "observed_value": "3"
+                  },
+                  {
+                    "constraint_id": "c_006",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_007",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_008",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_009",
+                    "observed_value": "one"
+                  },
+                  {
+                    "constraint_id": "c_010",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_011",
+                    "observed_value": " yes"
+                  }
+                ]
+              }
+            },
+            "episode_memory": {
+              "recent_round": {
+                "skill_queries": [],
+                "image_action": {
+                  "action": "edit_image",
+                  "source_attempt_id": "a_002",
+                  "decision_summary": "",
+                  "diagnosis_summary": null,
+                  "target_constraint_ids": [
+                    "c_004",
+                    "c_008"
+                  ],
+                  "preserve_constraint_ids": [
+                    "c_001",
+                    "c_002",
+                    "c_003",
+                    "c_005",
+                    "c_006",
+                    "c_007",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "instruction": "[same as planner_output.arguments.edit_instruction]"
+                },
+                "result_attempt_id": "a_003",
+                "observed_outcome": {
+                  "comparison_attempt_id": "a_002",
+                  "initial_passed_constraint_ids": [],
+                  "initial_failed_constraint_ids": [],
+                  "initial_uncertain_constraint_ids": [],
+                  "fixed_constraint_ids": [],
+                  "regressed_constraint_ids": [
+                    "c_002"
+                  ],
+                  "persistent_failed_constraint_ids": [
+                    "c_004",
+                    "c_008"
+                  ],
+                  "preserved_constraint_ids": [
+                    "c_001",
+                    "c_003",
+                    "c_005",
+                    "c_006",
+                    "c_007",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "new_uncertain_constraint_ids": [],
+                  "became_best": false
+                }
+              },
+              "best_attempt": {
+                "attempt_id": "a_002",
+                "same_as_latest": false,
+                "constraint_results_summary": {
+                  "failed_constraint_ids": [
+                    "c_004",
+                    "c_008"
+                  ]
+                }
+              }
+            },
+            "runtime_state": {
+              "remaining_image_budget": 1,
+              "available_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ]
+            },
+            "visible_images": [
+              {
+                "role": "latest",
+                "attempt_id": "a_003",
+                "artifact_id": "img_003"
+              },
+              {
+                "role": "best",
+                "attempt_id": "a_002",
+                "artifact_id": "img_002"
+              }
+            ]
+          }
+        }
+      },
+      "_decision_summary_note": "Empty because this source trajectory predates v0.4. In new v0.4 live trajectories, decision_summary should be filled by the teacher and trained as part of the assistant action."
+    },
+    {
+      "sample_id": "phase3_ep001_s_005",
+      "source_step_id": "s_005",
+      "round_id": "r_004",
+      "name": "Round 5 - rollback edit from best a_002",
+      "_note": "SFT message view: only assistant action is a trainable target. environment_observation is context for the next sample, not part of this assistant target.",
+      "messages": [
+        {
+          "role": "system",
+          "content": {
+            "system_prompt_summary": {
+              "_note": "The real system prompt is fixed and repeated every planner call.",
+              "role": "verifier-grounded multimodal image retry planner",
+              "output_rule": "output exactly one canonical action JSON object and no prose",
+              "legal_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ],
+              "source_rules": {
+                "generate_image": "no source image",
+                "edit_image": "requires source_attempt_id from known historical attempts",
+                "submit_attempt": "may submit a non-latest historical best attempt"
+              },
+              "forbidden_outputs": [
+                "environment facts",
+                "scores",
+                "fixed/regressed predictions",
+                "image paths",
+                "markdown",
+                "chain-of-thought"
+              ]
+            },
+            "action_space": {
+              "query_skill": {
+                "arguments": {
+                  "skill_ids": [
+                    "string"
+                  ],
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ]
+                }
+              },
+              "generate_image": {
+                "arguments": {
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "generation_instruction": "string"
+                }
+              },
+              "edit_image": {
+                "arguments": {
+                  "source_attempt_id": "attempt_id",
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "edit_instruction": "string"
+                }
+              },
+              "submit_attempt": {
+                "arguments": {
+                  "selected_attempt_id": "attempt_id",
+                  "reason_code": "all_constraints_passed|best_available_under_budget|no_productive_action_remaining"
+                }
+              }
+            }
+          },
+          "loss_weight": 0,
+          "token_source": "fixed_system_protocol"
+        },
+        {
+          "role": "user",
+          "content": {
+            "planner_context": {
+              "task_context_ref": "#/global_input/planner_context_task_context",
+              "latest_observation": {
+                "attempt_id": "a_003",
+                "constraint_results_summary": {
+                  "failed_constraint_ids": [
+                    "c_002",
+                    "c_004",
+                    "c_008"
+                  ]
+                }
+              },
+              "skill_context": {
+                "active_skills": [
+                  "counting_and_instance_layout",
+                  "spatial_relation_layout"
+                ]
+              },
+              "episode_memory": {
+                "recent_round": {
+                  "result_attempt_id": "a_003",
+                  "observed_outcome": {
+                    "comparison_attempt_id": "a_002",
+                    "regressed_constraint_ids": [
+                      "c_002"
+                    ],
+                    "persistent_failed_constraint_ids": [
+                      "c_004",
+                      "c_008"
+                    ],
+                    "became_best": false
+                  }
+                },
+                "best_attempt": {
+                  "attempt_id": "a_002",
+                  "same_as_latest": false,
+                  "constraint_results_summary": {
+                    "failed_constraint_ids": [
+                      "c_004",
+                      "c_008"
+                    ]
+                  }
+                }
+              },
+              "runtime_state": {
+                "remaining_image_budget": 1,
+                "available_actions": [
+                  "query_skill",
+                  "generate_image",
+                  "edit_image",
+                  "submit_attempt"
+                ]
+              }
+            },
+            "visible_images": [
+              {
+                "role": "latest",
+                "attempt_id": "a_003",
+                "artifact_id": "img_003"
+              },
+              {
+                "role": "best",
+                "attempt_id": "a_002",
+                "artifact_id": "img_002"
+              }
+            ]
+          },
+          "loss_weight": 0,
+          "token_source": "planner_input"
+        },
+        {
+          "role": "assistant",
+          "content": {
+            "_note": "decision_summary is empty because this source action predates v0.4. In new v0.4 runs, the teacher should fill this field.",
+            "schema_version": "0.4",
+            "action": "edit_image",
+            "arguments": {
+              "source_attempt_id": "a_002",
+              "decision_summary": "",
+              "diagnosis_summary": null,
+              "target_constraint_ids": [
+                "c_004",
+                "c_008"
+              ],
+              "preserve_constraint_ids": [
+                "c_001",
+                "c_002",
+                "c_003",
+                "c_005",
+                "c_006",
+                "c_007",
+                "c_009",
+                "c_010",
+                "c_011"
+              ],
+              "edit_instruction": "Target operation: revise attempt a_002 so the image shows exactly six glass lions chasing exactly three red cats, and exactly one brown donut in the scene. Spatial grounding: keep the single brown donut in the foreground; place the three red cats behind the donut in a middle depth layer so the donut overlaps their lower bodies; keep all six glass lions behind the cats, oriented toward them with forward-leaning pursuit poses and heads/paws aimed at the cats. Preservation lock: preserve the six-lion count, glass material, the red cat color, the three-cat count, the single brown donut, the clean white background, and the overall centered composition. Forbidden changes: do not change the lion count, cat count, donut count, colors, or materials; do not add extra animals or objects; do not remove the donut; do not place the cats in front of the donut; do not crop, fuse, mirror, duplicate, or obscure any subject beyond the intended depth overlap."
+            }
+          },
+          "loss_weight": 1,
+          "token_source": "canonical_planner_action"
+        }
+      ],
+      "environment_observation_after_assistant": {
+        "loss_weight": 0,
+        "content": {
+          "image_attempt_created": true,
+          "result_attempt_id": "a_004",
+          "comparison_attempt_id": "a_002",
+          "fixed_constraint_ids": [],
+          "regressed_constraint_ids": [],
+          "persistent_failed_constraint_ids": [
+            "c_004",
+            "c_008"
+          ],
+          "became_best": false,
+          "writes_to_next_planner_context": {
+            "latest_observation": {
+              "attempt_id": "a_004",
+              "constraint_results": {
+                "passed_constraint_ids": [
+                  "c_001",
+                  "c_002",
+                  "c_003",
+                  "c_005",
+                  "c_006",
+                  "c_007",
+                  "c_009",
+                  "c_010",
+                  "c_011"
+                ],
+                "failed_constraint_ids": [
+                  "c_004",
+                  "c_008"
+                ],
+                "uncertain_constraint_ids": [],
+                "observations": [
+                  {
+                    "constraint_id": "c_001",
+                    "observed_value": "6"
+                  },
+                  {
+                    "constraint_id": "c_002",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_003",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_004",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_005",
+                    "observed_value": "3"
+                  },
+                  {
+                    "constraint_id": "c_006",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_007",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_008",
+                    "observed_value": " no"
+                  },
+                  {
+                    "constraint_id": "c_009",
+                    "observed_value": "one"
+                  },
+                  {
+                    "constraint_id": "c_010",
+                    "observed_value": " yes"
+                  },
+                  {
+                    "constraint_id": "c_011",
+                    "observed_value": " yes"
+                  }
+                ]
+              }
+            },
+            "episode_memory": {
+              "recent_round": {
+                "skill_queries": [],
+                "image_action": {
+                  "action": "edit_image",
+                  "source_attempt_id": "a_002",
+                  "decision_summary": "",
+                  "diagnosis_summary": null,
+                  "target_constraint_ids": [
+                    "c_004",
+                    "c_008"
+                  ],
+                  "preserve_constraint_ids": [
+                    "c_001",
+                    "c_002",
+                    "c_003",
+                    "c_005",
+                    "c_006",
+                    "c_007",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "instruction": "[same as planner_output.arguments.edit_instruction]"
+                },
+                "result_attempt_id": "a_004",
+                "observed_outcome": {
+                  "comparison_attempt_id": "a_002",
+                  "initial_passed_constraint_ids": [],
+                  "initial_failed_constraint_ids": [],
+                  "initial_uncertain_constraint_ids": [],
+                  "fixed_constraint_ids": [],
+                  "regressed_constraint_ids": [],
+                  "persistent_failed_constraint_ids": [
+                    "c_004",
+                    "c_008"
+                  ],
+                  "preserved_constraint_ids": [
+                    "c_001",
+                    "c_002",
+                    "c_003",
+                    "c_005",
+                    "c_006",
+                    "c_007",
+                    "c_009",
+                    "c_010",
+                    "c_011"
+                  ],
+                  "new_uncertain_constraint_ids": [],
+                  "became_best": false
+                }
+              },
+              "best_attempt": {
+                "attempt_id": "a_002",
+                "same_as_latest": false
+              }
+            },
+            "runtime_state": {
+              "remaining_image_budget": 0,
+              "available_actions": [
+                "submit_attempt"
+              ]
+            },
+            "visible_images": [
+              {
+                "role": "latest",
+                "attempt_id": "a_004",
+                "artifact_id": "img_004"
+              },
+              {
+                "role": "best",
+                "attempt_id": "a_002",
+                "artifact_id": "img_002"
+              }
+            ]
+          }
+        }
+      },
+      "_decision_summary_note": "Empty because this source trajectory predates v0.4. In new v0.4 live trajectories, decision_summary should be filled by the teacher and trained as part of the assistant action."
+    },
+    {
+      "sample_id": "phase3_ep001_s_006",
+      "source_step_id": "s_006",
+      "round_id": null,
+      "name": "Final submit",
+      "_note": "SFT message view: only assistant action is a trainable target. environment_observation is context for the next sample, not part of this assistant target.",
+      "messages": [
+        {
+          "role": "system",
+          "content": {
+            "system_prompt_summary": {
+              "_note": "The real system prompt is fixed and repeated every planner call.",
+              "role": "verifier-grounded multimodal image retry planner",
+              "output_rule": "output exactly one canonical action JSON object and no prose",
+              "legal_actions": [
+                "query_skill",
+                "generate_image",
+                "edit_image",
+                "submit_attempt"
+              ],
+              "source_rules": {
+                "generate_image": "no source image",
+                "edit_image": "requires source_attempt_id from known historical attempts",
+                "submit_attempt": "may submit a non-latest historical best attempt"
+              },
+              "forbidden_outputs": [
+                "environment facts",
+                "scores",
+                "fixed/regressed predictions",
+                "image paths",
+                "markdown",
+                "chain-of-thought"
+              ]
+            },
+            "action_space": {
+              "query_skill": {
+                "arguments": {
+                  "skill_ids": [
+                    "string"
+                  ],
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ]
+                }
+              },
+              "generate_image": {
+                "arguments": {
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "generation_instruction": "string"
+                }
+              },
+              "edit_image": {
+                "arguments": {
+                  "source_attempt_id": "attempt_id",
+                  "decision_summary": "string",
+                  "diagnosis_summary": "string|null",
+                  "target_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "preserve_constraint_ids": [
+                    "constraint_id"
+                  ],
+                  "edit_instruction": "string"
+                }
+              },
+              "submit_attempt": {
+                "arguments": {
+                  "selected_attempt_id": "attempt_id",
+                  "reason_code": "all_constraints_passed|best_available_under_budget|no_productive_action_remaining"
+                }
+              }
+            }
+          },
+          "loss_weight": 0,
+          "token_source": "fixed_system_protocol"
+        },
+        {
+          "role": "user",
+          "content": {
+            "planner_context": {
+              "task_context_ref": "#/global_input/planner_context_task_context",
+              "latest_observation": {
+                "attempt_id": "a_004",
+                "constraint_results_summary": {
+                  "failed_constraint_ids": [
+                    "c_004",
+                    "c_008"
+                  ]
+                }
+              },
+              "episode_memory": {
+                "recent_round": {
+                  "result_attempt_id": "a_004",
+                  "observed_outcome": {
+                    "comparison_attempt_id": "a_002",
+                    "fixed_constraint_ids": [],
+                    "regressed_constraint_ids": [],
+                    "persistent_failed_constraint_ids": [
+                      "c_004",
+                      "c_008"
+                    ],
+                    "became_best": false
+                  }
+                },
+                "best_attempt": {
+                  "attempt_id": "a_002",
+                  "same_as_latest": false
+                }
+              },
+              "runtime_state": {
+                "remaining_image_budget": 0,
+                "available_actions": [
+                  "submit_attempt"
+                ]
+              }
+            },
+            "visible_images": [
+              {
+                "role": "latest",
+                "attempt_id": "a_004",
+                "artifact_id": "img_004"
+              },
+              {
+                "role": "best",
+                "attempt_id": "a_002",
+                "artifact_id": "img_002"
+              }
+            ]
+          },
+          "loss_weight": 0,
+          "token_source": "planner_input"
+        },
+        {
+          "role": "assistant",
+          "content": {
+            "schema_version": "0.4",
+            "action": "submit_attempt",
+            "arguments": {
+              "selected_attempt_id": "a_002",
+              "reason_code": "best_available_under_budget"
+            }
+          },
+          "loss_weight": 1,
+          "token_source": "canonical_planner_action"
+        }
+      ],
+      "environment_observation_after_assistant": {
+        "loss_weight": 0,
+        "content": {
+          "episode_ended": true,
+          "submitted_attempt_id": "a_002"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "profile": "control",
+  "case_id": "broad_failure_regenerate",
+  "sample_index": 2,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"generate_image\",\"arguments\":{\"target_constraint_ids\":[\"c_001\",\"c_002\",\"c_004\",\"c_005\",\"c_008\"],\"preserve_constraint_ids\":[\"c_003\",\"c_006\",\"c_007\",\"c_009\",\"c_010\",\"c_011\"],\"instruction\":\"Create a clear scene with exactly six lions, all visibly made of transparent glass, chasing exactly three red cats. Arrange the three red cats together behind a single large brown donut in the foreground, with the donut clearly in front of the cats. Show the six glass lions behind or to the side of the cats, facing and running toward the cats with pursuit poses, gaze, and motion lines or spacing that make the chase unambiguous. Preserve that there are lions, that there are cats, that the cats are red, that there is exactly one donut, that the donut is brown, and that the donut is present. Avoid adding any extra lions, cats, or donuts.\"}}",
+  "raw_output_sha256": "02375713015048513270747e3c5733648f08efec83c608ccd7f28f2a4a80b1a9",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 269,
+    "prompt_tokens": 1120,
+    "total_tokens": 1389,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 55,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": true,
+    "summary_future_leakage": false,
+    "errors": []
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "profile": "control",
+  "case_id": "rollback_best",
+  "sample_index": 1,
+  "model_id": "gpt-5.5",
+  "raw_output": "{\"schema_version\":\"0.5\",\"action\":\"edit_image\",\"arguments\":{\"source_attempt_id\":\"a_002\",\"target_constraint_ids\":[\"c_004\",\"c_008\"],\"preserve_constraint_ids\":[\"c_001\",\"c_002\",\"c_003\",\"c_005\",\"c_006\",\"c_007\",\"c_009\",\"c_010\",\"c_011\"],\"instruction\":\"Edit the image from attempt a_002 with a localized composition repair. Keep exactly six transparent glass lions, exactly three red cats, and exactly one brown donut. Preserve that the lions are glass and present, the cats are red and present, and the donut is brown and present. Reposition the three red cats so they are clearly behind the single brown donut from the viewer's perspective, with visible separation showing the donut in front. Pose and orient all six glass lions so they are unmistakably chasing the three red cats: lions behind or to the side moving toward the cats, facing the cats, with pursuit body language such as forward strides and gaze directed at the cats. Do not add or remove any lions, cats, or donuts.\"}}",
+  "raw_output_sha256": "600484baecf7f2ebaecf9a359a7c2d1d80dd7c9b366285e3ac9b32b63106cd55",
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 311,
+    "prompt_tokens": 1542,
+    "total_tokens": 1853,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 77,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": null
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "reference_valid": true,
+    "decision_correct": true,
+    "summary_contract_valid": true,
+    "summary_state_to_decision": true,
+    "summary_future_leakage": false,
+    "errors": []
+  }
+}
