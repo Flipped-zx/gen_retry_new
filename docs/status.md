@@ -5,7 +5,7 @@
 The official-atomicity-matched Flow-DPPO 200-trajectory batch has restarted
 from 200 empty episode states under
 `runs/phase7_flow_dppo200_fresh8_v1`. Eight fixed HCU workers are processing
-the first 20-episode range in tmux session
+the batch in tmux session
 `gen_retry_fresh8_001_020`. The frozen pool still has 25 prompts for every
 `atom_count` from 3 through 10; local reporting tiers are 75 easy, 75 medium,
 and 50 hard. The earlier interrupted run root remains untouched and is not
@@ -14,6 +14,8 @@ deep review, overlapped with subsequent generation unless a blocking issue is
 found. Range 1-20 uses eight logical workers; later ranges use the Sol-reviewed
 Teacher/GPU overlap profile with sixteen logical episode workers, eight
 Teacher slots, and one complete local GPU stage per physical HCU.
+Episodes 1-20 are complete and passed deterministic audit plus the first Sol
+light review. Episodes 21-40 are currently running with the overlap profile.
 
 ## Gate State
 
@@ -27,6 +29,7 @@ Teacher slots, and one complete local GPU stage per physical HCU.
 - PlannerContext v0.6 score-policy review: APPROVE
 - v0.7 / PlannerContext v0.6 five-trajectory final review: PASS
 - Flow-DPPO 200 official-mix distribution review: PASS
+- Flow-DPPO fresh-8 checkpoint 20 light review: PASS_CONTINUE
 - Muse Image-informed ablation claim-sufficiency review:
   PASS_WITH_REQUIRED_CHANGES (not a protocol gate)
 
@@ -106,7 +109,18 @@ Teacher slots, and one complete local GPU stage per physical HCU.
   - 200 new empty PlannerContext v0.6 / `qwen_dual_backend@1` episode
     directories prepared under `runs/phase7_flow_dppo200_fresh8_v1`;
   - no old image, Attempt, evaluator result, or submission was imported;
-  - range 1-20 launched with eight fixed HCU workers;
+  - range 1-20 completed with 20/20 valid submissions, 52 image attempts, and
+    52 complete Geneval2 evaluations;
+  - submitted atom pass improved from 125/144 to 141/144; Soft-TIFA AM from
+    85.32 to 96.05; Soft-TIFA GM from 53.95 to 89.89;
+  - 17/20 reached all atoms and submitted-to-peak GM gap was 0.00;
+  - checkpoint-20 audit:
+    `docs/phase7/checkpoints/fresh8_v1_ckpt_020_audit.md` (`PASS`);
+  - checkpoint-20 Sol light review:
+    `docs/reviews/phase7_fresh8_ckpt_020_sol_review.md`
+    (`PASS_CONTINUE`);
+  - range 21-40 is running with 16 logical episode workers, eight Teacher
+    slots, and eight physical-HCU execution slots;
   - checkpoint audit supports explicit episode subsets and inclusive ranges;
   - prospective 2-workers-per-HCU scheduling is protected by physical-HCU,
     scheduler, and episode locks, bounded Teacher slots, atomic image writes,

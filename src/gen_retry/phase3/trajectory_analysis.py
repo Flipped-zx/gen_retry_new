@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from gen_retry.domain.score_policy import candidate_is_better
 from gen_retry.runtime.event_io import load_events_jsonl
 from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.runtime.reducer import AttemptRecord, build_transition, reduce_events
@@ -165,6 +166,7 @@ def _analyze_episode(run_dir: Path) -> dict[str, Any]:
                 action_record=action_record,
                 context=attempt_by_action_event_id[action_event_id],
                 task_constraint_count=len(task_spec["constraints"]),
+                score_policy=state.score_policy,
             )
         elif action["action"] == "submit_attempt":
             label = _label_submit_action(
@@ -265,7 +267,13 @@ def _choose_best_after(state: Any, best_before: str | None, attempt: AttemptReco
     if best_before is None:
         return attempt.attempt_id
     current_best = state.attempts[best_before]
-    if attempt.pass_count > current_best.pass_count:
+    if candidate_is_better(
+        candidate_pass_count=attempt.pass_count,
+        candidate_primary_score=attempt.primary_score,
+        current_pass_count=current_best.pass_count,
+        current_primary_score=current_best.primary_score,
+        score_policy=state.score_policy,
+    ):
         return attempt.attempt_id
     return best_before
 
@@ -296,6 +304,7 @@ def _label_image_action(
     action_record: dict[str, Any],
     context: AttemptContext,
     task_constraint_count: int,
+    score_policy: dict[str, Any],
 ) -> dict[str, Any]:
     attempt = context.attempt
     action = action_record["action"]
@@ -322,8 +331,20 @@ def _label_image_action(
         behavior_tags.append("historical_branch")
 
     previous_best_pass = context.best_before_pass_count
-    improved_over_source = attempt.pass_count > source_pass
-    improved_over_best = attempt.pass_count > previous_best_pass
+    improved_over_source = source is not None and candidate_is_better(
+        candidate_pass_count=attempt.pass_count,
+        candidate_primary_score=attempt.primary_score,
+        current_pass_count=source.pass_count,
+        current_primary_score=source.primary_score,
+        score_policy=score_policy,
+    )
+    improved_over_best = (
+        context.best_before is None
+        or (
+            context.best_after == attempt.attempt_id
+            and context.best_after != context.best_before
+        )
+    )
     all_passed = attempt.pass_count == task_constraint_count
     if all_passed:
         behavior_tags.append("all_constraints_passed")
@@ -730,6 +751,14 @@ def _render_behavior_report(
         evidence = ", ".join(f"`{item}`" for item in by_label.get(label, [])) or "-"
         lines.append(f"| `{label}` | {counter[label]} | {evidence} |")
     all_pass_count = counter["all_constraints_passed"]
+    historical_submit_count = counter["historical_best_submission"]
+    historical_submit_sentence = (
+        "Historical-best submission occurred when the policy submitted an "
+        "earlier best after a later regression. "
+        if historical_submit_count
+        else "No historical-best submission occurred in this checkpoint, "
+        "although historical-source recovery branches were exercised. "
+    )
     lines.extend(
         [
             "",
@@ -737,8 +766,8 @@ def _render_behavior_report(
             "",
             (
                 "The fresh rollouts exercise both productive and non-productive history use. "
-                "Historical-best submission appears when the policy submits an earlier best "
-                "attempt after later edits or regenerations regress. Constraint regression and "
+                + historical_submit_sentence
+                + "Constraint regression and "
                 "repeated ineffective strategy supply negative history-only examples. "
                 f"{all_pass_count} trajectories reached all atom constraints."
             ),
@@ -839,6 +868,14 @@ def _render_sft_report(
                 "targets. Keep `query_skill` actions and linked tool responses at loss 0 until "
                 "Skill utility validation is accepted. Harmful, ineffective, ambiguous, invalid, "
                 "Geneval2, and raw teacher records remain context or audit evidence only."
+            ),
+            "",
+            (
+                "`history_only_ineffective` is an action-level supervision label evaluated "
+                "with the episode's frozen pass-count/primary-GM ordering. The rollout audit's "
+                "`ineffective image actions` is a narrower operational count: no fixed atom, "
+                "no regressed atom, and no reducer-best update. The two counts therefore need "
+                "not match."
             ),
             "",
         ]

@@ -843,6 +843,14 @@ def _render_report(summary: dict[str, Any]) -> str:
         "",
         planner_score_visibility,
         "",
+        (
+            "When the fifth image both exhausts the image budget and reaches all "
+            "constraints, runtime control requires the terminal reason "
+            "`best_available_under_budget`. The episode still counts as all-pass; "
+            "the reason records why submission became mandatory, not the quality "
+            "of the selected image."
+        ),
+        "",
         "These are actual Soft-TIFA AM/GM scores recomputed from the persisted "
         "local Qwen3-VL correct-answer probabilities. They are not official leaderboard "
         "scores: this batch uses Flow-DPPO training prompts, profile-routed local "
@@ -851,13 +859,14 @@ def _render_report(summary: dict[str, Any]) -> str:
         "",
         "## Difficulty Policy",
         "",
-        "The tiers are a deterministic local sampling policy over committed "
-        "Flow-DPPO training metadata, not official Geneval2 difficulty labels and "
-        "not post-hoc image outcomes:",
+        "The tiers are a deterministic local grouping over committed Flow-DPPO "
+        "training metadata, scaled from the official Geneval2 atom-count "
+        "distribution. They are not official Geneval2 difficulty labels and do "
+        "not use post-hoc image outcomes:",
         "",
-        "- **Hard:** `atom_count >= 9`, actual `len(vqa_list) >= 10`, and at least one relation/action phrase.",
-        "- **Medium:** `atom_count` 7-8, actual VQA count 8-10, and at least one relation/action phrase.",
-        "- **Easy:** `atom_count <= 5`, actual VQA count <= 7, and at least one relation/action phrase.",
+        "- **Hard:** source `atom_count` 9-10.",
+        "- **Medium:** source `atom_count` 6-8.",
+        "- **Easy:** source `atom_count` 3-5.",
         f"- This batch mix: {summary['selection_tier_counts']}.",
         "",
         "Within each tier, ranking rewards more metadata atoms, actual VQAs, "
@@ -923,174 +932,126 @@ def _render_report(summary: dict[str, Any]) -> str:
 
 
 def _render_strategy_examples(summary: dict[str, Any]) -> list[str]:
-    episodes = {item["episode_id"]: item for item in summary["episodes"]}
+    episodes = summary["episodes"]
     examples: list[str] = []
+    used: set[tuple[str, str]] = set()
 
-    def attempt(ep: str, attempt_id: str) -> dict[str, Any]:
-        return next(
-            item
-            for item in episodes[ep]["attempts"]
-            if item["attempt_id"] == attempt_id
+    def add_example(
+        title: str,
+        episode: dict[str, Any],
+        attempt: dict[str, Any],
+        details: list[str],
+    ) -> None:
+        key = (episode["episode_id"], title)
+        if key in used:
+            return
+        used.add(key)
+        examples.extend(
+            [
+                f"### {title}: `{episode['episode_id']}`",
+                "",
+                *details,
+                (
+                    f"- Result `{attempt['attempt_id']}`: "
+                    f"{attempt['pass_count']}/{episode['constraint_count']} atoms, "
+                    f"GM {attempt['geneval2_score'] * 100:.2f}."
+                ),
+                "",
+            ]
         )
 
-    if "0.6" in summary.get("planner_context_version_counts", {}):
-        if "phase3_ep_001" in episodes:
-            a1 = attempt("phase3_ep_001", "a_001")
-            a4 = attempt("phase3_ep_001", "a_004")
-            examples.extend(
+    for episode in episodes:
+        attempts = episode["attempts"]
+        if len(attempts) == 1 and episode["all_constraints_passed"]:
+            attempt = attempts[0]
+            add_example(
+                "Direct First-Attempt Success",
+                episode,
+                attempt,
                 [
-                    "### GM Tie-Break Across Stable Atom States: `phase3_ep_001`",
-                    "",
-                    f"- `a_001` reached {a1['pass_count']}/11 at GM "
-                    f"{a1['geneval2_score'] * 100:.2f}.",
-                    "- `a_002`, `a_003`, and `a_004` retained the same 8/11 "
-                    "atom count while increasing GM at each step.",
-                    f"- Final `a_004` remained 8/11 but reached GM "
-                    f"{a4['geneval2_score'] * 100:.2f} and was submitted.",
-                    "",
-                ]
+                    "- The fresh generation passed every atom.",
+                    "- The Agent submitted it without spending retry budget.",
+                ],
             )
-        if "phase3_ep_008" in episodes:
-            a1 = attempt("phase3_ep_008", "a_001")
-            a2 = attempt("phase3_ep_008", "a_002")
-            examples.extend(
-                [
-                    "### Pass-Count Primary Rejects Higher-GM Regression: "
-                    "`phase3_ep_008`",
-                    "",
-                    f"- `a_001` became best at {a1['pass_count']}/11, GM "
-                    f"{a1['geneval2_score'] * 100:.2f}.",
-                    f"- `a_002` had higher GM "
-                    f"({a2['geneval2_score'] * 100:.2f}) but only "
-                    f"{a2['pass_count']}/11 after regressing `c_001`.",
-                    "- Reducer retained `a_001`; the next two edits branched "
-                    "from `a_001`, and submission protected it.",
-                    "",
-                ]
-            )
-        if "phase3_ep_012" in episodes:
-            a1 = attempt("phase3_ep_012", "a_001")
-            a2 = attempt("phase3_ep_012", "a_002")
-            a3 = attempt("phase3_ep_012", "a_003")
-            a4 = attempt("phase3_ep_012", "a_004")
-            examples.extend(
-                [
-                    "### Ineffective Edit, Regenerate, Productive Edit: "
-                    "`phase3_ep_012`",
-                    "",
-                    f"- Local edit `a_001` stayed {a1['pass_count']}/11 and "
-                    f"fell to GM {a1['geneval2_score'] * 100:.2f}.",
-                    f"- Source-free `generate_image` produced `a_002` at "
-                    f"{a2['pass_count']}/11, GM "
-                    f"{a2['geneval2_score'] * 100:.2f}, becoming best by GM.",
-                    f"- Editing `a_002` fixed `c_010`; `a_003` reached "
-                    f"{a3['pass_count']}/11, GM "
-                    f"{a3['geneval2_score'] * 100:.2f}.",
-                    f"- Final `a_004` regressed `c_010` to "
-                    f"{a4['pass_count']}/11, so submission returned `a_003`.",
-                    "",
-                ]
-            )
-        if "phase3_ep_020" in episodes:
-            a1 = attempt("phase3_ep_020", "a_001")
-            a2 = attempt("phase3_ep_020", "a_002")
-            a3 = attempt("phase3_ep_020", "a_003")
-            a4 = attempt("phase3_ep_020", "a_004")
-            examples.extend(
-                [
-                    "### Catastrophic Edit, Rollback, Then Regenerate: "
-                    "`phase3_ep_020`",
-                    "",
-                    f"- `a_001` was best at {a1['pass_count']}/6, GM "
-                    f"{a1['geneval2_score'] * 100:.2f}.",
-                    f"- Editing it produced `a_002` at only "
-                    f"{a2['pass_count']}/6 and regressed three preserved atoms.",
-                    f"- The next edit rolled back to `a_001`; `a_003` restored "
-                    f"{a3['pass_count']}/6 but did not become best.",
-                    f"- Final source-free regeneration `a_004` remained "
-                    f"{a4['pass_count']}/6 at GM "
-                    f"{a4['geneval2_score'] * 100:.2f}.",
-                    "",
-                ]
-            )
+            break
 
-    if "phase3_ep_003" in episodes:
-        a0 = attempt("phase3_ep_003", "a_000")
-        a2 = attempt("phase3_ep_003", "a_002")
-        a3 = attempt("phase3_ep_003", "a_003")
-        a4 = attempt("phase3_ep_003", "a_004")
-        examples.extend(
-            [
-                "### Abandon Repeated Ineffective Edits: `phase3_ep_003`",
-                "",
-                f"- Fresh `a_000`: {a0['pass_count']}/11, GM {a0['geneval2_score'] * 100:.2f}.",
-                "- Two consecutive edits (`a_001`, `a_002`) fixed no atoms; the latest remained 6/11.",
-                f"- The next action was source-free `generate_image`, producing `a_003`: {a3['pass_count']}/11, GM {a3['geneval2_score'] * 100:.2f}.",
-                f"- A focused edit of improved latest `a_003` produced `a_004`: {a4['pass_count']}/11, GM {a4['geneval2_score'] * 100:.2f}.",
-                f"- Before regeneration, the Planner saw two no-fix outcomes at 6/11; post-hoc `a_002` GM was {a2['geneval2_score'] * 100:.2f}.",
-                "",
-            ]
-        )
+    for episode in episodes:
+        for attempt in episode["attempts"][1:]:
+            if attempt["regressed_constraint_ids"]:
+                add_example(
+                    "Observed Constraint Regression",
+                    episode,
+                    attempt,
+                    [
+                        f"- Action: `{attempt['action']}` from "
+                        f"`{attempt['source_attempt_id']}`.",
+                        "- Fixed atoms: "
+                        f"{attempt['fixed_constraint_ids'] or 'none'}.",
+                        "- Regressed atoms: "
+                        f"{attempt['regressed_constraint_ids']}.",
+                        f"- Reducer best after the full episode: "
+                        f"`{episode['best_attempt_id']}`.",
+                    ],
+                )
+                break
+        if any(attempt["regressed_constraint_ids"] for attempt in episode["attempts"][1:]):
+            break
 
-    if "phase3_ep_011" in episodes:
-        a0 = attempt("phase3_ep_011", "a_000")
-        a1 = attempt("phase3_ep_011", "a_001")
-        a2 = attempt("phase3_ep_011", "a_002")
-        examples.extend(
-            [
-                "### Branch From Historical Best After No Gain: `phase3_ep_011`",
-                "",
-                f"- `a_000` was best at 10/11, GM {a0['geneval2_score'] * 100:.2f}; only `c_008` failed.",
-                f"- Editing it produced latest `a_001` with no fixed atom: 10/11, GM {a1['geneval2_score'] * 100:.2f}.",
-                "- The next PlannerContext showed latest `a_001`, best `a_000`, and persistent `c_008`.",
-                "- The Agent selected `edit_image.source_attempt_id = a_000`, not latest `a_001`.",
-                f"- Result `a_002` fixed `c_008`, preserved ten atoms, and reached 11/11, GM {a2['geneval2_score'] * 100:.2f}.",
-                "",
-            ]
-        )
+    for episode in episodes:
+        attempts = episode["attempts"]
+        for index, attempt in enumerate(attempts[1:], 1):
+            if (
+                attempt["action"] == "edit_image"
+                and attempt["source_attempt_id"] != attempts[index - 1]["attempt_id"]
+            ):
+                add_example(
+                    "Historical-Source Branch",
+                    episode,
+                    attempt,
+                    [
+                        f"- Latest before the action was "
+                        f"`{attempts[index - 1]['attempt_id']}`.",
+                        f"- The Agent deliberately edited historical source "
+                        f"`{attempt['source_attempt_id']}`.",
+                        "- Fixed atoms: "
+                        f"{attempt['fixed_constraint_ids'] or 'none'}; "
+                        "regressed atoms: "
+                        f"{attempt['regressed_constraint_ids'] or 'none'}.",
+                    ],
+                )
+                break
+        if any(
+            attempt["action"] == "edit_image"
+            and attempt["source_attempt_id"] != attempts[index - 1]["attempt_id"]
+            for index, attempt in enumerate(attempts[1:], 1)
+        ):
+            break
 
-    if "phase3_ep_007" in episodes:
-        a2 = attempt("phase3_ep_007", "a_002")
-        a3 = attempt("phase3_ep_007", "a_003")
-        a4 = attempt("phase3_ep_007", "a_004")
-        examples.extend(
-            [
-                "### Continue Editing, Then Submit Historical Best: `phase3_ep_007`",
-                "",
-                f"- `a_002` became reducer best at 10/11, GM {a2['geneval2_score'] * 100:.2f}.",
-                f"- Continuing from `a_002` produced `a_003`, still 10/11 but GM {a3['geneval2_score'] * 100:.2f}.",
-                "- Because best ordering uses pass count and keeps the earlier tie, reducer best remained `a_002` despite `a_003` having higher GM.",
-                f"- A later branch from `a_002` produced latest `a_004`, regressed one atom, and fell to 9/11, GM {a4['geneval2_score'] * 100:.2f}.",
-                "- Submission correctly protected pass-count best `a_002`, while the score report exposes that peak-GM `a_003` was not selected.",
-                "",
-            ]
-        )
+    for episode in episodes:
+        for attempt in episode["attempts"][1:]:
+            if attempt["action"] == "generate_image":
+                add_example(
+                    "Source-Free Regeneration After Prior Attempts",
+                    episode,
+                    attempt,
+                    [
+                        "- The Agent abandoned source-conditioned editing for "
+                        "one source-free root generation.",
+                        "- Fixed atoms relative to the prior observation: "
+                        f"{attempt['fixed_constraint_ids'] or 'none'}; "
+                        "regressed atoms: "
+                        f"{attempt['regressed_constraint_ids'] or 'none'}.",
+                    ],
+                )
+                break
+        if any(
+            attempt["action"] == "generate_image"
+            for attempt in episode["attempts"][1:]
+        ):
+            break
 
-    if "phase3_ep_018" in episodes:
-        a0 = attempt("phase3_ep_018", "a_000")
-        a1 = attempt("phase3_ep_018", "a_001")
-        a2 = attempt("phase3_ep_018", "a_002")
-        examples.extend(
-            [
-                "### Regenerate Broad Failure, Then Local Edit: `phase3_ep_018`",
-                "",
-                f"- First Agent attempt `a_000`: {a0['pass_count']}/7, GM {a0['geneval2_score'] * 100:.2f}.",
-                f"- Source-free regeneration produced `a_001`: {a1['pass_count']}/7, GM {a1['geneval2_score'] * 100:.2f}; only the chasing verb remained failed.",
-                f"- Editing latest `a_001` for that remaining verb produced `a_002`: {a2['pass_count']}/7, GM {a2['geneval2_score'] * 100:.2f}.",
-                "",
-            ]
-        )
-
-    if "phase3_ep_019" in episodes:
-        a0 = attempt("phase3_ep_019", "a_000")
-        examples.extend(
-            [
-                "### Stop Immediately On Complete Success: `phase3_ep_019`",
-                "",
-                f"- First Agent attempt `a_000` passed 6/6 with GM {a0['geneval2_score'] * 100:.2f}.",
-                "- The next action was `submit_attempt(a_000, all_constraints_passed)`; no retry budget was wasted.",
-            ]
-        )
+    if not examples:
+        return ["- No qualifying strategy example was present in this checkpoint."]
     return examples
 
 
