@@ -515,6 +515,22 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
   - `python -m gen_retry.cli.validate_schemas` — passed, 12 schemas;
   - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records;
   - historical example replay — passed.
+- Fresh 8-HCU checkpoint-150 deep review:
+  - checkpoint increment — 10 valid trajectories and 38 evaluated images,
+    submitted atom pass 61/66, Soft-TIFA GM 76.17, and 6/10 all-pass
+    submissions;
+  - cumulative quality cohort — 150 valid trajectories and 489 evaluated
+    images, submitted atom pass 985/1063, Soft-TIFA GM 75.55, and 91/150
+    all-pass submissions;
+  - fixed ID 141-150 admission snapshot — nine completed, one active, zero
+    failed;
+  - cumulative SFT reconciliation — 490 canonical targets and 357
+    context-only records, with all ownership, profile, context/score-contract,
+    and split invariants passing;
+  - checkpoint 150 is frozen as an all-v7 baseline; the first valid v8
+    submission occurred outside that cohort;
+  - GPT-5.6 Sol verdict — `PASS_CONTINUE_QUEUE`, with v8 unchanged and
+    asynchronous admission accepted under immutable predeclared cohorts.
 
 ## Active Risks
 
@@ -561,14 +577,12 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
 
 ## Last Reviewer Verdict
 
-The latest review is the fresh 8-HCU checkpoint-140 review:
-`PASS_WITH_PROSPECTIVE_CHANGE`. It found no routing, lineage, evaluator,
-memory, SFT-masking, or future-leakage blocker, but required a versioned
-forward-only retry closure policy because regressive actions concentrated at
-23/79 attempts. Teacher policy v8 implements that requirement without changing
-Action Protocol 0.5, PlannerContext 0.6, scoring, routing, or completed
-artifacts. Post-change evidence must be reported separately by persisted
-system-prompt version.
+The latest review is the fresh 8-HCU checkpoint-150 deep review:
+`PASS_CONTINUE_QUEUE`. It found no cohort, evaluator, lineage, routing, memory,
+SFT-masking, or future-leakage blocker. Checkpoint 150 is accepted as the final
+all-v7 baseline; v8 continues unchanged and must be evaluated separately by
+persisted Teacher system-prompt version. Asynchronous admission during review
+is accepted because cohort boundaries are predeclared and immutable.
 
 Earlier active verdicts remain unchanged. Planner I/O native
 `decision_summary` is `FAIL_KEEP_V05`; Gate 3a Skill-v1 Trace I/O Clarity is
@@ -576,11 +590,11 @@ Earlier active verdicts remain unchanged. Planner I/O native
 
 ## Next Autonomous Action
 
-Continue the fresh 8-HCU queue through checkpoint 150 while preserving
-completion-quality and fixed-admission denominators. At checkpoint 150, run
-the deep Sol review and report v7/v8 evidence separately using each sanitized
-Planner request's persisted system-prompt version and hash. Do not rerun valid
-v7 trajectories to manufacture a post-change comparison.
+Continue the fresh 8-HCU queue through checkpoint 160 using the predeclared
+completion-quality and fixed-admission cohorts. Report v7 and v8 regressions,
+strict no-progress retries, quality, and throughput separately using each
+sanitized Planner request's persisted system-prompt version and hash. Do not
+rerun valid v7 trajectories to manufacture a post-change comparison.
 
 If prioritizing ablation evidence, first run the zero-image-call Stage 0
 analysis and planner-only Stage 1 screen in

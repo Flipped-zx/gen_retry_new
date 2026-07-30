@@ -1,0 +1,37 @@
+{
+  "schema_version": "0.1",
+  "checkpoint": 160,
+  "declared_before_checkpoint_completion": true,
+  "completed_quality_cohort": {
+    "baseline": "checkpoint 150 completed-quality cohort",
+    "candidate_episode_range": [
+      "phase3_ep_061",
+      "phase3_ep_200"
+    ],
+    "selection": "valid submissions ranked 91 through 100 by attempt_submitted.created_at ascending, then episode_id ascending",
+    "increment_count": 10,
+    "claim_scope": "completion-conditioned quality only"
+  },
+  "admission_safety_cohort": {
+    "episode_range": [
+      "phase3_ep_151",
+      "phase3_ep_160"
+    ],
+    "count": 10,
+    "required_statuses": [
+      "completed",
+      "failed_unsubmitted",
+      "active",
+      "not_yet_admitted"
+    ],
+    "claim_scope": "incident and operational status denominator"
+  },
+  "teacher_policy_evidence": {
+    "grouping_key": "persisted system_prompt_version in sanitized Planner requests",
+    "required_groups": [
+      "teacher_system_prompt_v7_planner_context_v0_6_primary_score",
+      "teacher_system_prompt_v8_retry_closure_policy"
+    ],
+    "rule": "Do not attribute a mixed or v7 episode to v8; report each group separately."
+  }
+}

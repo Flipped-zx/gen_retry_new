@@ -2,6 +2,19 @@
 
 ## 2026-07-30
 
+- Completed the checkpoint-150 deep audit: the 10-trajectory increment used 38
+  evaluated images, improved submitted atom pass from 51/66 to 61/66,
+  improved Soft-TIFA GM from 32.50 to 76.17, and produced 6/10 all-pass
+  submissions.
+- Reconciled cumulative checkpoint-150 SFT supervision: 490 canonical targets
+  and 357 context-only records, with no masking, canonical-target, profile,
+  context/score-contract, or prompt-split violation.
+- Froze checkpoint 150 as the final all-v7 baseline, predeclared checkpoint
+  160, and required future v8 evidence to be grouped by persisted Teacher
+  system-prompt version.
+- Recorded GPT-5.6 Sol's checkpoint-150 verdict `PASS_CONTINUE_QUEUE`; v8
+  continues unchanged and asynchronous admission remains valid under frozen
+  cohort boundaries.
 - Completed the checkpoint-140 quality audit: the 20-trajectory increment used
   79 evaluated images, improved submitted atom pass from 124/148 to 135/148,
   improved Soft-TIFA GM from 30.63 to 58.59, and produced 7/20 all-pass

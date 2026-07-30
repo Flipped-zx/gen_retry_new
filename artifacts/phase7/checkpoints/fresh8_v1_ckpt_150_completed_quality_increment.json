@@ -1,0 +1,18 @@
+{
+  "schema_version": "0.1",
+  "checkpoint": 150,
+  "claim_scope": "completion-conditioned quality only",
+  "selection": "valid submissions ranked 81 through 90 among phase3_ep_061 through phase3_ep_200 by attempt_submitted.created_at ascending, then episode_id ascending",
+  "cohort": [
+    {"rank": 81, "episode_id": "phase3_ep_148", "submitted_at": "2026-07-30T11:47:24Z"},
+    {"rank": 82, "episode_id": "phase3_ep_153", "submitted_at": "2026-07-30T11:48:46Z"},
+    {"rank": 83, "episode_id": "phase3_ep_138", "submitted_at": "2026-07-30T11:50:18Z"},
+    {"rank": 84, "episode_id": "phase3_ep_140", "submitted_at": "2026-07-30T11:52:25Z"},
+    {"rank": 85, "episode_id": "phase3_ep_142", "submitted_at": "2026-07-30T11:53:59Z"},
+    {"rank": 86, "episode_id": "phase3_ep_143", "submitted_at": "2026-07-30T11:56:49Z"},
+    {"rank": 87, "episode_id": "phase3_ep_156", "submitted_at": "2026-07-30T11:58:04Z"},
+    {"rank": 88, "episode_id": "phase3_ep_144", "submitted_at": "2026-07-30T12:01:44Z"},
+    {"rank": 89, "episode_id": "phase3_ep_146", "submitted_at": "2026-07-30T12:05:13Z"},
+    {"rank": 90, "episode_id": "phase3_ep_158", "submitted_at": "2026-07-30T12:06:28Z"}
+  ]
+}
