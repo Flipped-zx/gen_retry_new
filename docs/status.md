@@ -173,6 +173,18 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
   - checkpoint 100 prospectively separates a completed quality cohort from the
     fixed ID 61-100 admission-status denominator:
     `artifacts/phase7/checkpoints/fresh8_v1_ckpt_100_predeclared_cohorts.json`;
+  - checkpoint-100 completed-quality cohort passed with 100/100 valid
+    trajectories and 307 evaluated images; submitted atom pass is 666/713,
+    Soft-TIFA GM is 78.71, and 67/100 episodes are all-pass;
+  - fixed ID 61-100 admission snapshot recorded 36 completed, one
+    failed-unsubmitted, three active, and zero not-yet-admitted episodes:
+    `docs/phase7/checkpoints/fresh8_v1_ckpt_100_admission_status.md`;
+  - cumulative checkpoint-100 SFT reconciliation emitted 328 targets, retained
+    226 context-only records, and passed all mask and contract invariants;
+  - checkpoint-100 Sol deep review:
+    `docs/reviews/phase7_fresh8_ckpt_100_sol_review.md`
+    (`PASS_CONTINUE_QUEUE`; an initial routing blocker was withdrawn after the
+    reviewer read accepted ADR-0006);
   - one global continuous queue for episodes 51-200 is active, with checkpoint
     audits running asynchronously;
   - the continuous queue preserves two workers per HCU, eight Teacher slots,

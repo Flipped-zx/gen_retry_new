@@ -27,6 +27,16 @@
 - Predeclared checkpoint-100 completed-quality and fixed admission-status
   cohorts so pending, failed, active, and completed work use an explicit
   denominator.
+- Completed the checkpoint-100 deep audit: 100 valid quality trajectories,
+  307 evaluated images, submitted atom pass 666/713, Soft-TIFA GM 78.71, and
+  67/100 all-pass episodes.
+- Recorded the fixed ID 61-100 admission snapshot with 36 completed, one
+  failed-unsubmitted, and three active episodes.
+- Reconciled 100-trajectory SFT supervision to 328 canonical targets and 226
+  context-only records with all mask and contract invariants passing.
+- Recorded GPT-5.6 Sol's final checkpoint-100 verdict `PASS_CONTINUE_QUEUE`;
+  the reviewer withdrew an initial routing blocker after reading accepted
+  ADR-0006.
 - Completed and audited the first 40 fresh 8-HCU official-mix trajectories:
   121 evaluated images, submitted atom pass 278/296, Soft-TIFA GM 82.45, and
   27/40 all-pass episodes.

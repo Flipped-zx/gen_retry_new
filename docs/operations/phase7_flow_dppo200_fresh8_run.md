@@ -120,6 +120,6 @@ incident-rate claims.
 - Teacher slots: 8
 - Resource samples:
   `runs/phase7_flow_dppo200_fresh8_v1/continuous_051_200_resource_samples.jsonl`
-- Checkpoint 50:
-  `docs/reviews/phase7_fresh8_ckpt_050_sol_review.md`
-  (`PASS_WITH_PROSPECTIVE_CHANGE`; cumulative SFT reconciliation passed)
+- Latest deep review:
+  `docs/reviews/phase7_fresh8_ckpt_100_sol_review.md`
+  (`PASS_CONTINUE_QUEUE`)
