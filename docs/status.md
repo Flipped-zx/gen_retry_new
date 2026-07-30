@@ -161,6 +161,18 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
   - continuous-queue startup resource evidence averaged 5.92/8 active HCUs
     with 16 workers always present and no all-idle sample:
     `docs/phase7/checkpoints/fresh8_v1_queue_start_to_ckpt_060_resource_profile.md`;
+  - checkpoint-80 completion-conditioned cohort passed with 20/20 valid
+    submissions, submitted atom pass 126/131, Soft-TIFA GM 81.33, and 15/20
+    all-pass episodes;
+  - checkpoint-80 Sol light review:
+    `docs/reviews/phase7_fresh8_ckpt_080_sol_review.md`
+    (`PASS_WITH_PROSPECTIVE_CHANGE`);
+  - completion-order selection is explicitly qualified as unsuitable for
+    representative incident-rate claims:
+    `docs/phase7/checkpoints/fresh8_v1_ckpt_080_scope_note.md`;
+  - checkpoint 100 prospectively separates a completed quality cohort from the
+    fixed ID 61-100 admission-status denominator:
+    `artifacts/phase7/checkpoints/fresh8_v1_ckpt_100_predeclared_cohorts.json`;
   - one global continuous queue for episodes 51-200 is active, with checkpoint
     audits running asynchronously;
   - the continuous queue preserves two workers per HCU, eight Teacher slots,

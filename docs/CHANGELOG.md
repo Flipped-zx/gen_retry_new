@@ -18,6 +18,15 @@
 - Recorded GPT-5.6 Sol's checkpoint-60 verdict `PASS_CONTINUE_QUEUE`.
 - Measured the continuous queue at 5.92/8 mean active HCUs with 16 workers
   always present and no all-idle sample through checkpoint 60.
+- Audited a completion-conditioned checkpoint-80 cohort: 55 evaluated images,
+  submitted atom pass 126/131, Soft-TIFA GM 81.33, and 15/20 all-pass
+  episodes.
+- Recorded GPT-5.6 Sol's checkpoint-80 verdict
+  `PASS_WITH_PROSPECTIVE_CHANGE`: completion-order quality evidence remains
+  valid but cannot estimate admitted-work incident rates.
+- Predeclared checkpoint-100 completed-quality and fixed admission-status
+  cohorts so pending, failed, active, and completed work use an explicit
+  denominator.
 - Completed and audited the first 40 fresh 8-HCU official-mix trajectories:
   121 evaluated images, submitted atom pass 278/296, Soft-TIFA GM 82.45, and
   27/40 all-pass episodes.

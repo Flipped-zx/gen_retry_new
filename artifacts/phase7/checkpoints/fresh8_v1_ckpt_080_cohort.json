@@ -1,0 +1,38 @@
+{
+  "schema_version": "0.1",
+  "checkpoint": 80,
+  "baseline_episode_range": [
+    "phase3_ep_001",
+    "phase3_ep_060"
+  ],
+  "cohort_selection": {
+    "candidate_episode_range": [
+      "phase3_ep_061",
+      "phase3_ep_200"
+    ],
+    "order": "attempt_submitted.created_at ascending, then episode_id ascending",
+    "count": 20
+  },
+  "cohort": [
+    {"episode_id": "phase3_ep_065", "submitted_at": "2026-07-30T09:35:45Z"},
+    {"episode_id": "phase3_ep_066", "submitted_at": "2026-07-30T09:50:18Z"},
+    {"episode_id": "phase3_ep_067", "submitted_at": "2026-07-30T09:57:27Z"},
+    {"episode_id": "phase3_ep_061", "submitted_at": "2026-07-30T09:59:58Z"},
+    {"episode_id": "phase3_ep_074", "submitted_at": "2026-07-30T10:00:03Z"},
+    {"episode_id": "phase3_ep_062", "submitted_at": "2026-07-30T10:01:21Z"},
+    {"episode_id": "phase3_ep_071", "submitted_at": "2026-07-30T10:02:16Z"},
+    {"episode_id": "phase3_ep_073", "submitted_at": "2026-07-30T10:02:32Z"},
+    {"episode_id": "phase3_ep_064", "submitted_at": "2026-07-30T10:03:46Z"},
+    {"episode_id": "phase3_ep_063", "submitted_at": "2026-07-30T10:04:43Z"},
+    {"episode_id": "phase3_ep_068", "submitted_at": "2026-07-30T10:05:37Z"},
+    {"episode_id": "phase3_ep_081", "submitted_at": "2026-07-30T10:06:59Z"},
+    {"episode_id": "phase3_ep_082", "submitted_at": "2026-07-30T10:07:17Z"},
+    {"episode_id": "phase3_ep_084", "submitted_at": "2026-07-30T10:08:47Z"},
+    {"episode_id": "phase3_ep_070", "submitted_at": "2026-07-30T10:09:44Z"},
+    {"episode_id": "phase3_ep_077", "submitted_at": "2026-07-30T10:11:25Z"},
+    {"episode_id": "phase3_ep_089", "submitted_at": "2026-07-30T10:13:21Z"},
+    {"episode_id": "phase3_ep_090", "submitted_at": "2026-07-30T10:13:48Z"},
+    {"episode_id": "phase3_ep_091", "submitted_at": "2026-07-30T10:15:10Z"},
+    {"episode_id": "phase3_ep_083", "submitted_at": "2026-07-30T10:21:27Z"}
+  ]
+}

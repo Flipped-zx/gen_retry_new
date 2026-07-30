@@ -93,6 +93,13 @@ The queue continues while review runs. A blocking verdict atomically stops new
 episode admission; active episodes may finish and completed immutable
 trajectories are retained rather than rewritten.
 
+Because continuous completion order favors shorter episodes, checkpoint 80
+and later reports distinguish completion-conditioned quality from admitted
+work status. Checkpoint 100 uses a predeclared completed-quality cohort plus
+the fixed episode 61-100 status denominator, including incomplete and failed
+episodes. Completion-order cohorts are never used alone for representative
+incident-rate claims.
+
 ## Resume
 
 - The initial ranges and continuous queue have tmux sessions, orchestrator

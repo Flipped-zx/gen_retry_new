@@ -1,0 +1,32 @@
+{
+  "schema_version": "0.1",
+  "checkpoint": 100,
+  "declared_before_checkpoint_completion": true,
+  "completed_quality_cohort": {
+    "baseline_episode_range": [
+      "phase3_ep_001",
+      "phase3_ep_060"
+    ],
+    "candidate_episode_range": [
+      "phase3_ep_061",
+      "phase3_ep_200"
+    ],
+    "selection": "first 40 valid submissions ordered by attempt_submitted.created_at ascending, then episode_id ascending",
+    "count_after_baseline": 40,
+    "claim_scope": "completion-conditioned quality only"
+  },
+  "admission_safety_cohort": {
+    "episode_range": [
+      "phase3_ep_061",
+      "phase3_ep_100"
+    ],
+    "count": 40,
+    "required_statuses": [
+      "completed",
+      "failed_unsubmitted",
+      "active",
+      "not_yet_admitted"
+    ],
+    "claim_scope": "incident and operational status denominator"
+  }
+}
