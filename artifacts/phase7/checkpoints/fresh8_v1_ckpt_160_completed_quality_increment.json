@@ -1,0 +1,18 @@
+{
+  "schema_version": "0.1",
+  "checkpoint": 160,
+  "claim_scope": "completion-conditioned quality only",
+  "selection": "valid submissions ranked 91 through 100 among phase3_ep_061 through phase3_ep_200 by attempt_submitted.created_at ascending, then episode_id ascending",
+  "cohort": [
+    {"rank": 91, "episode_id": "phase3_ep_147", "submitted_at": "2026-07-30T12:06:31Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 92, "episode_id": "phase3_ep_149", "submitted_at": "2026-07-30T12:08:15Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 93, "episode_id": "phase3_ep_157", "submitted_at": "2026-07-30T12:10:33Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 94, "episode_id": "phase3_ep_151", "submitted_at": "2026-07-30T12:11:01Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 95, "episode_id": "phase3_ep_166", "submitted_at": "2026-07-30T12:11:17Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 96, "episode_id": "phase3_ep_152", "submitted_at": "2026-07-30T12:13:33Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 97, "episode_id": "phase3_ep_169", "submitted_at": "2026-07-30T12:14:43Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 98, "episode_id": "phase3_ep_154", "submitted_at": "2026-07-30T12:15:22Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 99, "episode_id": "phase3_ep_165", "submitted_at": "2026-07-30T12:15:32Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 100, "episode_id": "phase3_ep_155", "submitted_at": "2026-07-30T12:17:28Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"}
+  ]
+}

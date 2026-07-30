@@ -2,6 +2,17 @@
 
 ## 2026-07-30
 
+- Completed the checkpoint-160 light audit: the 10-trajectory increment used
+  38 evaluated images, improved submitted atom pass from 55/70 to 61/70,
+  improved Soft-TIFA GM from 34.18 to 59.44, and produced 4/10 all-pass
+  submissions.
+- Separated the increment into seven v7 and three v8 trajectories by persisted
+  Teacher system-prompt version. The three v8 trajectories provide only early
+  compatibility evidence, not an aggregate performance claim.
+- Recorded GPT-5.6 Sol's checkpoint-160 verdict `PASS_CONTINUE_QUEUE`; missing
+  closure-rejection coverage is an evidence gap rather than a blocker.
+- Predeclared checkpoint-180 quality, fixed-admission, and Teacher-version
+  cohorts before checkpoint completion.
 - Completed the checkpoint-150 deep audit: the 10-trajectory increment used 38
   evaluated images, improved submitted atom pass from 51/66 to 61/66,
   improved Soft-TIFA GM from 32.50 to 76.17, and produced 6/10 all-pass

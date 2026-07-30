@@ -531,6 +531,19 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
     submission occurred outside that cohort;
   - GPT-5.6 Sol verdict — `PASS_CONTINUE_QUEUE`, with v8 unchanged and
     asynchronous admission accepted under immutable predeclared cohorts.
+- Fresh 8-HCU checkpoint-160 light review:
+  - checkpoint increment — 10 valid trajectories and 38 evaluated images,
+    submitted atom pass 61/70, Soft-TIFA GM 59.44, and 4/10 all-pass
+    submissions;
+  - version split — seven v7 trajectories with 34 attempts and all 11
+    regressive actions; three v8 trajectories with four attempts, all 19
+    atoms passed, and no regression;
+  - the v8 subgroup is limited to early compatibility evidence because it is
+    small, easier, and contains no closure-rejection example;
+  - fixed ID 151-160 admission snapshot — eight completed, two active, zero
+    failed;
+  - GPT-5.6 Sol verdict — `PASS_CONTINUE_QUEUE`; continue unchanged to the
+    predeclared checkpoint 180.
 
 ## Active Risks
 
@@ -577,12 +590,12 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
 
 ## Last Reviewer Verdict
 
-The latest review is the fresh 8-HCU checkpoint-150 deep review:
+The latest review is the fresh 8-HCU checkpoint-160 light review:
 `PASS_CONTINUE_QUEUE`. It found no cohort, evaluator, lineage, routing, memory,
-SFT-masking, or future-leakage blocker. Checkpoint 150 is accepted as the final
-all-v7 baseline; v8 continues unchanged and must be evaluated separately by
-persisted Teacher system-prompt version. Asynchronous admission during review
-is accepted because cohort boundaries are predeclared and immutable.
+SFT-masking, or future-leakage blocker. The three v8 trajectories are accepted
+only as early compatibility evidence; their easier prompts and lack of a
+closure-rejection example preclude a performance claim. Continue unchanged to
+checkpoint 180 with version-stratified monitoring.
 
 Earlier active verdicts remain unchanged. Planner I/O native
 `decision_summary` is `FAIL_KEEP_V05`; Gate 3a Skill-v1 Trace I/O Clarity is
@@ -590,9 +603,9 @@ Earlier active verdicts remain unchanged. Planner I/O native
 
 ## Next Autonomous Action
 
-Continue the fresh 8-HCU queue through checkpoint 160 using the predeclared
+Continue the fresh 8-HCU queue through checkpoint 180 using the predeclared
 completion-quality and fixed-admission cohorts. Report v7 and v8 regressions,
-strict no-progress retries, quality, and throughput separately using each
+strict no-progress retries, closure rejections, quality, and throughput using each
 sanitized Planner request's persisted system-prompt version and hash. Do not
 rerun valid v7 trajectories to manufacture a post-change comparison.
 
