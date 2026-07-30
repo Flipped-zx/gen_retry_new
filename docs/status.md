@@ -2,12 +2,13 @@
 
 ## Current Phase
 
-The five-trajectory `qwen_dual_backend@1` / PlannerContext v0.6 diagnostic is
-complete and passed deterministic closure plus final GPT-5.6 Sol review. No
-rollout process is active. The matched result is mechanistically positive but
-performance-mixed: submitted atom pass improved 39/50 to 40/50, while submitted
-GM fell 19.70 to 18.32 and AM fell 77.68 to 77.33. Action Protocol remains
-v0.5; best selection uses pass-count, then GM, then earlier Attempt.
+The official-atomicity-matched Flow-DPPO 200-trajectory batch is selected,
+reviewed, and prepared for launch. The frozen pool has 25 prompts for every
+`atom_count` from 3 through 10; local reporting tiers are 75 easy, 75 medium,
+and 50 hard. All 200 fresh PlannerContext v0.6 / `qwen_dual_backend@1`
+directories are prepared with a locked selection SHA. GPT-5.6 Sol's focused
+distribution review is `PASS`; scheduler launch follows the pre-launch Git
+commit.
 
 ## Gate State
 
@@ -20,6 +21,7 @@ v0.5; best selection uses pass-count, then GM, then earlier Attempt.
 - Qwen dual-backend execution-profile review: APPROVE
 - PlannerContext v0.6 score-policy review: APPROVE
 - v0.7 / PlannerContext v0.6 five-trajectory final review: PASS
+- Flow-DPPO 200 official-mix distribution review: PASS
 - Muse Image-informed ablation claim-sufficiency review:
   PASS_WITH_REQUIRED_CHANGES (not a protocol gate)
 
@@ -79,6 +81,22 @@ v0.5; best selection uses pass-count, then GM, then earlier Attempt.
   - `docs/phase3/sft_candidate_action_report.md`
   - `artifacts/phase3/trajectory_index.json`
   - `artifacts/phase3/action_supervision_labels.jsonl`
+- Flow-DPPO official-mix 200-prompt batch prepared:
+  - exact official atomicity marginal: 25 prompts for every `atom_count`
+    from 3 through 10;
+  - local reporting tiers: easy=75, medium=75, hard=50;
+  - official 800 prompts and conservative semantic-family overlaps remain
+    held out;
+  - all 20 earlier Flow-DPPO source rows are excluded;
+  - frozen selection SHA:
+    `25fd84df1e4aba81c3511bc71ef54d0bb6d061a23a166c82032dca3747b287e8`;
+  - 200/200 fresh v0.6 dual-backend rollout directories prepared;
+  - selection report:
+    `docs/phase7/flow_dppo200_official_mix_selection_report.md`;
+  - parallel run plan and 2/4/8-card estimates:
+    `docs/operations/phase7_flow_dppo200_parallel_run.md`;
+  - final focused Sol review:
+    `docs/reviews/flow_dppo200_official_mix_sol_review.md` (`PASS`).
 - Gate 2 review approved in `docs/reviews/gate2_five_trajectory_pilot_review.md`.
 - Phase 4 SFT supervision freeze complete:
   - `docs/decisions/ADR-0005-sft-supervision-freeze.md`

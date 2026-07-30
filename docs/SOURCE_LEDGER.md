@@ -562,6 +562,38 @@ notes: Gen-Searcher's cited default model IDs are older Qwen-Image and
   directories are not Git repositories, so their model cards/configs have no
   local commit hash.
 
+### GenEval2 Official Distribution For The 200-Prompt Training Pool
+
+source_name: GenEval2 official repository and dataset
+repository_commit: `a6e82d2289e8d418f27f0adee77908b07060eea3`
+accessed_date: `2026-07-30`
+evidence_type: repository-grounded via `source_researcher`
+exact_repository_paths:
+- path: `/root/private_data/agentic_image/GenEval2/README.md:16`
+  evidence: the benchmark contains 800 prompts with varying compositionality.
+- path: `/root/private_data/agentic_image/GenEval2/README.md:27-39`
+  evidence: rows expose `prompt`, `atom_count`, `vqa_list`, and `skills`;
+    `atom_count` is the benchmark's compositionality/atomicity field.
+- path: `/root/private_data/agentic_image/GenEval2/soft_tifa_analysis.py:11-64`
+  evidence: analysis is grouped by skill at atom level and by atomicity at
+    prompt level; no official easy/medium/hard labels are defined.
+- path: `/root/private_data/agentic_image/GenEval2/geneval2_data.jsonl`
+  evidence: 800 rows are exactly balanced with 100 prompts for each
+    `atom_count` from 3 through 10. Skill atoms total attribute=1214,
+    count=2025, object=2025, position=662, and verb=86.
+borrowed_idea: Use exact atom-count quotas as the primary official-like
+  difficulty distribution and use skill frequencies only as soft coverage
+  targets.
+local_adaptation: The 200-prompt Flow-DPPO pool takes 25 rows for each
+  `atom_count` from 3 through 10. Local reporting tiers are easy=3-5,
+  medium=6-8, and hard=9-10; they are explicitly not official labels. The
+  official 800 rows, exact prompts, and conservative semantic-family overlaps
+  remain held out.
+copy_code: no
+notes: `atom_count != len(vqa_list)` for 554 of 800 official rows, so every
+  selected record retains both fields. The 200 synthetic rows are training
+  data and cannot be reported as an official Geneval2 benchmark result.
+
 ## Prior Broad Notes
 
 | Source | Evidence | Borrowed idea | Not reused directly | Status |

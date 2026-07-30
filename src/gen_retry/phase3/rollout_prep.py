@@ -39,7 +39,9 @@ def prepare_rollout_runs(
     execution_profile_id: str = "qwen_image_edit_only",
     execution_profile_version: str = "1",
 ) -> dict[str, Any]:
-    selected_payload = json.loads(selected_prompts_path.read_text(encoding="utf-8"))
+    selected_prompts_bytes = selected_prompts_path.read_bytes()
+    selected_prompts_sha256 = sha256_bytes(selected_prompts_bytes)
+    selected_payload = json.loads(selected_prompts_bytes)
     score_policy = score_policy_for_id(score_policy_id)
     context_version = planner_context_version(score_policy)
     selected = selected_payload["selected_prompts"]
@@ -68,6 +70,8 @@ def prepare_rollout_runs(
             execution_profile_version=execution_profile_version,
             score_policy=score_policy,
             planner_context_schema_version=context_version,
+            selection_artifact_ref=str(selected_prompts_path),
+            selection_artifact_sha256=selected_prompts_sha256,
         )
         for candidate in selected
     ]
@@ -75,6 +79,7 @@ def prepare_rollout_runs(
         "schema_version": "0.2",
         "prepared_count": len(prepared),
         "selected_prompts_ref": str(selected_prompts_path),
+        "selected_prompts_sha256": selected_prompts_sha256,
         "selected_prompt_limit": limit,
         "selected_prompt_ids": prompt_ids,
         "max_image_attempts": max_image_attempts,
@@ -109,6 +114,8 @@ def _prepare_one_run(
     execution_profile_version: str,
     score_policy: dict[str, Any],
     planner_context_schema_version: str,
+    selection_artifact_ref: str,
+    selection_artifact_sha256: str,
 ) -> dict[str, Any]:
     episode_id = f"phase3_ep_{int(candidate['selection_rank']):03d}"
     run_dir = output_root / episode_id
@@ -193,6 +200,8 @@ def _prepare_one_run(
                 execution_profile_version=execution_profile_version,
                 score_policy=score_policy,
                 planner_context_schema_version=planner_context_schema_version,
+                selection_artifact_ref=selection_artifact_ref,
+                selection_artifact_sha256=selection_artifact_sha256,
             )
         ).encode("utf-8"),
     )
@@ -260,6 +269,10 @@ def _prepare_one_run(
         },
         "planner_context_schema_version": planner_context_schema_version,
         "score_policy": score_policy,
+        "selection_artifact": {
+            "ref": selection_artifact_ref,
+            "sha256": selection_artifact_sha256,
+        },
     }
 
 
@@ -298,6 +311,8 @@ def _rollout_plan(
     execution_profile_version: str,
     score_policy: dict[str, Any],
     planner_context_schema_version: str,
+    selection_artifact_ref: str,
+    selection_artifact_sha256: str,
 ) -> dict[str, Any]:
     return {
         "schema_version": "0.2",
@@ -313,6 +328,10 @@ def _rollout_plan(
         },
         "planner_context_schema_version": planner_context_schema_version,
         "score_policy": score_policy,
+        "selection_artifact": {
+            "ref": selection_artifact_ref,
+            "sha256": selection_artifact_sha256,
+        },
         "fresh_start_policy": {
             "initial_attempt_history": [],
             "initial_best_attempt_id": None,

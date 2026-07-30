@@ -173,6 +173,13 @@ def test_prepare_rollout_runs_locks_dual_execution_profile(tmp_path: Path) -> No
         "profile_id": "qwen_dual_backend",
         "profile_version": "1",
     }
+    assert plan["selection_artifact"] == {
+        "ref": str(selected_path),
+        "sha256": summary["selected_prompts_sha256"],
+    }
+    assert summary["episodes"][0]["selection_artifact"] == plan[
+        "selection_artifact"
+    ]
 
 
 def test_prepare_rollout_runs_filters_exact_prompt_ids(tmp_path: Path) -> None:

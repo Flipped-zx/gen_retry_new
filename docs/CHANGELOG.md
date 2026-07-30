@@ -2,6 +2,19 @@
 
 ## 2026-07-30
 
+- Added deterministic Flow-DPPO selection that exactly matches the official
+  GenEval2 atomicity marginal: 25 prompts for every `atom_count` from 3
+  through 10, with easy/medium/hard explicitly labeled as local reporting
+  tiers.
+- Soft-balanced skill coverage toward the official aggregate, excluded the
+  official exact/family boundary and all 20 prior source rows, persisted the
+  actual VQA-count histogram, and added same-input determinism tests.
+- Froze 200 unique prompts under selection SHA
+  `25fd84df1e4aba81c3511bc71ef54d0bb6d061a23a166c82032dca3747b287e8`
+  and locked the SHA into the batch summary and each episode rollout plan.
+- Prepared 200 fresh PlannerContext v0.6 / `qwen_dual_backend@1` rollout
+  directories and recorded 2/4/8-card execution estimates.
+- Recorded GPT-5.6 Sol's focused data-distribution verdict: `PASS`.
 - Completed five fresh `qwen_dual_backend@1` / PlannerContext v0.6
   trajectories with 25 local 1024 x 1024 images and complete Geneval2
   evaluation.
