@@ -135,8 +135,23 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
   - checkpoint-40 Sol review:
     `docs/reviews/phase7_fresh8_ckpt_040_continuous_queue_sol_review.md`
     (`PASS_CONTINUE_QUEUE`);
-  - episodes 41-50 are running; the boundary controller will then replace
-    small execution ranges with one global queue for episodes 51-200;
+  - range 41-50 completed with 10/10 valid submissions and 27 evaluated image
+    attempts; submitted atom pass improved from 56/65 to 61/65 and Soft-TIFA
+    GM from 56.46 to 80.33;
+  - cumulative 1-50 submitted atom pass is 339/361 and GM is 82.02, with 35/50
+    all-pass episodes and a submitted-to-peak GM gap of 0.63;
+  - checkpoint-50 cumulative audit:
+    `docs/phase7/checkpoints/fresh8_v1_ckpt_050_cumulative_audit.md`
+    (`PASS`);
+  - checkpoint-50 Sol deep review:
+    `docs/reviews/phase7_fresh8_ckpt_050_sol_review.md`
+    (`PASS_WITH_PROSPECTIVE_CHANGE`, cumulative SFT reconciliation completed);
+  - cumulative SFT dry-run reconciliation emitted 164 canonical targets,
+    retained 117 context-only records, and passed all mask and contract
+    invariants:
+    `docs/phase7/checkpoints/fresh8_v1_ckpt_050_sft_reconciliation.md`;
+  - one global continuous queue for episodes 51-200 is active, with checkpoint
+    audits running asynchronously;
   - the continuous queue preserves two workers per HCU, eight Teacher slots,
     physical-HCU and episode locks, and adds atomic stop-admission checks plus
     canonical pending-only retries;

@@ -104,11 +104,15 @@ trajectories are retained rather than rewritten.
 - A review stop is requested with
   `python -m gen_retry.cli.request_phase3_scheduler_stop`.
 
-## Active Range
+## Active Queue
 
-- Range: `phase3_ep_041` through `phase3_ep_050`
-- tmux session: `gen_retry_fresh8_controller`
-- Workers: 10 active episode processes under the accepted 16-worker profile
-- Started: 2026-07-30
-- Next: boundary switch to the continuous `phase3_ep_051` through
-  `phase3_ep_200` queue.
+- Completed boundary: `phase3_ep_001` through `phase3_ep_050`
+- Active queue: `phase3_ep_051` through `phase3_ep_200`
+- tmux session: `gen_retry_switch_051_200`
+- Workers: 16 logical workers, two per physical HCU
+- Teacher slots: 8
+- Resource samples:
+  `runs/phase7_flow_dppo200_fresh8_v1/continuous_051_200_resource_samples.jsonl`
+- Checkpoint 50:
+  `docs/reviews/phase7_fresh8_ckpt_050_sol_review.md`
+  (`PASS_WITH_PROSPECTIVE_CHANGE`; cumulative SFT reconciliation passed)
