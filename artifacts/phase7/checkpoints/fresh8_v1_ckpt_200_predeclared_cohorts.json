@@ -1,0 +1,37 @@
+{
+  "schema_version": "0.1",
+  "checkpoint": 200,
+  "declared_before_checkpoint_completion": true,
+  "final_quality_cohort": {
+    "episode_range": [
+      "phase3_ep_001",
+      "phase3_ep_200"
+    ],
+    "required_status": "valid submission",
+    "count": 200,
+    "selection": "all 200 fixed fresh episode IDs; no completion-conditioned substitution",
+    "claim_scope": "final complete-batch quality"
+  },
+  "final_admission_cohort": {
+    "episode_range": [
+      "phase3_ep_181",
+      "phase3_ep_200"
+    ],
+    "count": 20,
+    "required_statuses": [
+      "completed",
+      "failed_unsubmitted",
+      "active",
+      "not_yet_admitted"
+    ],
+    "claim_scope": "incident and operational status denominator"
+  },
+  "teacher_policy_evidence": {
+    "grouping_key": "persisted system_prompt_version in sanitized Planner requests",
+    "required_groups": [
+      "teacher_system_prompt_v7_planner_context_v0_6_primary_score",
+      "teacher_system_prompt_v8_retry_closure_policy"
+    ],
+    "rule": "Report final aggregate over all fixed IDs and policy-stratified descriptive evidence; do not interpret the nonrandom version boundary as a causal ablation."
+  }
+}

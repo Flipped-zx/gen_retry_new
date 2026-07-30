@@ -2,6 +2,18 @@
 
 ## 2026-07-30
 
+- Completed the checkpoint-180 light audit: the 20-trajectory increment used
+  64 evaluated images, improved submitted atom pass from 109/130 to 122/130,
+  improved Soft-TIFA GM from 49.10 to 80.41, and produced 13/20 all-pass
+  submissions with zero submitted-to-peak GM gap.
+- Separated five v7 and 15 v8 trajectories by persisted Teacher system-prompt
+  version. Across six v8 post-regression/strict-no-progress opportunities,
+  zero subsequent actions repeated the same action/source/target tuple.
+- Recorded GPT-5.6 Sol's checkpoint-180 verdict `PASS_CONTINUE_QUEUE`: the v8
+  evidence supports retry-closure mechanism consistency, not causal
+  performance improvement.
+- Predeclared the final checkpoint-200 cohort as all fixed IDs 1-200 with no
+  completion-conditioned substitution.
 - Completed the checkpoint-160 light audit: the 10-trajectory increment used
   38 evaluated images, improved submitted atom pass from 55/70 to 61/70,
   improved Soft-TIFA GM from 34.18 to 59.44, and produced 4/10 all-pass

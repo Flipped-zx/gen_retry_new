@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1",
+  "checkpoint": 180,
+  "claim_scope": "completion-conditioned quality only",
+  "selection": "valid submissions ranked 101 through 120 among phase3_ep_061 through phase3_ep_200 by attempt_submitted.created_at ascending, then episode_id ascending",
+  "cohort": [
+    {"rank": 101, "episode_id": "phase3_ep_172", "submitted_at": "2026-07-30T12:18:11Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 102, "episode_id": "phase3_ep_159", "submitted_at": "2026-07-30T12:21:49Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 103, "episode_id": "phase3_ep_160", "submitted_at": "2026-07-30T12:22:28Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 104, "episode_id": "phase3_ep_177", "submitted_at": "2026-07-30T12:23:51Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 105, "episode_id": "phase3_ep_164", "submitted_at": "2026-07-30T12:24:05Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 106, "episode_id": "phase3_ep_161", "submitted_at": "2026-07-30T12:24:21Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 107, "episode_id": "phase3_ep_162", "submitted_at": "2026-07-30T12:25:44Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 108, "episode_id": "phase3_ep_167", "submitted_at": "2026-07-30T12:26:41Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 109, "episode_id": "phase3_ep_175", "submitted_at": "2026-07-30T12:28:19Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 110, "episode_id": "phase3_ep_163", "submitted_at": "2026-07-30T12:28:45Z", "teacher_system_prompt_version": "teacher_system_prompt_v7_planner_context_v0_6_primary_score"},
+    {"rank": 111, "episode_id": "phase3_ep_185", "submitted_at": "2026-07-30T12:33:02Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 112, "episode_id": "phase3_ep_179", "submitted_at": "2026-07-30T12:34:30Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 113, "episode_id": "phase3_ep_176", "submitted_at": "2026-07-30T12:34:34Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 114, "episode_id": "phase3_ep_186", "submitted_at": "2026-07-30T12:34:37Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 115, "episode_id": "phase3_ep_170", "submitted_at": "2026-07-30T12:36:07Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 116, "episode_id": "phase3_ep_168", "submitted_at": "2026-07-30T12:39:28Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 117, "episode_id": "phase3_ep_173", "submitted_at": "2026-07-30T12:39:46Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 118, "episode_id": "phase3_ep_187", "submitted_at": "2026-07-30T12:42:29Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 119, "episode_id": "phase3_ep_171", "submitted_at": "2026-07-30T12:42:52Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"},
+    {"rank": 120, "episode_id": "phase3_ep_193", "submitted_at": "2026-07-30T12:46:19Z", "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy"}
+  ]
+}
