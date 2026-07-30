@@ -37,6 +37,12 @@
 - Recorded GPT-5.6 Sol's final checkpoint-100 verdict `PASS_CONTINUE_QUEUE`;
   the reviewer withdrew an initial routing blocker after reading accepted
   ADR-0006.
+- Completed checkpoint 120 with a 20-trajectory quality increment: 65
+  evaluated images, submitted atom pass 123/136, Soft-TIFA GM 76.37, and zero
+  submitted-to-peak GM gap.
+- Recorded the fixed ID 101-120 admission snapshot with 16 completed and four
+  active episodes, then recorded Sol's `PASS_CONTINUE_QUEUE` light review.
+- Predeclared checkpoint-140 quality and fixed ID 121-140 admission cohorts.
 - Completed and audited the first 40 fresh 8-HCU official-mix trajectories:
   121 evaluated images, submitted atom pass 278/296, Soft-TIFA GM 82.45, and
   27/40 all-pass episodes.

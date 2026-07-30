@@ -185,6 +185,16 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
     `docs/reviews/phase7_fresh8_ckpt_100_sol_review.md`
     (`PASS_CONTINUE_QUEUE`; an initial routing blocker was withdrawn after the
     reviewer read accepted ADR-0006);
+  - checkpoint-120 completed-quality increment passed with 20/20 valid
+    trajectories and 65 evaluated images; submitted atom pass improved from
+    111/136 to 123/136 and Soft-TIFA GM from 53.10 to 76.37;
+  - cumulative 120-trajectory quality is 789/849 submitted atoms, GM 78.32,
+    and 78/120 all-pass episodes;
+  - fixed ID 101-120 admission snapshot recorded 16 completed and four active
+    episodes, with no failed or unadmitted episode;
+  - checkpoint-120 Sol light review:
+    `docs/reviews/phase7_fresh8_ckpt_120_sol_review.md`
+    (`PASS_CONTINUE_QUEUE`);
   - one global continuous queue for episodes 51-200 is active, with checkpoint
     audits running asynchronously;
   - the continuous queue preserves two workers per HCU, eight Teacher slots,

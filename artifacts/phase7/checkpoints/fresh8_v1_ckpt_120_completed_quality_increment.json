@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1",
+  "checkpoint": 120,
+  "claim_scope": "completion-conditioned quality only",
+  "selection": "valid submissions ranked 41 through 60 among phase3_ep_061 through phase3_ep_200 by attempt_submitted.created_at ascending, then episode_id ascending",
+  "cohort": [
+    {"rank": 41, "episode_id": "phase3_ep_113", "submitted_at": "2026-07-30T10:44:54Z"},
+    {"rank": 42, "episode_id": "phase3_ep_114", "submitted_at": "2026-07-30T10:45:16Z"},
+    {"rank": 43, "episode_id": "phase3_ep_095", "submitted_at": "2026-07-30T10:47:48Z"},
+    {"rank": 44, "episode_id": "phase3_ep_115", "submitted_at": "2026-07-30T10:49:27Z"},
+    {"rank": 45, "episode_id": "phase3_ep_108", "submitted_at": "2026-07-30T10:54:10Z"},
+    {"rank": 46, "episode_id": "phase3_ep_098", "submitted_at": "2026-07-30T10:55:53Z"},
+    {"rank": 47, "episode_id": "phase3_ep_100", "submitted_at": "2026-07-30T10:57:57Z"},
+    {"rank": 48, "episode_id": "phase3_ep_122", "submitted_at": "2026-07-30T11:01:22Z"},
+    {"rank": 49, "episode_id": "phase3_ep_121", "submitted_at": "2026-07-30T11:03:11Z"},
+    {"rank": 50, "episode_id": "phase3_ep_102", "submitted_at": "2026-07-30T11:03:20Z"},
+    {"rank": 51, "episode_id": "phase3_ep_103", "submitted_at": "2026-07-30T11:03:28Z"},
+    {"rank": 52, "episode_id": "phase3_ep_124", "submitted_at": "2026-07-30T11:04:48Z"},
+    {"rank": 53, "episode_id": "phase3_ep_107", "submitted_at": "2026-07-30T11:05:18Z"},
+    {"rank": 54, "episode_id": "phase3_ep_104", "submitted_at": "2026-07-30T11:07:13Z"},
+    {"rank": 55, "episode_id": "phase3_ep_120", "submitted_at": "2026-07-30T11:08:32Z"},
+    {"rank": 56, "episode_id": "phase3_ep_109", "submitted_at": "2026-07-30T11:11:13Z"},
+    {"rank": 57, "episode_id": "phase3_ep_128", "submitted_at": "2026-07-30T11:11:24Z"},
+    {"rank": 58, "episode_id": "phase3_ep_129", "submitted_at": "2026-07-30T11:11:30Z"},
+    {"rank": 59, "episode_id": "phase3_ep_111", "submitted_at": "2026-07-30T11:11:53Z"},
+    {"rank": 60, "episode_id": "phase3_ep_112", "submitted_at": "2026-07-30T11:12:07Z"}
+  ]
+}
