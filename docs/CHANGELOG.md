@@ -15,6 +15,8 @@
 - Prepared 200 fresh PlannerContext v0.6 / `qwen_dual_backend@1` rollout
   directories and recorded 2/4/8-card execution estimates.
 - Recorded GPT-5.6 Sol's focused data-distribution verdict: `PASS`.
+- Launched the resumable 200-trajectory queue from commit `3a6ef8f` with one
+  fixed sequential episode worker on each of two HCUs.
 - Completed five fresh `qwen_dual_backend@1` / PlannerContext v0.6
   trajectories with 25 local 1024 x 1024 images and complete Geneval2
   evaluation.

@@ -73,6 +73,11 @@ can increase them.
 - Selection SHA:
   `25fd84df1e4aba81c3511bc71ef54d0bb6d061a23a166c82032dca3747b287e8`.
 - Prepared fresh episodes: 200/200.
-- Dry-run workers: 2 HCUs, one worker per card.
+- Launch commit: `3a6ef8f`.
+- Started at: `2026-07-30T03:58:39Z`.
+- Active workers: 2 HCUs, one worker per card.
+- Initial assignments: `phase3_ep_001` on HCU0 and `phase3_ep_002`
+  on HCU1.
+- tmux session: `gen_retry_phase7_flow200`.
 - GPT-5.6 Sol distribution review: `PASS`.
-- Scheduler launch: pending the pre-launch Git commit.
+- Scheduler state: active.

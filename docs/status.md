@@ -2,13 +2,13 @@
 
 ## Current Phase
 
-The official-atomicity-matched Flow-DPPO 200-trajectory batch is selected,
-reviewed, and prepared for launch. The frozen pool has 25 prompts for every
-`atom_count` from 3 through 10; local reporting tiers are 75 easy, 75 medium,
-and 50 hard. All 200 fresh PlannerContext v0.6 / `qwen_dual_backend@1`
-directories are prepared with a locked selection SHA. GPT-5.6 Sol's focused
-distribution review is `PASS`; scheduler launch follows the pre-launch Git
-commit.
+The official-atomicity-matched Flow-DPPO 200-trajectory batch is active in
+tmux session `gen_retry_phase7_flow200`. The frozen pool has 25 prompts for
+every `atom_count` from 3 through 10; local reporting tiers are 75 easy,
+75 medium, and 50 hard. Two fixed HCU workers are processing independent
+episodes from the 200 fresh PlannerContext v0.6 / `qwen_dual_backend@1`
+directories. Selection and preparation are locked at commit `3a6ef8f`;
+GPT-5.6 Sol's focused distribution review is `PASS`.
 
 ## Gate State
 
