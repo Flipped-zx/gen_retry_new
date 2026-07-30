@@ -2,6 +2,16 @@
 
 ## 2026-07-30
 
+- Completed and audited the first 40 fresh 8-HCU official-mix trajectories:
+  121 evaluated images, submitted atom pass 278/296, Soft-TIFA GM 82.45, and
+  27/40 all-pass episodes.
+- Corrected post-hoc supervision labeling to use the frozen pass-count/GM
+  ordering, so equal-pass GM improvements are not mislabeled ineffective.
+- Recorded GPT-5.6 Sol checkpoint verdicts `PASS_CONTINUE` at 20 and
+  `PASS_CONTINUE_QUEUE` at 40.
+- Added a continuous global episode queue for 51-200 with two workers per HCU,
+  atomic durable stop admission, canonical submitted-only skipping, five-pass
+  pending-only retry, interleaved device assignment, and scheduler provenance.
 - Added deterministic Flow-DPPO selection that exactly matches the official
   GenEval2 atomicity marginal: 25 prompts for every `atom_count` from 3
   through 10, with easy/medium/hard explicitly labeled as local reporting

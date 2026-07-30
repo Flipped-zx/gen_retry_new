@@ -24,10 +24,9 @@ archive and is not part of this batch.
 
 ## Parallel Schedule
 
-Eight fixed workers run independent episodes, one HCU per worker. Attempts
+Independent episodes run concurrently across eight physical HCUs. Attempts
 inside one episode remain sequential because the next PlannerContext depends
-on the preceding image and Geneval2 result. The existing model-load lock
-serializes only transient pipeline loading; inference can overlap across HCUs.
+on the preceding image and Geneval2 result.
 
 Range 1-20 uses one logical episode worker per HCU. Beginning at the complete
 21-40 boundary, the Sol-approved overlap profile uses two logical episode
@@ -50,16 +49,24 @@ Design review:
 `docs/reviews/phase7_api_gpu_overlap_sol_review.md`
 (`APPROVE_WITH_REQUIRED_CHANGES`, required changes implemented).
 
-The launch ranges are:
+Ranges 1-20, 21-40, and 41-50 establish the two-worker overlap profile and the
+first deep-review boundary. Starting after 41-50, episodes 51-200 enter one
+global pending queue with the same 16 logical workers, eight Teacher slots,
+and eight physical-HCU slots. This removes the measured small-range tail while
+checkpoint audits remain asynchronous.
 
-- 1-20, 21-40
-- 41-50, 51-60
-- 61-80
-- 81-100
-- repeat the same 20-light / 50-deep cadence through 200
+The continuous queue adds:
 
-Splitting at 50 keeps the deep-review evidence deterministic without requiring
-a partially completed 20-episode window.
+- interleaved worker assignment `0..7,0..7`;
+- an atomically checked durable stop-admission flag;
+- no new episode claim after a stop request;
+- canonical submitted-only skipping on resume;
+- failed unsubmitted episodes deferred until the queue drains;
+- at most five pending-only orchestration passes.
+
+Approval:
+`docs/reviews/phase7_fresh8_ckpt_040_continuous_queue_sol_review.md`
+(`PASS_CONTINUE_QUEUE`).
 
 ## Review Cadence
 
@@ -82,24 +89,26 @@ answers at most three questions:
 3. Should generation continue, continue with a prospective correction, or
    stop?
 
-The next range starts before the review finishes so GPU generation and review
-overlap. A blocking Sol verdict stops assignment of further ranges; completed
-immutable trajectories are retained rather than rewritten.
+The queue continues while review runs. A blocking verdict atomically stops new
+episode admission; active episodes may finish and completed immutable
+trajectories are retained rather than rewritten.
 
 ## Resume
 
-- Every range has its own tmux session, orchestrator log, and exit-status file.
-- Submitted episodes are skipped on an exact-range resume.
+- The initial ranges and continuous queue have tmux sessions, orchestrator
+  logs, scheduler profiles, and exit-status files.
+- Submitted episodes are skipped from canonical reduced state.
 - Immutable events, completed images, and evaluator artifacts remain
   authoritative.
-- A failed or interrupted range is resumed with the same run root and episode
-  IDs; no valid episode is rerun.
+- Failed unsubmitted episodes are retried only after the active queue drains.
+- A review stop is requested with
+  `python -m gen_retry.cli.request_phase3_scheduler_stop`.
 
 ## Active Range
 
-- Range: `phase3_ep_001` through `phase3_ep_020`
-- tmux session: `gen_retry_fresh8_001_020`
-- Workers: 8
+- Range: `phase3_ep_041` through `phase3_ep_050`
+- tmux session: `gen_retry_fresh8_controller`
+- Workers: 10 active episode processes under the accepted 16-worker profile
 - Started: 2026-07-30
-- Resume policy: up to five exact-range scheduler retries; completed
-  submissions are skipped and incomplete event suffixes resume.
+- Next: boundary switch to the continuous `phase3_ep_051` through
+  `phase3_ep_200` queue.

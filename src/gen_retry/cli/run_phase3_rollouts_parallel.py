@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import os
 import queue
 import shutil
@@ -68,6 +69,14 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--log-dir", type=Path)
     parser.add_argument(
+        "--stop-admission-file",
+        type=Path,
+        help=(
+            "Durable flag checked atomically before every episode claim. "
+            "Active episodes finish, then workers stop admitting pending episodes."
+        ),
+    )
+    parser.add_argument(
         "--execution-profile-id",
         choices=["qwen_dual_backend", "qwen_image_edit_only"],
     )
@@ -115,11 +124,10 @@ def main() -> None:
             physical_devices = eligible_devices
             if args.max_workers is not None:
                 physical_devices = physical_devices[: args.max_workers]
-            worker_devices = [
-                device
-                for device in physical_devices
-                for _ in range(args.workers_per_device)
-            ]
+            worker_devices = _worker_device_plan(
+                physical_devices,
+                args.workers_per_device,
+            )
     else:
         max_workers = args.max_workers or 1
         worker_devices = [None for _ in range(max_workers)]
@@ -152,6 +160,7 @@ def main() -> None:
             worker_devices=worker_devices,
             workers_per_device=args.workers_per_device,
             teacher_concurrency=args.teacher_concurrency,
+            stop_admission_file=args.stop_admission_file,
         )
         results = _execute_worker_plan(
             episodes=episodes,
@@ -166,6 +175,7 @@ def main() -> None:
             teacher_concurrency=args.teacher_concurrency,
             execution_profile_id=args.execution_profile_id,
             log_dir=log_dir,
+            stop_admission_file=args.stop_admission_file,
         )
     for result in results:
         print(
@@ -178,6 +188,8 @@ def main() -> None:
     if failed:
         failed_ids = ", ".join(result.episode_id for result in failed)
         raise SystemExit(f"failed episodes: {failed_ids}")
+    if args.stop_admission_file and args.stop_admission_file.exists():
+        print(f"admission_stop_observed={args.stop_admission_file}")
 
 
 def _enforce_quality_floor(image_steps: int, image_height: int, image_width: int) -> None:
@@ -305,6 +317,17 @@ def _detect_devices_with_torch() -> list[DeviceInfo]:
         ]
     except Exception:
         return []
+
+
+def _worker_device_plan(
+    physical_devices: list[DeviceInfo],
+    workers_per_device: int,
+) -> list[DeviceInfo]:
+    return [
+        device
+        for _ in range(workers_per_device)
+        for device in physical_devices
+    ]
 
 
 def _print_plan(
@@ -449,6 +472,7 @@ def _execute_worker_plan(
     teacher_concurrency: int = 8,
     execution_profile_id: str | None = None,
     log_dir: Path,
+    stop_admission_file: Path | None = None,
 ) -> list[WorkerResult]:
     pending: queue.Queue[EpisodeRun] = queue.Queue()
     for episode in episodes:
@@ -471,6 +495,7 @@ def _execute_worker_plan(
                 teacher_concurrency=teacher_concurrency,
                 execution_profile_id=execution_profile_id,
                 log_dir=log_dir,
+                stop_admission_file=stop_admission_file,
             )
             for device in worker_devices
         ]
@@ -493,12 +518,16 @@ def _run_device_worker(
     teacher_concurrency: int = 8,
     execution_profile_id: str | None = None,
     log_dir: Path,
+    stop_admission_file: Path | None = None,
 ) -> list[WorkerResult]:
     results: list[WorkerResult] = []
     while True:
-        try:
-            episode = pending.get_nowait()
-        except queue.Empty:
+        episode = _claim_next_episode(
+            pending=pending,
+            run_root=run_root,
+            stop_admission_file=stop_admission_file,
+        )
+        if episode is None:
             return results
         try:
             result = _run_one_episode(
@@ -520,6 +549,65 @@ def _run_device_worker(
             pending.task_done()
 
 
+def _claim_next_episode(
+    *,
+    pending: queue.Queue[EpisodeRun],
+    run_root: Path,
+    stop_admission_file: Path | None,
+) -> EpisodeRun | None:
+    with _admission_control(run_root):
+        if stop_admission_file is not None and stop_admission_file.exists():
+            return None
+        try:
+            return pending.get_nowait()
+        except queue.Empty:
+            return None
+
+
+class _admission_control:
+    def __init__(self, run_root: Path) -> None:
+        self._path = run_root / ".scheduler_admission.lock"
+        self._handle: Any = None
+
+    def __enter__(self) -> None:
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        self._handle = self._path.open("a+", encoding="utf-8")
+        fcntl.flock(self._handle.fileno(), fcntl.LOCK_EX)
+
+    def __exit__(self, exc_type: Any, exc: Any, traceback: Any) -> None:
+        del exc_type, exc, traceback
+        fcntl.flock(self._handle.fileno(), fcntl.LOCK_UN)
+        self._handle.close()
+
+
+def request_admission_stop(
+    *,
+    run_root: Path,
+    stop_admission_file: Path,
+    reason: str,
+) -> None:
+    record = {
+        "schema_version": "0.1",
+        "requested_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "reason": reason,
+    }
+    temporary = stop_admission_file.with_name(
+        f".{stop_admission_file.name}.{os.getpid()}.tmp"
+    )
+    with _admission_control(run_root):
+        stop_admission_file.parent.mkdir(parents=True, exist_ok=True)
+        with temporary.open("w", encoding="utf-8") as handle:
+            handle.write(canonical_json(record) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, stop_admission_file)
+        directory_fd = os.open(stop_admission_file.parent, os.O_DIRECTORY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+
+
 def _record_scheduler_profile(
     *,
     run_root: Path,
@@ -527,6 +615,7 @@ def _record_scheduler_profile(
     worker_devices: list[DeviceInfo | None],
     workers_per_device: int,
     teacher_concurrency: int,
+    stop_admission_file: Path | None = None,
 ) -> None:
     physical_devices = sorted(
         {
@@ -545,6 +634,15 @@ def _record_scheduler_profile(
         "workers_per_device": workers_per_device,
         "teacher_concurrency": teacher_concurrency,
         "resource_lock_version": LOCK_VERSION,
+        "device_assignment_order": [
+            device.index if device is not None else None
+            for device in worker_devices
+        ],
+        "stop_admission_file": (
+            str(stop_admission_file)
+            if stop_admission_file is not None
+            else None
+        ),
     }
     with (run_root / "scheduler_profiles.jsonl").open("a", encoding="utf-8") as fh:
         fh.write(canonical_json(record))

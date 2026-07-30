@@ -14,8 +14,10 @@ deep review, overlapped with subsequent generation unless a blocking issue is
 found. Range 1-20 uses eight logical workers; later ranges use the Sol-reviewed
 Teacher/GPU overlap profile with sixteen logical episode workers, eight
 Teacher slots, and one complete local GPU stage per physical HCU.
-Episodes 1-20 are complete and passed deterministic audit plus the first Sol
-light review. Episodes 21-40 are currently running with the overlap profile.
+Episodes 1-40 are complete and passed deterministic audit plus Sol light
+reviews. Episodes 41-50 are running under the overlap profile. Sol approved a
+continuous global queue for episodes 51-200 with the same hard concurrency
+limits, durable admission stop, canonical resume, and five-pass retry bound.
 
 ## Gate State
 
@@ -30,6 +32,8 @@ light review. Episodes 21-40 are currently running with the overlap profile.
 - v0.7 / PlannerContext v0.6 five-trajectory final review: PASS
 - Flow-DPPO 200 official-mix distribution review: PASS
 - Flow-DPPO fresh-8 checkpoint 20 light review: PASS_CONTINUE
+- Flow-DPPO fresh-8 checkpoint 40 / continuous queue review:
+  PASS_CONTINUE_QUEUE
 - Muse Image-informed ablation claim-sufficiency review:
   PASS_WITH_REQUIRED_CHANGES (not a protocol gate)
 
@@ -119,8 +123,23 @@ light review. Episodes 21-40 are currently running with the overlap profile.
   - checkpoint-20 Sol light review:
     `docs/reviews/phase7_fresh8_ckpt_020_sol_review.md`
     (`PASS_CONTINUE`);
-  - range 21-40 is running with 16 logical episode workers, eight Teacher
-    slots, and eight physical-HCU execution slots;
+  - range 21-40 completed with 20/20 valid submissions and 69 evaluated image
+    attempts;
+  - range 21-40 submitted atom pass improved from 125/152 to 137/152,
+    Soft-TIFA AM from 82.37 to 90.88, and Soft-TIFA GM from 42.44 to 75.01;
+  - cumulative 1-40 submitted atom pass is 278/296 and GM is 82.45, with 27/40
+    all-pass episodes;
+  - checkpoint-40 cumulative audit:
+    `docs/phase7/checkpoints/fresh8_v1_ckpt_040_cumulative_audit.md`
+    (`PASS`);
+  - checkpoint-40 Sol review:
+    `docs/reviews/phase7_fresh8_ckpt_040_continuous_queue_sol_review.md`
+    (`PASS_CONTINUE_QUEUE`);
+  - episodes 41-50 are running; the boundary controller will then replace
+    small execution ranges with one global queue for episodes 51-200;
+  - the continuous queue preserves two workers per HCU, eight Teacher slots,
+    physical-HCU and episode locks, and adds atomic stop-admission checks plus
+    canonical pending-only retries;
   - checkpoint audit supports explicit episode subsets and inclusive ranges;
   - prospective 2-workers-per-HCU scheduling is protected by physical-HCU,
     scheduler, and episode locks, bounded Teacher slots, atomic image writes,

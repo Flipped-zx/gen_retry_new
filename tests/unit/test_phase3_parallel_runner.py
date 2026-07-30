@@ -154,3 +154,58 @@ def test_scheduler_profile_records_overlap_controls(tmp_path: Path) -> None:
     assert record["workers_per_device"] == 2
     assert record["teacher_concurrency"] == 8
     assert record["resource_lock_version"] == "1"
+    assert record["device_assignment_order"] == [0, 0, 1, 1]
+    assert record["stop_admission_file"] is None
+
+
+def test_worker_device_plan_interleaves_physical_devices() -> None:
+    devices = [
+        parallel.DeviceInfo(0, 0, "test"),
+        parallel.DeviceInfo(1, 0, "test"),
+        parallel.DeviceInfo(2, 0, "test"),
+    ]
+
+    plan = parallel._worker_device_plan(devices, workers_per_device=2)
+
+    assert [device.index for device in plan] == [0, 1, 2, 0, 1, 2]
+
+
+def test_admission_stop_prevents_next_episode_claim(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    seen: list[str] = []
+    stop_file = tmp_path / "STOP_ADMISSION"
+
+    def fake_run_one_episode(*, episode, device, log_dir, **kwargs):
+        del kwargs
+        seen.append(episode.episode_id)
+        parallel.request_admission_stop(
+            run_root=tmp_path,
+            stop_admission_file=stop_file,
+            reason="test_review_blocker",
+        )
+        return parallel.WorkerResult(
+            episode_id=episode.episode_id,
+            device_index=device.index,
+            returncode=0,
+            log_path=log_dir / f"{episode.episode_id}.log",
+        )
+
+    monkeypatch.setattr(parallel, "_run_one_episode", fake_run_one_episode)
+    results = parallel._execute_worker_plan(
+        episodes=_episodes(3),
+        worker_devices=[parallel.DeviceInfo(0, 0, "test")],
+        run_root=tmp_path,
+        image_steps=40,
+        image_height=1024,
+        image_width=1024,
+        teacher_max_completion_tokens=1400,
+        log_dir=tmp_path / "logs",
+        stop_admission_file=stop_file,
+    )
+
+    assert seen == ["phase3_ep_001"]
+    assert [result.episode_id for result in results] == seen
+    stop_record = json.loads(stop_file.read_text(encoding="utf-8"))
+    assert stop_record["reason"] == "test_review_blocker"
