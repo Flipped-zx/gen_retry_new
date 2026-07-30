@@ -121,6 +121,17 @@ def audit_rollout_batch(
         for backend, count in item["image_backend_counts"].items()
         for _ in range(count)
     )
+    canonical_action_counts = Counter(
+        action
+        for item in episode_results
+        for action, count in item["canonical_action_counts"].items()
+        for _ in range(count)
+    )
+    action_backend_counts = Counter(
+        f"{attempt['action']}|{attempt['backend']}"
+        for item in episode_results
+        for attempt in item["attempts"]
+    )
     format_error_classification = Counter(
         {
             key: sum(
@@ -192,11 +203,33 @@ def audit_rollout_batch(
             peak_geneval2_score - first_geneval2_score
         )
         * 100,
+        "submitted_to_peak_geneval2_gap_100": (
+            peak_geneval2_score - submitted_geneval2_score
+        )
+        * 100,
         "all_constraints_passed_episode_count": all_pass,
         "historical_best_submission_count": sum(
             item["submitted_attempt_id"] != item["latest_attempt_id"]
             for item in episode_results
         ),
+        "regression_episode_count": sum(
+            item["regression_image_action_count"] > 0
+            for item in episode_results
+        ),
+        "regression_image_action_count": sum(
+            item["regression_image_action_count"]
+            for item in episode_results
+        ),
+        "ineffective_image_action_count": sum(
+            item["ineffective_image_action_count"]
+            for item in episode_results
+        ),
+        "historical_branch_count": sum(
+            item["historical_branch_count"]
+            for item in episode_results
+        ),
+        "canonical_action_counts": dict(sorted(canonical_action_counts.items())),
+        "action_backend_counts": dict(sorted(action_backend_counts.items())),
         "format_error_count": sum(item["format_error_count"] for item in episode_results),
         "format_error_classification": dict(format_error_classification),
         "teacher_model_ids": sorted(
@@ -437,6 +470,48 @@ def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:
         task_spec=task_spec,
         events=events,
     )
+    attempt_rows = [
+        {
+            "attempt_id": attempt_id,
+            "action": round_records[index]["image_action"]["action"],
+            "source_attempt_id": round_records[index]["image_action"][
+                "source_attempt_id"
+            ],
+            "backend": completions_by_attempt[attempt_id]["backend"],
+            "model_id": completions_by_attempt[attempt_id].get("model_id"),
+            "pass_count": state.attempts[attempt_id].pass_count,
+            "geneval2_am": geneval2_am_scores[attempt_id],
+            "geneval2_score": geneval2_scores[attempt_id],
+            "fixed_constraint_ids": round_records[index]["observed_outcome"][
+                "fixed_constraint_ids"
+            ],
+            "regressed_constraint_ids": round_records[index]["observed_outcome"][
+                "regressed_constraint_ids"
+            ],
+            "persistent_failed_constraint_ids": round_records[index][
+                "observed_outcome"
+            ]["persistent_failed_constraint_ids"],
+            "became_best": round_records[index]["observed_outcome"]["became_best"],
+        }
+        for index, attempt_id in enumerate(state.attempt_order)
+    ]
+    regression_image_action_count = sum(
+        bool(attempt["regressed_constraint_ids"])
+        for attempt in attempt_rows
+    )
+    ineffective_image_action_count = sum(
+        index > 0
+        and not attempt["fixed_constraint_ids"]
+        and not attempt["regressed_constraint_ids"]
+        and not attempt["became_best"]
+        for index, attempt in enumerate(attempt_rows)
+    )
+    historical_branch_count = sum(
+        index > 0
+        and attempt["action"] == "edit_image"
+        and attempt["source_attempt_id"] != state.attempt_order[index - 1]
+        for index, attempt in enumerate(attempt_rows)
+    )
     return {
         "episode_id": state.episode_id,
         "prompt_id": selected["prompt_id"],
@@ -466,6 +541,9 @@ def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:
         "canonical_action_counts": dict(
             sorted(Counter(canonical_action_sequence).items())
         ),
+        "regression_image_action_count": regression_image_action_count,
+        "ineffective_image_action_count": ineffective_image_action_count,
+        "historical_branch_count": historical_branch_count,
         "interrupted_request_retry_count": len(request_ids) - len(set(request_ids)),
         "format_error_count": event_counts["format_error"],
         "format_error_classification": format_error_classification,
@@ -481,33 +559,7 @@ def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:
         "image_backend_counts": dict(sorted(image_backend_counts.items())),
         "manifest_closed": True,
         "planner_context_snapshots_verified": event_counts["planner_context_built"],
-        "attempts": [
-            {
-                "attempt_id": attempt_id,
-                "action": round_records[index]["image_action"]["action"],
-                "source_attempt_id": round_records[index]["image_action"][
-                    "source_attempt_id"
-                ],
-                "backend": completions_by_attempt[attempt_id]["backend"],
-                "model_id": completions_by_attempt[attempt_id].get("model_id"),
-                "pass_count": state.attempts[attempt_id].pass_count,
-                "geneval2_am": geneval2_am_scores[attempt_id],
-                "geneval2_score": geneval2_scores[attempt_id],
-                "fixed_constraint_ids": round_records[index]["observed_outcome"][
-                    "fixed_constraint_ids"
-                ],
-                "regressed_constraint_ids": round_records[index][
-                    "observed_outcome"
-                ]["regressed_constraint_ids"],
-                "persistent_failed_constraint_ids": round_records[index][
-                    "observed_outcome"
-                ]["persistent_failed_constraint_ids"],
-                "became_best": round_records[index]["observed_outcome"][
-                    "became_best"
-                ],
-            }
-            for index, attempt_id in enumerate(state.attempt_order)
-        ],
+        "attempts": attempt_rows,
     }
 
 
@@ -723,6 +775,10 @@ def _render_report(summary: dict[str, Any]) -> str:
             f"({summary['peak_to_first_geneval2_gain_100']:+.2f})"
         ),
         (
+            "- Submitted-to-peak GM gap: "
+            f"{summary['submitted_to_peak_geneval2_gap_100']:.2f}"
+        ),
+        (
             "- Episodes with all atoms passed: "
             f"{summary['all_constraints_passed_episode_count']}/{episode_count}"
         ),
@@ -730,6 +786,18 @@ def _render_report(summary: dict[str, Any]) -> str:
             "- Historical-best submissions: "
             f"{summary['historical_best_submission_count']}/{episode_count}"
         ),
+        (
+            "- Regression exposure: "
+            f"{summary['regression_episode_count']}/{episode_count} episodes, "
+            f"{summary['regression_image_action_count']} image actions"
+        ),
+        (
+            "- Ineffective image actions: "
+            f"{summary['ineffective_image_action_count']}"
+        ),
+        f"- Historical edit branches: {summary['historical_branch_count']}",
+        f"- Canonical action counts: {summary['canonical_action_counts']}",
+        f"- Action/backend counts: {summary['action_backend_counts']}",
         f"- Teacher model IDs: {summary['teacher_model_ids']}",
         (
             "- Rejected raw Teacher turns: "
