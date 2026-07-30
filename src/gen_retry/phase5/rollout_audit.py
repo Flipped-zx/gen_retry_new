@@ -11,6 +11,11 @@ from PIL import Image
 
 from gen_retry.agent.instruction_quality import evaluate_instruction_quality
 from gen_retry.domain.artifacts import validate_artifact_manifest_closure
+from gen_retry.domain.score_policy import (
+    planner_context_version,
+    score_policy_from_task_payload,
+    soft_tifa_geometric_mean,
+)
 from gen_retry.protocol.action_parser import parse_action
 from gen_retry.protocol.reference_validator import validate_action_references
 from gen_retry.protocol.schema_loader import validate_instance
@@ -37,15 +42,30 @@ def audit_rollout_batch(
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
     selected = selection["selected_prompts"]
     run_dirs = sorted(path for path in run_root.glob("phase3_ep_*") if path.is_dir())
-    if len(selected) != expected_count or len(run_dirs) != expected_count:
+    if len(run_dirs) != expected_count:
         raise ValueError(
-            f"expected {expected_count} selections and runs, got "
-            f"{len(selected)} selections and {len(run_dirs)} runs"
+            f"expected {expected_count} runs, got {len(run_dirs)}"
         )
+    selected_by_prompt_id = {
+        candidate["prompt_id"]: candidate for candidate in selected
+    }
+    selected_for_runs: list[dict[str, Any]] = []
+    for run_dir in run_dirs:
+        plan = _load_json(run_dir / "rollout_plan.json")
+        prompt_id = plan["prompt_id"]
+        if prompt_id not in selected_by_prompt_id:
+            raise ValueError(
+                f"{run_dir.name}: prompt {prompt_id} is absent from selection"
+            )
+        selected_for_runs.append(selected_by_prompt_id[prompt_id])
 
     episode_results = [
-        _audit_episode(run_dir, selected[index])
-        for index, run_dir in enumerate(run_dirs)
+        _audit_episode(run_dir, candidate)
+        for run_dir, candidate in zip(
+            run_dirs,
+            selected_for_runs,
+            strict=True,
+        )
     ]
     secret_scan = _scan_for_key_like_text([run_root, artifact_path.parent, report_path.parent])
     if secret_scan["matches"]:
@@ -78,6 +98,26 @@ def audit_rollout_batch(
         for item in episode_results
         for version in item["teacher_system_prompt_versions"]
     )
+    execution_profile_counts = Counter(
+        f"{item['execution_profile']['profile_id']}@"
+        f"{item['execution_profile']['profile_version']}"
+        for item in episode_results
+    )
+    planner_context_version_counts = Counter(
+        item["planner_context_schema_version"]
+        for item in episode_results
+    )
+    score_policy_counts = Counter(
+        f"{item['score_policy']['policy_id']}@"
+        f"{item['score_policy']['policy_version']}"
+        for item in episode_results
+    )
+    backend_counts = Counter(
+        backend
+        for item in episode_results
+        for backend, count in item["image_backend_counts"].items()
+        for _ in range(count)
+    )
     format_error_classification = Counter(
         {
             key: sum(
@@ -96,7 +136,14 @@ def audit_rollout_batch(
         "status": "PASS",
         "expected_episode_count": expected_count,
         "validated_episode_count": len(episode_results),
-        "selection_tier_counts": selection["tier_counts"],
+        "selection_tier_counts": dict(
+            sorted(
+                Counter(
+                    candidate["difficulty_tier"]
+                    for candidate in selected_for_runs
+                ).items()
+            )
+        ),
         "total_image_attempts": total_attempts,
         "total_constraint_slots": total_constraints,
         "aggregate_initial_pass_count": initial_pass,
@@ -157,13 +204,17 @@ def audit_rollout_batch(
             }
         ),
         "teacher_system_prompt_version_counts": dict(sorted(version_counts.items())),
+        "planner_context_version_counts": dict(
+            sorted(planner_context_version_counts.items())
+        ),
+        "score_policy_counts": dict(sorted(score_policy_counts.items())),
         "image_runtime": {
-            "provider": "local",
-            "backend": "qianwen_image_edit",
+            "execution_profile_counts": dict(
+                sorted(execution_profile_counts.items())
+            ),
+            "backend_counts": dict(sorted(backend_counts.items())),
             "width": 1024,
             "height": 1024,
-            "num_inference_steps": 40,
-            "cpu_offload": False,
         },
         "credential_scan": {
             "status": "PASS",
@@ -196,6 +247,11 @@ def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:
     for event in events:
         validate_instance(event, "episode_event_v0_2.schema.json")
     state = reduce_events(events)
+    plan = _load_json(run_dir / "rollout_plan.json")
+    execution_profile = plan.get("execution_profile") or {
+        "profile_id": "qwen_image_edit_only",
+        "profile_version": "1",
+    }
     if state.submitted_attempt_id is None:
         raise ValueError(f"{run_dir.name}: episode is not submitted")
     if state.submitted_attempt_id != state.best_attempt_id:
@@ -210,6 +266,9 @@ def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:
         record["action"]
         for record in canonical_actions
         if record["action"]["action"] in {"generate_image", "edit_image"}
+    ]
+    canonical_action_sequence = [
+        record["action"]["action"] for record in canonical_actions
     ]
     if not image_actions or image_actions[0]["action"] != "generate_image":
         raise ValueError(f"{run_dir.name}: first image action is not fresh generation")
@@ -267,22 +326,49 @@ def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:
     }
     if set(artifacts_by_attempt) != set(state.attempt_order):
         raise ValueError(f"{run_dir.name}: image artifact coverage mismatch")
+    completions_by_attempt = {
+        event["payload"]["attempt_id"]: event["payload"]
+        for event in events
+        if event["event_type"] == "image_execution_completed"
+    }
+    image_backend_counts: Counter[str] = Counter()
     for attempt_id, attempt in state.attempts.items():
         artifact = artifacts_by_attempt[attempt_id]
         metadata = artifact["metadata"]
-        expected_metadata = {
-            "provider": "local",
-            "backend": "qianwen_image_edit",
-            "width": 1024,
-            "height": 1024,
-            "num_inference_steps": 40,
-            "cpu_offload": False,
-        }
-        for key, expected in expected_metadata.items():
-            if metadata.get(key) != expected:
+        completion = completions_by_attempt[attempt_id]
+        backend = completion["backend"]
+        image_backend_counts[backend] += 1
+        if metadata.get("provider") != "local":
+            raise ValueError(
+                f"{run_dir.name}/{attempt_id}: image provider is not local"
+            )
+        if metadata.get("backend_id", metadata.get("backend")) != backend:
+            raise ValueError(
+                f"{run_dir.name}/{attempt_id}: image backend mismatch"
+            )
+        if completion.get("model_id") is not None:
+            for key in (
+                "model_id",
+                "model_revision_or_fingerprint",
+                "pipeline_id",
+                "adapter_version",
+            ):
+                if metadata.get(key) != completion[key]:
+                    raise ValueError(
+                        f"{run_dir.name}/{attempt_id}: image metadata {key} mismatch"
+                    )
+            if metadata.get("sampling") != completion["sampling"]:
                 raise ValueError(
-                    f"{run_dir.name}/{attempt_id}: image metadata {key} mismatch"
+                    f"{run_dir.name}/{attempt_id}: image sampling mismatch"
                 )
+        sampling = metadata.get("sampling") or {
+            "width": metadata.get("width"),
+            "height": metadata.get("height"),
+        }
+        if sampling.get("width") != 1024 or sampling.get("height") != 1024:
+            raise ValueError(
+                f"{run_dir.name}/{attempt_id}: image dimensions mismatch"
+            )
         with Image.open(run_dir / artifact["uri"]) as image:
             if image.size != (1024, 1024):
                 raise ValueError(f"{run_dir.name}/{attempt_id}: image size mismatch")
@@ -358,6 +444,10 @@ def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:
         "submitted_attempt_id": state.submitted_attempt_id,
         "submitted_reason_code": state.submitted_reason_code,
         "canonical_action_count": len(canonical_actions),
+        "canonical_action_sequence": canonical_action_sequence,
+        "canonical_action_counts": dict(
+            sorted(Counter(canonical_action_sequence).items())
+        ),
         "interrupted_request_retry_count": len(request_ids) - len(set(request_ids)),
         "format_error_count": event_counts["format_error"],
         "format_error_classification": format_error_classification,
@@ -365,6 +455,12 @@ def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:
         "teacher_system_prompt_versions": sorted(
             {record["system_prompt_version"] for record in requests}
         ),
+        "planner_context_schema_version": planner_context_version(
+            state.score_policy
+        ),
+        "score_policy": state.score_policy,
+        "execution_profile": execution_profile,
+        "image_backend_counts": dict(sorted(image_backend_counts.items())),
         "manifest_closed": True,
         "planner_context_snapshots_verified": event_counts["planner_context_built"],
         "attempts": [
@@ -374,6 +470,8 @@ def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:
                 "source_attempt_id": round_records[index]["image_action"][
                     "source_attempt_id"
                 ],
+                "backend": completions_by_attempt[attempt_id]["backend"],
+                "model_id": completions_by_attempt[attempt_id].get("model_id"),
                 "pass_count": state.attempts[attempt_id].pass_count,
                 "geneval2_am": geneval2_am_scores[attempt_id],
                 "geneval2_score": geneval2_scores[attempt_id],
@@ -399,11 +497,27 @@ def _audit_planner_context_snapshots(
     run_dir: Path,
     events: list[dict[str, Any]],
 ) -> None:
+    score_policy = score_policy_from_task_payload(events[0]["payload"])
+    expected_context_version = planner_context_version(score_policy)
     for index, event in enumerate(events):
         if event["event_type"] != "planner_context_built":
             continue
         context = _load_json(run_dir / event["payload"]["planner_context_ref"])
-        validate_instance(context, "planner_context_v0_5.schema.json")
+        context_version = str(
+            event["payload"].get(
+                "planner_context_schema_version",
+                context.get("planner_context_schema_version", "0.5"),
+            )
+        )
+        if context_version != expected_context_version:
+            raise ValueError(
+                f"{run_dir.name}: PlannerContext {context_version} disagrees "
+                f"with score policy {score_policy['policy_id']}"
+            )
+        validate_instance(
+            context,
+            f"planner_context_v{context_version.replace('.', '_')}.schema.json",
+        )
         state = reduce_events(events[: index + 1])
         latest = context["latest_attempt"]
         best = context["episode_memory"]["best_attempt"]
@@ -419,6 +533,11 @@ def _audit_planner_context_snapshots(
             )
         if context["runtime_state"]["remaining_image_budget"] != state.remaining_budget:
             raise ValueError(f"{run_dir.name}: PlannerContext budget mismatch")
+        if context_version == "0.6" and latest is not None:
+            if latest["primary_score"] != state.attempts[latest_id].primary_score:
+                raise ValueError(
+                    f"{run_dir.name}: PlannerContext primary score mismatch"
+                )
 
 
 def _classify_format_errors(
@@ -495,14 +614,6 @@ def soft_tifa_arithmetic_mean(probabilities: list[float]) -> float:
     return sum(probabilities) / len(probabilities)
 
 
-def soft_tifa_geometric_mean(probabilities: list[float]) -> float:
-    _validate_soft_tifa_probabilities(probabilities)
-    return math.exp(
-        sum(math.log(max(value, 1e-300)) for value in probabilities)
-        / len(probabilities)
-    )
-
-
 def _validate_soft_tifa_probabilities(probabilities: list[float]) -> None:
     if not probabilities:
         raise ValueError("Soft-TIFA score requires at least one probability")
@@ -512,11 +623,49 @@ def _validate_soft_tifa_probabilities(probabilities: list[float]) -> None:
 
 def _render_report(summary: dict[str, Any]) -> str:
     episode_count = summary["validated_episode_count"]
+    uses_gm_tiebreak = set(summary["score_policy_counts"]) == {
+        "geneval2_pass_count_then_gm@1"
+    }
+    if uses_gm_tiebreak:
+        selection_semantics = (
+            "Gen-Retry selects best by passed-atom count, then higher "
+            "Soft-TIFA GM, then the earlier Attempt. A trajectory's submitted "
+            "GM can still be lower than its peak GM when the peak-GM image "
+            "passes fewer atoms."
+        )
+        planner_score_visibility = (
+            "PlannerContext v0.6 exposed the environment-owned GM scalar for "
+            "latest/best plus source-aware GM deltas. The Planner did not see "
+            "raw confidence vectors or AM; it saw GM together with normalized "
+            "atom statuses and observed answers."
+        )
+    else:
+        selection_semantics = (
+            "Historical Gen-Retry selects best by passed-atom count and keeps "
+            "the earlier Attempt on a tie; it does not rank Attempts by GM. "
+            "Submitted GM can therefore be lower than peak GM."
+        )
+        planner_score_visibility = (
+            "The historical Planner did not see confidence values, AM, or GM; "
+            "it saw normalized atom statuses and observed answers. AM and GM "
+            "are post-hoc environment metrics computed from persisted "
+            "probabilities."
+        )
     lines = [
-        "# Flow-DPPO 20 Rollout Validation",
+        "# Flow-DPPO Rollout Validation",
         "",
         f"- Status: **{summary['status']}**",
-        f"- Native v0.5 episodes: {episode_count}/{episode_count}",
+        f"- Validated episodes: {episode_count}/{episode_count}",
+        (
+            "- PlannerContext versions: "
+            f"{summary['planner_context_version_counts']}"
+        ),
+        f"- Score policies: {summary['score_policy_counts']}",
+        (
+            "- Execution profiles: "
+            f"{summary['image_runtime']['execution_profile_counts']}"
+        ),
+        f"- Image backends: {summary['image_runtime']['backend_counts']}",
         f"- Difficulty mix: {summary['selection_tier_counts']}",
         f"- Evaluated image attempts: {summary['total_image_attempts']}",
         (
@@ -593,20 +742,15 @@ def _render_report(summary: dict[str, Any]) -> str:
         "",
         "AM is the atom-level continuous score; GM is the prompt-level score and "
         "the primary Flow-DPPO reporting metric. Both differ from thresholded atom "
-        "pass rate. Gen-Retry currently "
-        "selects best by passed-atom count and keeps the earlier attempt on a tie; "
-        "it does not rank attempts by Soft-TIFA GM. Consequently, submitted score "
-        "can be lower than the highest GM observed in the same trajectory.",
+        "pass rate. " + selection_semantics,
         "",
-        "The Planner did not see confidence values, AM, or GM during these rollouts; "
-        "it saw normalized atom statuses and observed answers. AM and GM below are "
-        "post-hoc environment metrics computed from persisted probabilities.",
+        planner_score_visibility,
         "",
         "These are actual Soft-TIFA AM/GM scores recomputed from the persisted "
         "local Qwen3-VL correct-answer probabilities. They are not official leaderboard "
-        "scores: this batch uses Flow-DPPO training prompts, Qwen-Image-Edit at "
-        "1024 x 1024, and one trajectory-selected image per prompt rather than the "
-        "official 800-prompt benchmark generation protocol.",
+        "scores: this batch uses Flow-DPPO training prompts, profile-routed local "
+        "image generation at 1024 x 1024, and one trajectory-selected image per "
+        "prompt rather than the official 800-prompt benchmark generation protocol.",
         "",
         "## Difficulty Policy",
         "",
@@ -617,7 +761,7 @@ def _render_report(summary: dict[str, Any]) -> str:
         "- **Hard:** `atom_count >= 9`, actual `len(vqa_list) >= 10`, and at least one relation/action phrase.",
         "- **Medium:** `atom_count` 7-8, actual VQA count 8-10, and at least one relation/action phrase.",
         "- **Easy:** `atom_count <= 5`, actual VQA count <= 7, and at least one relation/action phrase.",
-        "- Mix: 12 hard, 5 medium, 3 easy.",
+        f"- This batch mix: {summary['selection_tier_counts']}.",
         "",
         "Within each tier, ranking rewards more metadata atoms, actual VQAs, "
         "distinct skill types, verb/position atoms, high-count atoms, new relation "
@@ -670,7 +814,8 @@ def _render_report(summary: dict[str, Any]) -> str:
             "## Invariants",
             "",
             "Every row passed schema validation, manifest hash closure, fresh-start generation, "
-            "local Qwen-Image-Edit 1024x1024/40-step metadata checks, complete Geneval2 atom "
+            "profile-specific local image-backend provenance and 1024x1024 artifact checks, "
+            "complete Geneval2 atom "
             "coverage, source-based edit lineage, complete RoundRecord suffixes, point-in-time "
             "PlannerContext latest/best/budget checks, best-attempt submission, and sanitized "
             "GPT-5.5 output checks.",
@@ -690,6 +835,87 @@ def _render_strategy_examples(summary: dict[str, Any]) -> list[str]:
             for item in episodes[ep]["attempts"]
             if item["attempt_id"] == attempt_id
         )
+
+    if "0.6" in summary.get("planner_context_version_counts", {}):
+        if "phase3_ep_001" in episodes:
+            a1 = attempt("phase3_ep_001", "a_001")
+            a4 = attempt("phase3_ep_001", "a_004")
+            examples.extend(
+                [
+                    "### GM Tie-Break Across Stable Atom States: `phase3_ep_001`",
+                    "",
+                    f"- `a_001` reached {a1['pass_count']}/11 at GM "
+                    f"{a1['geneval2_score'] * 100:.2f}.",
+                    "- `a_002`, `a_003`, and `a_004` retained the same 8/11 "
+                    "atom count while increasing GM at each step.",
+                    f"- Final `a_004` remained 8/11 but reached GM "
+                    f"{a4['geneval2_score'] * 100:.2f} and was submitted.",
+                    "",
+                ]
+            )
+        if "phase3_ep_008" in episodes:
+            a1 = attempt("phase3_ep_008", "a_001")
+            a2 = attempt("phase3_ep_008", "a_002")
+            examples.extend(
+                [
+                    "### Pass-Count Primary Rejects Higher-GM Regression: "
+                    "`phase3_ep_008`",
+                    "",
+                    f"- `a_001` became best at {a1['pass_count']}/11, GM "
+                    f"{a1['geneval2_score'] * 100:.2f}.",
+                    f"- `a_002` had higher GM "
+                    f"({a2['geneval2_score'] * 100:.2f}) but only "
+                    f"{a2['pass_count']}/11 after regressing `c_001`.",
+                    "- Reducer retained `a_001`; the next two edits branched "
+                    "from `a_001`, and submission protected it.",
+                    "",
+                ]
+            )
+        if "phase3_ep_012" in episodes:
+            a1 = attempt("phase3_ep_012", "a_001")
+            a2 = attempt("phase3_ep_012", "a_002")
+            a3 = attempt("phase3_ep_012", "a_003")
+            a4 = attempt("phase3_ep_012", "a_004")
+            examples.extend(
+                [
+                    "### Ineffective Edit, Regenerate, Productive Edit: "
+                    "`phase3_ep_012`",
+                    "",
+                    f"- Local edit `a_001` stayed {a1['pass_count']}/11 and "
+                    f"fell to GM {a1['geneval2_score'] * 100:.2f}.",
+                    f"- Source-free `generate_image` produced `a_002` at "
+                    f"{a2['pass_count']}/11, GM "
+                    f"{a2['geneval2_score'] * 100:.2f}, becoming best by GM.",
+                    f"- Editing `a_002` fixed `c_010`; `a_003` reached "
+                    f"{a3['pass_count']}/11, GM "
+                    f"{a3['geneval2_score'] * 100:.2f}.",
+                    f"- Final `a_004` regressed `c_010` to "
+                    f"{a4['pass_count']}/11, so submission returned `a_003`.",
+                    "",
+                ]
+            )
+        if "phase3_ep_020" in episodes:
+            a1 = attempt("phase3_ep_020", "a_001")
+            a2 = attempt("phase3_ep_020", "a_002")
+            a3 = attempt("phase3_ep_020", "a_003")
+            a4 = attempt("phase3_ep_020", "a_004")
+            examples.extend(
+                [
+                    "### Catastrophic Edit, Rollback, Then Regenerate: "
+                    "`phase3_ep_020`",
+                    "",
+                    f"- `a_001` was best at {a1['pass_count']}/6, GM "
+                    f"{a1['geneval2_score'] * 100:.2f}.",
+                    f"- Editing it produced `a_002` at only "
+                    f"{a2['pass_count']}/6 and regressed three preserved atoms.",
+                    f"- The next edit rolled back to `a_001`; `a_003` restored "
+                    f"{a3['pass_count']}/6 but did not become best.",
+                    f"- Final source-free regeneration `a_004` remained "
+                    f"{a4['pass_count']}/6 at GM "
+                    f"{a4['geneval2_score'] * 100:.2f}.",
+                    "",
+                ]
+            )
 
     if "phase3_ep_003" in episodes:
         a0 = attempt("phase3_ep_003", "a_000")

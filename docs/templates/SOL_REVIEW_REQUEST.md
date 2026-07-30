@@ -2,40 +2,46 @@
 
 ## Gate
 
-`SFT Supervision Freeze`
+`PlannerContext / best-attempt semantics amendment review`
 
 ## Decision to review
 
-是否可以把规则合成的 Geneval2-compatible prompt/VQA 数据作为主要 SFT 来源，同时把官方 800 条 Geneval2 全部保留为最终测试集。
+Review the concrete PlannerContext v0.6 score-semantics proposal in
+`docs/architecture/planner_score_semantics_v0_6.md`. Action Protocol remains
+v0.5. New episodes would rank best by passed-atom count, then Geneval2
+Soft-TIFA GM, then earlier attempt.
 
 ## Current evidence
 
-- Relevant schema/ADR: `docs/phase4/sft_supervision_freeze.md`,
-  `docs/phase5/geneval2_synthetic_prompt_pool_review.md`,
-  `artifacts/phase5/geneval2_synthetic_prompt_review_samples.jsonl`.
-- Minimal test/pilot summary: 6 条设计样例已通过现有
-  `task_spec_from_geneval2_row` 解析，覆盖
-  `attribute/count/object/position/verb`，与官方 800 条无 prompt 精确重复；
-  尚未进行图像生成或 VQA 评估。
-- Conflicting evidence, if any: 原始 GenEval 有官方规则采样器；GenEval2
-  只发布固定 800 条数据与评估代码，没有官方 prompt 扩充器。当前 Phase 4
-  按原始 prompt hash 分组，而大规模合成数据需要按语义家族分组。
+- Geneval2 atom results already persist correct-answer probabilities.
+- GM is deterministically recomputable from immutable events.
+- In the completed 20-trajectory batch, pass-count-then-GM changes eight best
+  attempts and raises mean selected GM from 0.4725 to 0.5333 without lowering
+  selected pass count.
+- Six changed cases have identical atom-status vectors; two have equal pass
+  count but different passing atom identities.
+- Historical episodes must retain pass-count-only replay semantics.
 
 ## Questions（最多 3 个）
 
-1. 判断合成数据是否可用，哪些问题可由静态/schema review 发现，哪些必须真实生成图像并运行 Geneval2 evaluator？
-2. 最小但足以支持扩大到 SFT 规模的 pilot 应如何抽样、人工 review 和设定通过门槛？
-3. 为避免测试泄漏、模板过拟合和 evaluator gaming，训练/验证/测试边界及语义家族去重应采用什么最小充分方案？
+1. Should atom-level equality mean equal pass count, exact atom-status vector,
+   or should GM become primary?
+2. Is one GM scalar on latest/best plus score delta in round memory sufficient,
+   with AM reporting-only?
+3. Are score-policy locking, aggregate recomputation, legacy fallback, resume
+   rejection, and SFT grouping sufficient?
 
 ## Explicit non-goals
 
-- 不审查生成器具体代码实现。
-- 不重新设计 Geneval2 evaluator。
-- 不决定最终 SFT 数量或训练超参数。
+- No schema or reducer implementation in this review.
+- No new rollout, Qwen-Image-Edit, Teacher, or Geneval2 calls.
+- No redesign of the Geneval2 evaluator.
+- No claim that the 20 synthetic training prompts are an official leaderboard
+  evaluation.
 
 ## Expected response
 
-- blocking issues only;
-- recommended decision;
-- risks and one minimal validation experiment;
-- no code implementation.
+- direct recommendation for each question;
+- blocking ambiguity or SFT risk only;
+- one minimal v0.6 candidate field/selection policy if change is recommended;
+- distinguish required change from optional token optimization.

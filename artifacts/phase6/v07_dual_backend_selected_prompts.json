@@ -1,0 +1,157 @@
+{
+  "schema_version": "0.1",
+  "selection_purpose": "diagnostic comparison of legacy edit-only execution and v0.7 dual-backend execution",
+  "source_batch": "runs/phase5_flow_dppo20",
+  "official_geneval2_test_set_held_out": true,
+  "max_image_attempts": 5,
+  "selected_failure_cases": [
+    {
+      "baseline_episode_id": "phase3_ep_001",
+      "prompt_id": "flow_dppo_train_00427_7d6b02210ea2",
+      "original_prompt": "a bird playing with six blue white cows under seven spotted suitcases",
+      "difficulty_tier": "hard",
+      "source_line": 427,
+      "source_row_sha256": "3e2193ab8b4e1314e4510346f869b2f07672c98f643b8095fc4bb21912f2a328",
+      "baseline": {
+        "initial_pass_count": 8,
+        "submitted_pass_count": 8,
+        "constraint_count": 11,
+        "initial_gm": 0.05283330327695888,
+        "submitted_gm": 0.05283330327695888,
+        "peak_gm": 0.08163663040110027,
+        "image_action_sequence": [
+          "generate_image",
+          "edit_image",
+          "edit_image",
+          "edit_image",
+          "edit_image"
+        ]
+      },
+      "diagnostic_role": "global multi-object count and attribute failure followed by four non-productive edits",
+      "task_spec_source": "runs/phase5_flow_dppo20/phase3_ep_001/task_spec.json"
+    },
+    {
+      "baseline_episode_id": "phase3_ep_008",
+      "prompt_id": "flow_dppo_train_13028_bb87fc9e40d7",
+      "original_prompt": "five spotted donuts under a red metal horse chasing six cats",
+      "difficulty_tier": "hard",
+      "source_line": 13028,
+      "source_row_sha256": "4400299a7b5d0fe47c0c2da4f75f55c492708b3256083739227d1a13951a4f77",
+      "baseline": {
+        "initial_pass_count": 9,
+        "submitted_pass_count": 9,
+        "constraint_count": 11,
+        "initial_gm": 0.08079163661056785,
+        "submitted_gm": 0.08079163661056785,
+        "peak_gm": 0.25700426807793075,
+        "image_action_sequence": [
+          "generate_image",
+          "edit_image",
+          "edit_image",
+          "generate_image",
+          "edit_image"
+        ]
+      },
+      "diagnostic_role": "persistent chasing and cat-count failure; source-free regenerate collapsed from nine to seven passed atoms",
+      "task_spec_source": "runs/phase5_flow_dppo20/phase3_ep_008/task_spec.json"
+    },
+    {
+      "baseline_episode_id": "phase3_ep_010",
+      "prompt_id": "flow_dppo_train_00728_07ff67209ae9",
+      "original_prompt": "six sparkling purple bagels to the right of six plastic kangaroos behind a car",
+      "difficulty_tier": "hard",
+      "source_line": 728,
+      "source_row_sha256": "4a0cbbf9bbcc8340cac4c8bd372a81d408a2a6f8beb79708a505738c9346768b",
+      "baseline": {
+        "initial_pass_count": 7,
+        "submitted_pass_count": 8,
+        "constraint_count": 11,
+        "initial_gm": 0.01795882180723597,
+        "submitted_gm": 0.03337887888291274,
+        "peak_gm": 0.03337887888291274,
+        "image_action_sequence": [
+          "generate_image",
+          "edit_image",
+          "edit_image",
+          "edit_image",
+          "edit_image"
+        ]
+      },
+      "diagnostic_role": "bagel identity, count, and color remained unresolved after repeated local replacement edits",
+      "task_spec_source": "runs/phase5_flow_dppo20/phase3_ep_010/task_spec.json"
+    },
+    {
+      "baseline_episode_id": "phase3_ep_012",
+      "prompt_id": "flow_dppo_train_17729_371f9a89f5a8",
+      "original_prompt": "a checkered toy in front of five sparkling checkered chairs on top of seven candles",
+      "difficulty_tier": "hard",
+      "source_line": 17729,
+      "source_row_sha256": "53337e03fe7a36970e00d087cf8295269cbfb1c5e50c1488bf74c8b9d9f7973c",
+      "baseline": {
+        "initial_pass_count": 5,
+        "submitted_pass_count": 9,
+        "constraint_count": 11,
+        "initial_gm": 0.007595225589892341,
+        "submitted_gm": 0.1070378205885194,
+        "peak_gm": 0.21045187071544968,
+        "image_action_sequence": [
+          "generate_image",
+          "edit_image",
+          "edit_image",
+          "edit_image",
+          "edit_image"
+        ]
+      },
+      "diagnostic_role": "thresholded atom count improved strongly, but chair-on-candle support and candle count kept submitted GM low",
+      "task_spec_source": "runs/phase5_flow_dppo20/phase3_ep_012/task_spec.json"
+    },
+    {
+      "baseline_episode_id": "phase3_ep_020",
+      "prompt_id": "flow_dppo_train_10910_dd0d2d58f4f7",
+      "original_prompt": "five rabbits chasing a sparkling elephant",
+      "difficulty_tier": "easy",
+      "source_line": 10910,
+      "source_row_sha256": "6f97da76d22f7b112aa1eeeb5aafb05784a06e981c98c83f8d9bdfba76787ad7",
+      "baseline": {
+        "initial_pass_count": 5,
+        "submitted_pass_count": 5,
+        "constraint_count": 6,
+        "initial_gm": 0.7110689198683792,
+        "submitted_gm": 0.7110689198683792,
+        "peak_gm": 0.8242795683124752,
+        "image_action_sequence": [
+          "generate_image",
+          "edit_image",
+          "edit_image",
+          "edit_image",
+          "edit_image"
+        ]
+      },
+      "diagnostic_role": "isolated chasing relation remained failed through four edits, separating verb difficulty from global scene complexity",
+      "task_spec_source": "runs/phase5_flow_dppo20/phase3_ep_020/task_spec.json"
+    }
+  ],
+  "optional_regression_control": {
+    "baseline_episode_id": "phase3_ep_011",
+    "prompt_id": "flow_dppo_train_00791_ca9d9bfb8af8",
+    "original_prompt": "a pink checkered cookie in front of four flowers under four metal pigs",
+    "difficulty_tier": "hard",
+    "source_line": 791,
+    "source_row_sha256": "6516290823015763ca6700956e386394e81b10c9935646813ba1506166ae5da7",
+    "baseline": {
+      "initial_pass_count": 10,
+      "submitted_pass_count": 11,
+      "constraint_count": 11,
+      "initial_gm": 0.8343557093750481,
+      "submitted_gm": 0.9463555918860561,
+      "peak_gm": 0.9463555918860561,
+      "image_action_sequence": [
+        "generate_image",
+        "edit_image",
+        "edit_image"
+      ]
+    },
+    "diagnostic_role": "known successful edit path used only to detect regressions in edit behavior",
+    "task_spec_source": "runs/phase5_flow_dppo20/phase3_ep_011/task_spec.json"
+  }
+}

@@ -6,6 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from gen_retry.domain.score_policy import (
+    canonical_primary_score,
+    validate_primary_score,
+)
 from gen_retry.domain.artifacts import artifact_manifest_entry, sha256_file
 from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.tools.model_load_lock import exclusive_model_load
@@ -15,6 +19,7 @@ from gen_retry.tools.model_load_lock import exclusive_model_load
 class Geneval2Report:
     attempt_id: str
     constraint_results: list[dict[str, Any]]
+    primary_score: dict[str, Any]
     raw_results: list[dict[str, Any]]
     report_ref: str
     report_sha256: str
@@ -83,6 +88,7 @@ class LocalGeneval2Adapter:
                 "constraint coverage mismatch "
                 f"missing={sorted(expected - observed)} extra={sorted(observed - expected)}"
             )
+        primary_score = canonical_primary_score(constraint_results)
         report_path.parent.mkdir(parents=True, exist_ok=True)
         report_payload = {
             "schema_version": "0.2",
@@ -91,6 +97,7 @@ class LocalGeneval2Adapter:
             "method": "soft_tifa_local_qwen3_vl",
             "normalization": self.normalization_policy(),
             "constraint_results": constraint_results,
+            "primary_score": primary_score,
             "raw_results": raw_results,
         }
         report_path.write_text(canonical_json(report_payload) + "\n", encoding="utf-8")
@@ -107,11 +114,14 @@ class LocalGeneval2Adapter:
                 "method": "soft_tifa_local_qwen3_vl",
                 "pass_threshold": self.pass_threshold,
                 "fail_threshold": self.fail_threshold,
+                "primary_metric_id": primary_score["metric_id"],
+                "primary_metric_version": primary_score["metric_version"],
             },
         )
         return Geneval2Report(
             attempt_id=attempt_id,
             constraint_results=constraint_results,
+            primary_score=primary_score,
             raw_results=raw_results,
             report_ref=report_ref,
             report_sha256=report_sha256,
@@ -150,6 +160,11 @@ class LocalGeneval2Adapter:
                 "cached Geneval2 constraint coverage mismatch "
                 f"missing={sorted(expected - observed)} extra={sorted(observed - expected)}"
             )
+        primary_score = payload.get("primary_score")
+        if primary_score is None:
+            primary_score = canonical_primary_score(constraint_results)
+        else:
+            validate_primary_score(primary_score, constraint_results)
         report_sha256 = sha256_file(report_path)
         manifest_entry = artifact_manifest_entry(
             artifact_id=_report_artifact_id(attempt_id),
@@ -164,11 +179,14 @@ class LocalGeneval2Adapter:
                 "pass_threshold": self.pass_threshold,
                 "fail_threshold": self.fail_threshold,
                 "cache_hit": True,
+                "primary_metric_id": primary_score["metric_id"],
+                "primary_metric_version": primary_score["metric_version"],
             },
         )
         return Geneval2Report(
             attempt_id=attempt_id,
             constraint_results=constraint_results,
+            primary_score=primary_score,
             raw_results=raw_results,
             report_ref=report_ref,
             report_sha256=report_sha256,

@@ -30,6 +30,28 @@ def main() -> None:
         type=int,
         help="Prepare only the first N already-selected prompts without rerunning selection.",
     )
+    parser.add_argument(
+        "--prompt-id",
+        action="append",
+        dest="prompt_ids",
+        help="Prepare only these already-selected prompt IDs; may be repeated.",
+    )
+    parser.add_argument(
+        "--execution-profile-id",
+        default="qwen_image_edit_only",
+    )
+    parser.add_argument(
+        "--execution-profile-version",
+        default="1",
+    )
+    parser.add_argument(
+        "--score-policy-id",
+        choices=[
+            "geneval2_pass_count_then_gm",
+            "pass_count_only_then_earlier",
+        ],
+        default="geneval2_pass_count_then_gm",
+    )
     args = parser.parse_args()
 
     summary = prepare_rollout_runs(
@@ -39,6 +61,10 @@ def main() -> None:
         max_image_attempts=args.max_image_attempts,
         created_at=args.created_at,
         limit=args.limit,
+        prompt_ids=args.prompt_ids,
+        score_policy_id=args.score_policy_id,
+        execution_profile_id=args.execution_profile_id,
+        execution_profile_version=args.execution_profile_version,
     )
     print(f"prepared {summary['prepared_count']} Phase 3 rollout directories")
 

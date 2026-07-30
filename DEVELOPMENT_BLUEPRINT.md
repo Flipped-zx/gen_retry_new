@@ -8,13 +8,14 @@
 原始 Prompt + 固定原子约束
 + 当前/历史图片
 + Geneval2 atom feedback
++ Geneval2 prompt-level GM（pass-count 相同时用于 best tie-break）
 + canonical attempt memory
 + skill/tool manifest
 + remaining budget
 → query_skill / generate_image / edit_image / submit_attempt
 ```
 
-它学习的不是“再写一遍 Prompt”，而是：选择动作、选择 source attempt、选择修复/保留约束、构造本轮 Qianwen-Image-Edit 指令，并在非单调结果中恢复或提交历史最优。
+它学习的不是“再写一遍 Prompt”，而是：选择动作、选择 source attempt、选择修复/保留约束、构造本轮可执行图像指令，并在非单调结果中恢复或提交历史最优。
 
 ---
 
@@ -27,7 +28,7 @@
 ```text
 state_t
 → planner action_t
-→ Qianwen-Image-Edit execution
+→ environment-owned image execution
 → image I_t
 → Geneval2 V_t
 → deterministic transition Δ_t
@@ -52,7 +53,8 @@ state_t
 | 组件 | 职责 | 训练 |
 |---|---|---:|
 | Qwen3-VL-8B-Instruct | Retry policy / planner | 后续 SFT，可能 RL |
-| Qianwen-Image-Edit | 统一执行生成、重生成、局部编辑 | 冻结 |
+| Qwen-Image-2512 | 执行 source-free 生成和重新生成 | 冻结 |
+| Qwen-Image-Edit-2511 | 执行有 source 的图像编辑 | 冻结 |
 | Geneval2 | Rubric / atom-level evaluator | 冻结 |
 | GPT-5.5 Teacher API | Pilot action、SFT teacher、有限 review | 外部服务 |
 | Event Store + Reducer | Canonical memory | 程序逻辑 |
@@ -61,11 +63,13 @@ state_t
 关键口径：
 
 ```text
-generate_image → Qianwen-Image-Edit(mode=generate)
-edit_image     → Qianwen-Image-Edit(mode=edit, source_image=...)
+generate_image → Qwen-Image-2512（无 source）
+edit_image     → Qwen-Image-Edit-2511（有 source_image）
 ```
 
-底层后端统一，但逻辑动作不能合并，因为 source、风险、保存约束和训练信用不同。
+逻辑动作不能合并，因为 source、风险、保存约束和训练信用不同。Planner
+只选择逻辑动作；环境通过独立版本化的 execution profile 选择 backend，
+backend/model/mode 不进入 SFT target。
 
 ---
 
@@ -78,7 +82,7 @@ Prompt P
 → PlannerContext S0
 → Planner emits one action A0
 → Environment validates A0
-→ Qianwen-Image-Edit executes A0
+→ Execution profile routes and executes A0
 → Image I0
 → Geneval2 evaluates every ci
 → Reducer creates Attempt a0, transition, best-so-far, compact memory
@@ -166,6 +170,10 @@ fixed / regressed / persistent / stable pass
 - schema validity。
 
 Planner 不得把环境事实当成待预测 target。
+
+新 episode 的 best 排序由环境固定为：
+`higher pass-count → higher Soft-TIFA GM → earlier Attempt`。GM 不是 Action
+字段，也不能让更少 pass-count 的 Attempt 取代更多 pass-count 的 Attempt。
 
 ---
 
@@ -263,11 +271,13 @@ gen-retry-v3/
 └── reports/
 ```
 
-核心 adapter：
+核心 adapters：
 
 ```python
-class QianwenImageEditAdapter:
+class QwenImageAdapter:
     def generate(self, instruction, request_id, config): ...
+
+class QianwenImageEditAdapter:
     def edit(self, source_image, instruction, request_id, config): ...
 ```
 

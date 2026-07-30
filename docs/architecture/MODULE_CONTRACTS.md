@@ -18,7 +18,7 @@
 
 **输出**：短的 `PlannerContext`；完成图像 round 后可派生并持久化 `RoundRecord` artifact。
 
-**负责**：task context、latest attempt、active planning round、last/prior completed image-round memory、deduplicated best/latest refs、budget/control state、source-based outcome comparison。
+**负责**：task context、latest attempt、active planning round、last/prior completed image-round memory、deduplicated best/latest refs、budget/control state、source-based atom/GM outcome comparison。
 
 **不得做**：调用 LLM；重写 action；生成新环境事实；把 future evaluator outcome 注入当前 action target。
 
@@ -56,27 +56,31 @@
 
 ---
 
-## 6. QianwenImageEditAdapter
+## 6. Image Execution Profile And Adapters
 
-统一底层后端。
+环境根据 episode 锁定的 execution profile 将逻辑动作确定性路由到本地
+adapter。Planner 不选择 backend、model、pipeline 或 mode。
 
-### generate
+### QwenImageAdapter.generate
 
 **输入**：generation instruction、model config、request ID。
 
 **输出**：new image artifact + backend metadata。
 
-**约束**：无 source attempt。
+**约束**：只执行 `generate_image`；无 source attempt；创建 root Attempt。
 
-### edit
+### QianwenImageEditAdapter.edit
 
 **输入**：source image artifact、edit instruction、model config、request ID。
 
 **输出**：edited image artifact + backend metadata。
 
-**约束**：source attempt/image 必须存在且 lineage 可追踪。
+**约束**：只执行 `edit_image`；source attempt/image 必须存在且 lineage
+可追踪；创建 declared source 的 child Attempt。
 
-**共同要求**：幂等 request ID、缓存、超时、重试、artifact hash、secret redaction。
+**共同要求**：幂等 request ID、缓存、artifact hash、完整 profile/model/
+pipeline/sampling/source/output provenance、resume profile lock、secret
+redaction。当前 accepted profile 为 `qwen_dual_backend@1`。
 
 ---
 
@@ -84,9 +88,11 @@
 
 **输入**：TaskSpec constraints + image artifact。
 
-**输出**：canonical per-constraint observation。
+**输出**：canonical per-constraint observation + environment-owned prompt-level
+Soft-TIFA GM。
 
-**负责**：标准化 pass/fail/uncertain、expected/observed、confidence（若有）。
+**负责**：标准化 pass/fail/uncertain、expected/observed、correct-answer
+probability，以及按冻结公式计算 `geneval2_soft_tifa_gm@flow_dppo_v1`。
 
 **不得做**：决定 edit/regenerate；修改 planner action。
 
@@ -106,9 +112,10 @@
 
 **输入**：从 episode 起点开始的 canonical events。
 
-**输出**：EpisodeState、AttemptRecord、constraint transitions、best-so-far。
+**输出**：EpisodeState、AttemptRecord、constraint/GM transitions、best-so-far。
 
-**要求**：纯函数、确定性、可从头 replay。
+**要求**：纯函数、确定性、可从头 replay；新 episode 按 pass-count、GM、
+更早 Attempt 的顺序选择 best，旧 episode 保持原排序。
 
 **不得做**：LLM 推理；读取外部网络；修改 events。
 
@@ -130,4 +137,5 @@
 
 **输出**：multi-turn training records + exact loss masks + audit report。
 
-**要求**：只训练 assistant action；同 prompt group 不跨 split；harmful actions 默认不做正 target；记录 token percentiles。
+**要求**：只训练 assistant action；同 prompt group 不跨 split；harmful actions 默认不做正 target；记录 token percentiles；按 execution profile
+和 PlannerContext/score-policy tuple 分组；从目标动作之前的事件前缀重建输入。

@@ -5,6 +5,10 @@ from pathlib import Path
 
 import pytest
 
+from gen_retry.domain.score_policy import (
+    canonical_primary_score,
+    primary_score_policy,
+)
 from gen_retry.runtime.event_io import load_events_jsonl
 from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.runtime.planner_context import (
@@ -23,6 +27,166 @@ def _golden_events() -> list[dict]:
     if not GOLDEN_RUN.exists():
         pytest.skip("phase3_ep_001 golden live events are not present in this checkout")
     return load_events_jsonl(GOLDEN_RUN)
+
+
+def _score_enabled_one_attempt_events() -> list[dict]:
+    path = ROOT / "tests" / "fixtures" / "events" / "one_attempt_events.jsonl"
+    events = load_events_jsonl(path)
+    events[0]["payload"]["score_policy"] = primary_score_policy()
+    geneval = next(
+        event for event in events if event["event_type"] == "geneval2_completed"
+    )
+    confidences = [0.10, 0.80, 0.90, 0.70]
+    for result, confidence in zip(
+        geneval["payload"]["constraint_results"],
+        confidences,
+        strict=True,
+    ):
+        result["confidence"] = confidence
+    geneval["payload"]["primary_score"] = canonical_primary_score(
+        geneval["payload"]["constraint_results"]
+    )
+    return events
+
+
+def _score_enabled_two_attempt_events() -> list[dict]:
+    events = _score_enabled_one_attempt_events()
+    results = [
+        {
+            "constraint_id": "c_001",
+            "status": "fail",
+            "expected": "exactly three apples",
+            "observed": "two apples",
+            "confidence": 0.20,
+        },
+        {"constraint_id": "c_002", "status": "pass", "confidence": 0.95},
+        {"constraint_id": "c_003", "status": "pass", "confidence": 0.95},
+        {"constraint_id": "c_004", "status": "pass", "confidence": 0.95},
+    ]
+    events.extend(
+        [
+            {
+                "schema_version": "0.2",
+                "event_id": "evt_0010",
+                "episode_id": "ep_demo_001",
+                "turn_id": "turn_001",
+                "event_type": "action_validated",
+                "created_at": "2026-07-14T06:00:00Z",
+                "producer": "action_validator",
+                "input_refs": ["evt_0009"],
+                "payload": {
+                    "action": {
+                        "schema_version": "0.5",
+                        "action": "edit_image",
+                        "arguments": {
+                            "source_attempt_id": "a_000",
+                            "target_constraint_ids": ["c_001"],
+                            "preserve_constraint_ids": ["c_002", "c_003", "c_004"],
+                            "instruction": "Add exactly one apple and preserve the bowl.",
+                        },
+                    }
+                },
+            },
+            {
+                "schema_version": "0.2",
+                "event_id": "evt_0011",
+                "episode_id": "ep_demo_001",
+                "turn_id": "turn_001",
+                "event_type": "image_execution_started",
+                "created_at": "2026-07-14T06:00:00Z",
+                "producer": "qianwen_image_edit_adapter",
+                "input_refs": ["evt_0010"],
+                "payload": {
+                    "request_id": "req_ep_demo_001_turn_001",
+                    "operation": "edit",
+                    "backend": "qianwen_image_edit",
+                    "source_attempt_id": "a_000",
+                },
+            },
+            {
+                "schema_version": "0.2",
+                "event_id": "evt_0012",
+                "episode_id": "ep_demo_001",
+                "turn_id": "turn_001",
+                "event_type": "image_execution_completed",
+                "created_at": "2026-07-14T06:00:00Z",
+                "producer": "qianwen_image_edit_adapter",
+                "input_refs": ["evt_0011"],
+                "payload": {
+                    "request_id": "req_ep_demo_001_turn_001",
+                    "attempt_id": "a_001",
+                    "parent_attempt_id": "a_000",
+                    "operation": "edit",
+                    "backend": "qianwen_image_edit",
+                    "source_attempt_id": "a_000",
+                    "image_artifact_id": "img_001",
+                    "artifact_manifest_ref": "artifacts/manifest.json",
+                    "artifact_sha256": "e" * 64,
+                },
+            },
+            {
+                "schema_version": "0.2",
+                "event_id": "evt_0013",
+                "episode_id": "ep_demo_001",
+                "turn_id": "turn_001",
+                "event_type": "geneval2_completed",
+                "created_at": "2026-07-14T06:00:00Z",
+                "producer": "geneval2_adapter",
+                "input_refs": ["evt_0012"],
+                "payload": {
+                    "attempt_id": "a_001",
+                    "constraint_results": results,
+                    "primary_score": canonical_primary_score(results),
+                    "report_ref": "artifacts/geneval2/a_001.json",
+                    "report_sha256": "f" * 64,
+                },
+            },
+        ]
+    )
+    return events
+
+
+def test_v0_6_context_exposes_observed_score_without_duplicating_best() -> None:
+    events = _score_enabled_one_attempt_events()
+    context = build_planner_context_from_events(events, schema_version="0.6")
+    expected_score = events[6]["payload"]["primary_score"]["value"]
+
+    assert context["planner_context_schema_version"] == "0.6"
+    assert context["latest_attempt"]["primary_score"] == expected_score
+    assert context["episode_memory"]["best_attempt"] == {
+        "attempt_id": "a_000",
+        "constraint_results_ref": "latest_attempt",
+    }
+    assert (
+        context["episode_memory"]["last_completed_image_round"][
+            "observed_outcome"
+        ]["primary_score_delta"]
+        is None
+    )
+    assert context["runtime_state"]["score_policy"] == primary_score_policy()
+
+
+def test_v0_6_equal_pass_count_uses_gm_and_records_source_delta() -> None:
+    events = _score_enabled_two_attempt_events()
+    state = reduce_events(events)
+    context = build_planner_context_from_events(events, schema_version="0.6")
+    latest = context["latest_attempt"]
+    outcome = context["episode_memory"]["last_completed_image_round"][
+        "observed_outcome"
+    ]
+
+    assert state.attempts["a_000"].pass_count == state.attempts["a_001"].pass_count
+    assert state.best_attempt_id == "a_001"
+    assert latest["attempt_id"] == "a_001"
+    assert context["episode_memory"]["best_attempt"] == {
+        "attempt_id": "a_001",
+        "constraint_results_ref": "latest_attempt",
+    }
+    assert outcome["baseline_attempt_id"] == "a_000"
+    assert outcome["primary_score_delta"] == (
+        state.attempts["a_001"].primary_score
+        - state.attempts["a_000"].primary_score
+    )
 
 
 def test_golden_replay_round_memory_tracks_query_and_image_rounds() -> None:

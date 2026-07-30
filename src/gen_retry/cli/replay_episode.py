@@ -3,6 +3,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from gen_retry.domain.score_policy import (
+    planner_context_version,
+    score_policy_from_task_payload,
+)
 from gen_retry.runtime.event_io import load_events_jsonl
 from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.runtime.planner_context import build_planner_context_from_events
@@ -14,7 +18,13 @@ def replay(path: Path) -> dict:
     events = load_events_jsonl(path)
     state = reduce_events(events)
     planner_view = build_planner_view(state)
-    planner_context = build_planner_context_from_events(events)
+    context_version = planner_context_version(
+        score_policy_from_task_payload(events[0]["payload"])
+    )
+    planner_context = build_planner_context_from_events(
+        events,
+        schema_version=context_version,
+    )
     return {
         "state": state.to_dict(),
         "planner_view": planner_view,

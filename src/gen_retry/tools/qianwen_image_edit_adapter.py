@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import gc
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -9,30 +8,23 @@ from PIL import Image
 
 from gen_retry.domain.artifacts import artifact_manifest_entry, sha256_file
 from gen_retry.tools.model_load_lock import exclusive_model_load
-
-
-@dataclass(frozen=True)
-class QianwenImageResult:
-    request_id: str
-    attempt_id: str
-    parent_attempt_id: str | None
-    operation: str
-    backend: str
-    image_artifact_id: str
-    artifact_uri: str
-    artifact_manifest_ref: str
-    artifact_sha256: str
-    manifest_entry: dict[str, Any]
-    metadata: dict[str, Any]
+from gen_retry.tools.qwen_common import (
+    QwenImageResult,
+    model_revision_or_fingerprint,
+    save_output_image,
+)
 
 
 class QianwenImageEditAdapter:
     backend = "qianwen_image_edit"
+    pipeline_id = "QwenImageEditPlusPipeline"
+    adapter_version = "2"
 
     def __init__(
         self,
         *,
         provider: str,
+        model_id: str = "Qwen-Image-Edit-2511",
         model_path: Path,
         artifact_root: Path,
         height: int = 1024,
@@ -46,6 +38,7 @@ class QianwenImageEditAdapter:
         if provider != "local":
             raise ValueError(f"unsupported Qianwen provider for Phase 3: {provider}")
         self.provider = provider
+        self.model_id = model_id
         self.model_path = model_path
         self.artifact_root = artifact_root
         self.height = height
@@ -67,7 +60,7 @@ class QianwenImageEditAdapter:
         attempt_id: str,
         image_artifact_id: str,
         instruction: str,
-    ) -> QianwenImageResult:
+    ) -> QwenImageResult:
         return self._run(
             request_id=request_id,
             attempt_id=attempt_id,
@@ -87,7 +80,7 @@ class QianwenImageEditAdapter:
         source_image_path: Path,
         image_artifact_id: str,
         instruction: str,
-    ) -> QianwenImageResult:
+    ) -> QwenImageResult:
         return self._run(
             request_id=request_id,
             attempt_id=attempt_id,
@@ -108,7 +101,7 @@ class QianwenImageEditAdapter:
         instruction: str,
         image_artifact_id: str,
         source_image_path: Path | None,
-    ) -> QianwenImageResult:
+    ) -> QwenImageResult:
         if not self.model_path.exists():
             raise FileNotFoundError(f"missing Qwen-Image-Edit model path: {self.model_path}")
         artifact_uri = f"images/{image_artifact_id}.png"
@@ -123,7 +116,10 @@ class QianwenImageEditAdapter:
                 image_artifact_id=image_artifact_id,
                 artifact_uri=artifact_uri,
                 artifact_sha256=artifact_sha256,
-                metadata={"cache_hit": True, "provider": self.provider},
+                metadata=self.execution_metadata(
+                    cache_hit=True,
+                    internal_generation_canvas=source_image_path is None,
+                ),
             )
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -154,7 +150,7 @@ class QianwenImageEditAdapter:
                     width=self.width,
                     output_type="pt",
                 )
-            _save_output_image(output.images[0], output_path)
+            save_output_image(output.images[0], output_path)
         finally:
             del pipeline
             gc.collect()
@@ -175,21 +171,40 @@ class QianwenImageEditAdapter:
             image_artifact_id=image_artifact_id,
             artifact_uri=artifact_uri,
             artifact_sha256=artifact_sha256,
-            metadata={
-                "cache_hit": False,
-                "provider": self.provider,
-                "model_path_exists": True,
-                "local_runtime": "diffusers.QwenImageEditPlusPipeline",
-                "internal_generation_canvas": source_image_path is None,
-                "height": self.height,
-                "width": self.width,
+            metadata=self.execution_metadata(
+                cache_hit=False,
+                internal_generation_canvas=source_image_path is None,
+            ),
+        )
+
+    def execution_metadata(
+        self,
+        *,
+        cache_hit: bool,
+        internal_generation_canvas: bool,
+    ) -> dict[str, Any]:
+        return {
+            "cache_hit": cache_hit,
+            "provider": self.provider,
+            "backend_id": self.backend,
+            "model_id": self.model_id,
+            "model_revision_or_fingerprint": model_revision_or_fingerprint(self.model_path),
+            "pipeline_id": self.pipeline_id,
+            "adapter_version": self.adapter_version,
+            "sampling": {
+                "seed": self.seed,
                 "num_inference_steps": self.num_inference_steps,
                 "true_cfg_scale": self.true_cfg_scale,
                 "guidance_scale": self.guidance_scale,
-                "seed": self.seed,
-                "cpu_offload": self.cpu_offload,
+                "width": self.width,
+                "height": self.height,
+                "negative_prompt": " ",
             },
-        )
+            "model_path_exists": self.model_path.exists(),
+            "local_runtime": "diffusers.QwenImageEditPlusPipeline",
+            "internal_generation_canvas": internal_generation_canvas,
+            "cpu_offload": self.cpu_offload,
+        }
 
     def _load_pipeline(self) -> Any:
         import torch
@@ -220,7 +235,7 @@ class QianwenImageEditAdapter:
         artifact_uri: str,
         artifact_sha256: str,
         metadata: dict[str, Any],
-    ) -> QianwenImageResult:
+    ) -> QwenImageResult:
         manifest_entry = artifact_manifest_entry(
             artifact_id=image_artifact_id,
             attempt_id=attempt_id,
@@ -236,7 +251,7 @@ class QianwenImageEditAdapter:
                 **metadata,
             },
         )
-        return QianwenImageResult(
+        return QwenImageResult(
             request_id=request_id,
             attempt_id=attempt_id,
             parent_attempt_id=parent_attempt_id,
@@ -249,31 +264,3 @@ class QianwenImageEditAdapter:
             manifest_entry=manifest_entry,
             metadata=metadata,
         )
-
-
-def _save_output_image(image: Any, output_path: Path) -> None:
-    if isinstance(image, Image.Image):
-        image.save(output_path)
-        return
-    try:
-        import torch
-
-        if isinstance(image, torch.Tensor):
-            tensor = image.detach().float().clamp(0, 1).cpu()
-            if tensor.ndim == 4:
-                tensor = tensor[0]
-            if tensor.shape[0] == 1:
-                tensor = tensor.repeat(3, 1, 1)
-            if tensor.shape[0] == 4:
-                tensor = tensor[:3]
-            if tensor.shape[0] != 3:
-                raise ValueError(f"unexpected image tensor shape: {tuple(tensor.shape)}")
-            tensor = (tensor * 255).round().to(torch.uint8)
-            tensor = tensor.permute(1, 2, 0).contiguous()
-            height, width = tensor.shape[:2]
-            pil_image = Image.frombytes("RGB", (width, height), tensor.numpy().tobytes())
-            pil_image.save(output_path)
-            return
-    except ImportError:
-        pass
-    raise TypeError(f"unsupported Qwen image output type: {type(image)}")

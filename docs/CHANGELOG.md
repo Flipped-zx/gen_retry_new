@@ -1,5 +1,63 @@
 # Changelog
 
+## 2026-07-30
+
+- Completed five fresh `qwen_dual_backend@1` / PlannerContext v0.6
+  trajectories with 25 local 1024 x 1024 images and complete Geneval2
+  evaluation.
+- Used one sequential episode worker per HCU, parallelized independent
+  episodes across two cards, and completed without OOM or rerunning submitted
+  trajectories.
+- Corrected the runtime mismatch that unconditionally rejected a second novel
+  `query_skill`: each image-producing Round now permits at most two successful
+  novel Skill queries and idempotently resumes a validated query missing its
+  tool response.
+- Extended rollout auditing for dynamic execution-profile provenance,
+  PlannerContext v0.6 score visibility, corrected current-validator
+  classification, and subset selection by prompt ID.
+- Added deterministic paired comparison reporting with per-Attempt
+  action/source/backend/outcome tables, GM tie-break updates, pass-first
+  rejections, rollbacks, and post-initial regenerations.
+- Recorded the matched result: submitted atom pass 39/50 to 40/50, GM 19.70 to
+  18.32, and AM 77.68 to 77.33. Four pairs improved under hierarchical
+  ordering; one easy verb/count pair regressed.
+- Added a real v0.6 Round-by-Round walkthrough for `phase3_ep_012` and recorded
+  GPT-5.6 Sol's final `PASS` for the bounded claim "mechanistically positive
+  but performance-mixed."
+- Accepted ADR-0007 and added PlannerContext v0.6 while keeping Action Protocol
+  v0.5 unchanged.
+- Added the environment-owned
+  `geneval2_soft_tifa_gm@flow_dppo_v1` aggregate with one shared deterministic
+  implementation and exact event recomputation.
+- Changed new-episode best selection to higher pass-count, then higher GM, then
+  earlier Attempt; historical scoreless episodes retain legacy replay order.
+- Added latest/best GM, source-aware round GM delta, score-policy resume locks,
+  and homogeneous temporal-prefix-verified SFT export.
+- Reprepared the five matched dual-backend and five edit-only diagnostic
+  scaffolds with PlannerContext v0.6 and the explicit score policy; no live
+  model or evaluator calls were made.
+- Recorded GPT-5.6 Sol's final `APPROVE` after numeric, comparator, delta,
+  policy-lock, and SFT leakage amendments.
+
+## 2026-07-29
+
+- Accepted ADR-0006 and introduced independently versioned
+  `qwen_dual_backend@1` execution while keeping Planner Action and
+  PlannerContext schemas at v0.5.
+- Routed source-free `generate_image` to local Qwen-Image-2512 and
+  source-conditioned `edit_image` to local Qwen-Image-Edit-2511 without adding
+  backend, model, or mode fields to the SFT target.
+- Added complete profile/model/pipeline/sampling/source/output provenance,
+  profile-locked resume, trajectory validation, and homogeneous-profile SFT
+  export enforcement.
+- Retained the legacy edit-only configuration as historical provenance; old
+  trajectories and completed artifacts were not rewritten.
+- Froze five diagnostic Flow-DPPO prompts with known legacy failure modes and
+  prepared matched fresh dual-profile and edit-only run directories without
+  making live model or evaluator calls.
+- Recorded GPT-5.6 Sol's final `APPROVE` after its requested execution-profile,
+  provenance, resume, SFT-separation, and matched-comparison amendments.
+
 ## 2026-07-27
 
 - Added optional loading of Git-ignored `.env.teacher.local` credentials while

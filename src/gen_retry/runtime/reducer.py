@@ -3,6 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from gen_retry.domain.score_policy import (
+    candidate_is_better,
+    primary_score_value,
+    score_policy_from_task_payload,
+)
 from gen_retry.protocol.trajectory_validator import validate_trajectory_events
 
 
@@ -18,6 +23,7 @@ class AttemptRecord:
     operation: str
     image_artifact_id: str
     constraint_results: dict[str, dict[str, Any]]
+    primary_score: float | None = None
 
     @property
     def passed_constraint_ids(self) -> list[str]:
@@ -45,6 +51,7 @@ class EpisodeState:
     schema_version: str
     episode_id: str
     task_spec: dict[str, Any]
+    score_policy: dict[str, Any]
     attempts: dict[str, AttemptRecord] = field(default_factory=dict)
     attempt_order: list[str] = field(default_factory=list)
     latest_attempt_id: str | None = None
@@ -59,6 +66,7 @@ class EpisodeState:
             "schema_version": self.schema_version,
             "episode_id": self.episode_id,
             "task_spec": self.task_spec,
+            "score_policy": self.score_policy,
             "attempt_order": self.attempt_order,
             "attempts": {
                 attempt_id: attempt_to_dict(self.attempts[attempt_id])
@@ -85,6 +93,7 @@ def attempt_to_dict(attempt: AttemptRecord) -> dict[str, Any]:
             key: attempt.constraint_results[key]
             for key in sorted(attempt.constraint_results)
         },
+        "primary_score": attempt.primary_score,
         "passed_constraint_ids": attempt.passed_constraint_ids,
         "failed_constraint_ids": attempt.failed_constraint_ids,
     }
@@ -138,20 +147,26 @@ def choose_best_attempt(state: EpisodeState, candidate: AttemptRecord) -> str:
     if state.best_attempt_id is None:
         return candidate.attempt_id
     current_best = state.attempts[state.best_attempt_id]
-    if candidate.pass_count > current_best.pass_count:
+    if candidate_is_better(
+        candidate_pass_count=candidate.pass_count,
+        candidate_primary_score=candidate.primary_score,
+        current_pass_count=current_best.pass_count,
+        current_primary_score=current_best.primary_score,
+        score_policy=state.score_policy,
+    ):
         return candidate.attempt_id
-    if candidate.pass_count < current_best.pass_count:
-        return current_best.attempt_id
     return current_best.attempt_id
 
 
 def reduce_events(events: list[dict[str, Any]]) -> EpisodeState:
     validate_trajectory_events(events)
     task_spec = events[0]["payload"]["task_spec"]
+    score_policy = score_policy_from_task_payload(events[0]["payload"])
     state = EpisodeState(
         schema_version="0.2",
         episode_id=events[0]["episode_id"],
         task_spec=task_spec,
+        score_policy=score_policy,
         remaining_budget=task_spec["max_image_attempts"],
     )
     action_by_event_id: dict[str, dict[str, Any]] = {}
@@ -186,6 +201,7 @@ def reduce_events(events: list[dict[str, Any]]) -> EpisodeState:
                 operation=completion["payload"]["operation"],
                 image_artifact_id=completion["payload"]["image_artifact_id"],
                 constraint_results=constraint_results,
+                primary_score=primary_score_value(payload, score_policy),
             )
             if attempt.parent_attempt_id is not None:
                 previous = state.attempts[attempt.parent_attempt_id]

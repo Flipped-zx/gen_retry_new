@@ -1,0 +1,26 @@
+{
+  "source_id": "meta_muse_image_blog_2026_07_07",
+  "title": "Introducing Muse Image and Muse Video",
+  "publisher": "Meta Superintelligence Labs",
+  "published_date": "2026-07-07",
+  "accessed_date": "2026-07-29",
+  "canonical_url": "https://ai.meta.com/blog/introducing-muse-image-muse-video-msl/",
+  "evidence_type": "official-blog-grounded",
+  "capture": {
+    "format": "canonical URL plus selective paraphrased technical snapshot",
+    "raw_html_vendored": false,
+    "assets_vendored": false,
+    "reason": "The page does not publish a reusable content license; the repository stores a source pointer and research-focused paraphrase rather than republishing the page or its media."
+  },
+  "relevant_figure_urls": {
+    "search_tool_internal_ablation": "https://lookaside.fbsbx.com/elementpath/media/?media_id=1020234107374296&version=1783727678",
+    "self_refinement_internal_ablation": "https://lookaside.fbsbx.com/elementpath/media/?media_id=1051639497205607&version=1783727678",
+    "test_time_compute_internal_ablation": "https://lookaside.fbsbx.com/elementpath/media/?media_id=1877978896921254&version=1783727678"
+  },
+  "related_official_sources": {
+    "meta_product_announcement": "https://about.fb.com/news/2026/07/introducing-muse-image-meta-ai/",
+    "google_muse_2023_disambiguation": "https://muse-model.github.io/",
+    "google_richhf_blog": "https://research.google/blog/rich-human-feedback-for-text-to-image-generation/",
+    "google_richhf_paper": "https://arxiv.org/abs/2312.10240"
+  }
+}

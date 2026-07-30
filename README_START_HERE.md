@@ -2,36 +2,31 @@
 
 本版本默认采用**全新 Git 仓库**开发，不再把启动包覆盖到旧 `gen-retry` 仓库中。旧项目、Gen-Searcher、GenEvolve 与 Geneval2 只作为只读证据源，通过显式路径配置供 Codex 考古和复用。
 
-## 推荐目录布局
-
-```text
-/root/private_data/agentic_image/
-├── gen-retry-v3/                  # 新仓库：唯一允许写入的主项目
-├── gen-retry-legacy/              # 旧实现，只读参考
-├── Gen-Searcher/                  # 外部仓库，只读参考
-├── GenEvolve/                     # 外部仓库，只读参考
-└── Geneval2/                      # 本地 evaluator 环境/仓库
-```
-
-目录名可以不同，但必须写入 `configs/paths/local.yaml`，不要在代码和 Prompt 中散落绝对路径。
 
 ## 固定系统口径
 
 ```text
 Policy model       : Qwen3-VL-8B-Instruct（后续 SFT）
-Image backend      : Qianwen-Image-Edit（统一执行生成、重生成、局部编辑）
+Image execution    : qwen_dual_backend@1
+Generate backend   : Qwen-Image-2512（source-free generation / restart）
+Edit backend       : Qwen-Image-Edit-2511（source-conditioned editing）
 Evaluator          : Geneval2 atom-level verifier
 Teacher            : GPT-5.5 API（Pilot / SFT teacher）
 Persistent state   : immutable events + deterministic reducer
 Agent actions      : query_skill / generate_image / edit_image / submit_attempt
 ```
 
-`generate_image` 与 `edit_image` 是不同的逻辑动作，但都走同一个 `Qianwen-Image-Edit` executor：
+`generate_image` 与 `edit_image` 是不同的逻辑动作，并由环境按执行配置确定性路由：
 
 ```text
-generate_image → Qianwen-Image-Edit(mode=generate)
-edit_image     → Qianwen-Image-Edit(mode=edit, source_image=...)
+generate_image → Qwen-Image-2512（无 source，创建 root Attempt）
+edit_image     → Qwen-Image-Edit-2511（必须有 source，创建 child Attempt）
 ```
+
+Planner 不输出 backend、model 或 mode；这些均为环境 provenance。动作协议和
+Action Protocol 仍为 v0.5；PlannerContext v0.6 额外暴露环境计算的
+Geneval2 prompt-level GM，并只在 atom pass-count 相同时用于 best
+tie-break。执行配置独立版本化为 `qwen_dual_backend@1`。
 
 ## 你现在要做的事情
 

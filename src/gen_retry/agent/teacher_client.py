@@ -13,7 +13,9 @@ from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.runtime.planner_view import DEFAULT_SKILL_MANIFEST
 
 
-TEACHER_SYSTEM_PROMPT_VERSION = "teacher_system_prompt_v5_planner_io_v0_5_skill_catalog"
+TEACHER_SYSTEM_PROMPT_VERSION = (
+    "teacher_system_prompt_v7_planner_context_v0_6_primary_score"
+)
 AVAILABLE_SKILL_IDS = tuple(entry["skill_id"] for entry in DEFAULT_SKILL_MANIFEST)
 
 
@@ -26,7 +28,13 @@ TEACHER_SYSTEM_PROMPT_TEXT = (
     "to generate, edit, branch from best, continue, or submit. Use visible images "
     "and Geneval2 atom feedback together. Do not invent unsupported visual "
     "observations. Compare latest and best images when they differ before selecting "
-    "an edit source. Use fixed, regressed, persistent, and stable-pass history. Do "
+    "an edit source. Treat primary_score as an environment-owned prompt-level "
+    "Geneval2 signal: passed-atom count is primary, and primary_score breaks ties. "
+    "Never copy or predict scores into an action. "
+    "generate_image always starts a source-free root image; "
+    "edit_image always modifies one declared historical source attempt. Never "
+    "output a backend or mode field. Use fixed, regressed, persistent, and "
+    "stable-pass history. Do "
     "not repeat a materially equivalent ineffective instruction unless the new "
     "instruction contains a concrete change. When using query_skill, select skill_ids "
     "only from this exact catalog: "
@@ -158,6 +166,9 @@ class OpenAICompatibleTeacherClient:
             "system_prompt_sha256": teacher_system_prompt_sha256(),
             "planner_context_ref": context_ref,
             "planner_context_sha256": context_sha,
+            "planner_context_schema_version": str(
+                context.get("planner_context_schema_version", "0.5")
+            ),
             "teacher_text_input": self.build_teacher_text_input(
                 planner_context=context,
                 task_spec=task_spec,
@@ -222,6 +233,12 @@ class OpenAICompatibleTeacherClient:
                 ),
                 "Return exactly one JSON object matching action_protocol_v0_5. "
                 "No markdown, no prose, no environment facts, no paths, no scores.",
+                (
+                    "Geneval2 primary_score is environment-owned. Prefer more passed "
+                    "atoms; only when pass counts tie, prefer higher primary_score. "
+                    "Use score deltas as observed action outcomes, never as fields in "
+                    "your action."
+                ),
                 "The top-level object must have exactly these keys: "
                 "schema_version, action, arguments. Never use a top-level "
                 "instructions field.",
@@ -240,7 +257,7 @@ class OpenAICompatibleTeacherClient:
                 canonical_json(DEFAULT_SKILL_MANIFEST),
                 "generate_image and edit_image are Planner Actions. Their arguments "
                 "must contain the action plan and the exact executable text sent to "
-                "Qwen-Image-Edit.",
+                "the environment-owned image executor.",
                 "For generate_image and edit_image, include target_constraint_ids, "
                 "preserve_constraint_ids, and the final executable instruction in "
                 "arguments.instruction. Do not include decision_summary, diagnosis_summary, "
@@ -249,11 +266,16 @@ class OpenAICompatibleTeacherClient:
                 "or change.",
                 "Generation instructions must include relevant exact entities/counts, "
                 "entity-specific attributes, layout, relation/depth cues, visibility, "
-                "separation, and no extras or fused/cropped/reflected instances.",
+                "separation, and no extras or fused/cropped/reflected instances. "
+                "generate_image is always source-free, creates a new root attempt, "
+                "and may be used initially or later to abandon an ineffective visual "
+                "route. Its instruction must describe the complete desired image and "
+                "must not refer to preserving pixels from a source image.",
                 "Edit instructions must include four semantic blocks: target operation, "
                 "spatial grounding, preservation lock, and forbidden changes. Do not rely "
                 "only on vague phrases such as 'fix the failed parts' or 'preserve all "
-                "correct evidence'.",
+                "correct evidence'. edit_image always uses the declared source attempt "
+                "and creates a child attempt.",
                 "Use edit_image only with a source_attempt_id already present in "
                 "PlannerContext latest_attempt or episode_memory. "
                 "Use visible LATEST_IMAGE and BEST_IMAGE inputs; never decide from a path "

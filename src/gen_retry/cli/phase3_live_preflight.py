@@ -10,6 +10,7 @@ from gen_retry.phase3.model_config import load_model_config
 from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.tools.geneval2_adapter import LocalGeneval2Adapter
 from gen_retry.tools.qianwen_image_edit_adapter import QianwenImageEditAdapter
+from gen_retry.tools.qwen_image_adapter import QwenImageAdapter
 
 
 def run_preflight(
@@ -30,28 +31,52 @@ def run_preflight(
     teacher_response = teacher.smoke_test()
     teacher_smoke_passed = "ok" in teacher_response.raw_text.lower()
 
-    model_path_exists = cfg.image_backend.model_path.exists()
-    adapter = QianwenImageEditAdapter(
-        provider=cfg.image_backend.provider,
-        model_path=cfg.image_backend.model_path,
+    execution = cfg.resolved_image_execution
+    generate_backend = execution.generate_backend
+    edit_backend = execution.edit_backend
+    generate_steps = (
+        params.generate_image_steps
+        if params.generate_image_steps is not None
+        else generate_backend.num_inference_steps or params.image_steps
+    )
+    edit_steps = (
+        params.edit_image_steps
+        if params.edit_image_steps is not None
+        else edit_backend.num_inference_steps or params.image_steps
+    )
+    generate_adapter = QwenImageAdapter(
+        provider=generate_backend.provider,
+        model_id=generate_backend.model_id,
+        model_path=generate_backend.model_path,
         artifact_root=output_dir,
         height=params.image_height,
         width=params.image_width,
-        num_inference_steps=params.image_steps,
+        num_inference_steps=generate_steps,
+        true_cfg_scale=generate_backend.true_cfg_scale,
         seed=params.image_seed,
     )
-    adapter_check = {
-        "provider": cfg.image_backend.provider,
-        "backend_id": cfg.image_backend.backend_id,
-        "uses_http_endpoint": adapter.uses_http_endpoint,
-        "requires_qianwen_endpoint_env": False,
-    }
+    edit_adapter = QianwenImageEditAdapter(
+        provider=edit_backend.provider,
+        model_id=edit_backend.model_id,
+        model_path=edit_backend.model_path,
+        artifact_root=output_dir,
+        height=params.image_height,
+        width=params.image_width,
+        num_inference_steps=edit_steps,
+        true_cfg_scale=edit_backend.true_cfg_scale,
+        guidance_scale=(
+            edit_backend.guidance_scale
+            if edit_backend.guidance_scale is not None
+            else 1.0
+        ),
+        seed=params.image_seed + 1,
+    )
     generation = None
     edit = None
     geneval_report = None
     atom_schema_ok = None
     if run_image_smoke:
-        generation = adapter.generate(
+        generation = generate_adapter.generate(
             request_id="phase3_smoke_generate",
             attempt_id="a_000",
             image_artifact_id="img_000",
@@ -60,7 +85,7 @@ def run_preflight(
                 "Use a simple uncluttered composition with no text."
             ),
         )
-        edit = adapter.edit(
+        edit = edit_adapter.edit(
             request_id="phase3_smoke_edit",
             attempt_id="a_001",
             source_attempt_id="a_000",
@@ -130,18 +155,36 @@ def run_preflight(
             "finish_reason": teacher_response.finish_reason,
             "raw_text_sha256": teacher_response.response_metadata["raw_text_sha256"],
         },
-        "image_backend": {
-            "provider": cfg.image_backend.provider,
-            "model_id": cfg.image_backend.model_id,
-            "backend_id": cfg.image_backend.backend_id,
-            "model_path_exists": model_path_exists,
-            "adapter_check": adapter_check,
-            "render_quality_defaults": {
-                "height": params.image_height,
-                "width": params.image_width,
-                "num_inference_steps": params.image_steps,
-                "true_cfg_scale": adapter.true_cfg_scale,
-                "guidance_scale": adapter.guidance_scale,
+        "image_execution": {
+            "profile_id": execution.profile_id,
+            "profile_version": execution.profile_version,
+            "generate": {
+                "provider": generate_backend.provider,
+                "model_id": generate_backend.model_id,
+                "backend_id": generate_backend.backend_id,
+                "model_path_exists": generate_backend.model_path.exists(),
+                "uses_http_endpoint": generate_adapter.uses_http_endpoint,
+                "render_quality_defaults": {
+                    "height": params.image_height,
+                    "width": params.image_width,
+                    "num_inference_steps": generate_steps,
+                    "true_cfg_scale": generate_adapter.true_cfg_scale,
+                    "guidance_scale": None,
+                },
+            },
+            "edit": {
+                "provider": edit_backend.provider,
+                "model_id": edit_backend.model_id,
+                "backend_id": edit_backend.backend_id,
+                "model_path_exists": edit_backend.model_path.exists(),
+                "uses_http_endpoint": edit_adapter.uses_http_endpoint,
+                "render_quality_defaults": {
+                    "height": params.image_height,
+                    "width": params.image_width,
+                    "num_inference_steps": edit_steps,
+                    "true_cfg_scale": edit_adapter.true_cfg_scale,
+                    "guidance_scale": edit_adapter.guidance_scale,
+                },
             },
             "generation_smoke": None if generation is None else {
                 "request_id": generation.request_id,
@@ -172,8 +215,10 @@ def run_preflight(
         "passed": (
             all(value == "SET" for value in env_status.values())
             and teacher_smoke_passed
-            and model_path_exists
-            and not adapter.uses_http_endpoint
+            and generate_backend.model_path.exists()
+            and edit_backend.model_path.exists()
+            and not generate_adapter.uses_http_endpoint
+            and not edit_adapter.uses_http_endpoint
             and cfg.evaluator.config_path.exists()
             and (atom_schema_ok is not False)
         ),
@@ -197,13 +242,18 @@ def _checkpoint(summary: dict) -> str:
         f"- TEACHER_BASE_URL: {summary['teacher_env'].get('TEACHER_BASE_URL', 'MISSING')}",
         f"- Teacher model ID: {summary['teacher']['model_id']}",
         f"- Teacher smoke: {'PASS' if summary['teacher']['smoke_passed'] else 'FAIL'}",
-        f"- Image provider: {summary['image_backend']['provider']}",
-        f"- Local model path exists: {'PASS' if summary['image_backend']['model_path_exists'] else 'FAIL'}",
-        f"- Adapter uses HTTP endpoint: {summary['image_backend']['adapter_check']['uses_http_endpoint']}",
+        f"- Execution profile: {summary['image_execution']['profile_id']}@{summary['image_execution']['profile_version']}",
+        f"- Generate provider: {summary['image_execution']['generate']['provider']}",
+        f"- Generate model path exists: {'PASS' if summary['image_execution']['generate']['model_path_exists'] else 'FAIL'}",
+        f"- Generate adapter uses HTTP endpoint: {summary['image_execution']['generate']['uses_http_endpoint']}",
+        f"- Edit provider: {summary['image_execution']['edit']['provider']}",
+        f"- Edit model path exists: {'PASS' if summary['image_execution']['edit']['model_path_exists'] else 'FAIL'}",
+        f"- Edit adapter uses HTTP endpoint: {summary['image_execution']['edit']['uses_http_endpoint']}",
         f"- Image smoke run: {image_smoke}",
-        f"- Rendering defaults: {summary['image_backend']['render_quality_defaults']}",
-        f"- Generation smoke artifact: {summary['image_backend']['generation_smoke']['artifact_uri'] if image_smoke else 'not run'}",
-        f"- Edit smoke artifact: {summary['image_backend']['edit_smoke']['artifact_uri'] if image_smoke else 'not run'}",
+        f"- Generate defaults: {summary['image_execution']['generate']['render_quality_defaults']}",
+        f"- Edit defaults: {summary['image_execution']['edit']['render_quality_defaults']}",
+        f"- Generation smoke artifact: {summary['image_execution']['generation_smoke']['artifact_uri'] if image_smoke else 'not run'}",
+        f"- Edit smoke artifact: {summary['image_execution']['edit_smoke']['artifact_uri'] if image_smoke else 'not run'}",
         f"- Geneval2 atom schema normalization: {atom_status}",
         f"- Counted as Phase 3 episode: {summary['phase3_episode_counted']}",
         f"- Overall preflight: {'PASS' if summary['passed'] else 'FAIL'}",
@@ -243,11 +293,36 @@ def main() -> None:
     print("TEACHER_BASE_URL=" + summary["teacher_env"].get("TEACHER_BASE_URL", "MISSING"))
     print("teacher_model_id=" + summary["teacher"]["model_id"])
     print("teacher_smoke=" + ("PASS" if summary["teacher"]["smoke_passed"] else "FAIL"))
-    print("model_path_exists=" + ("SET" if summary["image_backend"]["model_path_exists"] else "MISSING"))
-    print("adapter_provider=" + summary["image_backend"]["provider"])
-    print("adapter_uses_http_endpoint=" + str(summary["image_backend"]["adapter_check"]["uses_http_endpoint"]))
+    print(
+        "execution_profile="
+        + summary["image_execution"]["profile_id"]
+        + "@"
+        + summary["image_execution"]["profile_version"]
+    )
+    for route in ("generate", "edit"):
+        route_summary = summary["image_execution"][route]
+        print(
+            f"{route}_model_path_exists="
+            + ("SET" if route_summary["model_path_exists"] else "MISSING")
+        )
+        print(f"{route}_adapter_provider=" + route_summary["provider"])
+        print(
+            f"{route}_adapter_uses_http_endpoint="
+            + str(route_summary["uses_http_endpoint"])
+        )
     print("image_smoke_run=" + str(summary["image_smoke_run"]))
-    print("render_quality_defaults=" + canonical_json(summary["image_backend"]["render_quality_defaults"]))
+    print(
+        "generate_render_quality_defaults="
+        + canonical_json(
+            summary["image_execution"]["generate"]["render_quality_defaults"]
+        )
+    )
+    print(
+        "edit_render_quality_defaults="
+        + canonical_json(
+            summary["image_execution"]["edit"]["render_quality_defaults"]
+        )
+    )
     if summary["image_smoke_run"]:
         print("generation_smoke=PASS")
         print("edit_smoke=PASS")

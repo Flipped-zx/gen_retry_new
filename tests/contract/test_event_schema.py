@@ -8,6 +8,10 @@ import pytest
 from jsonschema.exceptions import ValidationError
 
 from gen_retry.cli.validate_fixtures import validate_nested_event_payload
+from gen_retry.domain.score_policy import (
+    canonical_primary_score,
+    primary_score_policy,
+)
 from gen_retry.protocol.schema_loader import validate_instance
 from gen_retry.protocol.trajectory_validator import (
     ProtocolValidationError,
@@ -44,6 +48,37 @@ def test_event_fixture_validates_with_nested_payloads() -> None:
     for event in events:
         validate_instance(event, "episode_event_v0_2.schema.json")
         validate_nested_event_payload(event)
+
+
+def test_primary_score_policy_requires_exact_geneval2_aggregate() -> None:
+    events = load_events(ROOT / "tests" / "fixtures" / "events" / "one_attempt_events.jsonl")
+    events[0]["payload"]["score_policy"] = primary_score_policy()
+    geneval = next(
+        event for event in events if event["event_type"] == "geneval2_completed"
+    )
+    for result, confidence in zip(
+        geneval["payload"]["constraint_results"],
+        [0.10, 0.80, 0.90, 0.70],
+        strict=True,
+    ):
+        result["confidence"] = confidence
+    geneval["payload"]["primary_score"] = canonical_primary_score(
+        geneval["payload"]["constraint_results"]
+    )
+
+    validate_trajectory_events(events)
+
+    geneval["payload"]["primary_score"]["value"] += 0.01
+    with pytest.raises(ProtocolValidationError, match="invalid_primary_score"):
+        validate_trajectory_events(events)
+
+
+def test_primary_score_policy_rejects_missing_aggregate() -> None:
+    events = load_events(ROOT / "tests" / "fixtures" / "events" / "one_attempt_events.jsonl")
+    events[0]["payload"]["score_policy"] = primary_score_policy()
+
+    with pytest.raises(ProtocolValidationError, match="missing_primary_score"):
+        validate_trajectory_events(events)
 
 
 def test_event_schema_accepts_nested_v0_5_action_without_breaking_v0_2() -> None:
@@ -177,6 +212,85 @@ def test_generate_payload_cannot_smuggle_source_attempt() -> None:
 
     with pytest.raises(ValidationError):
         validate_instance(event, "episode_event_v0_2.schema.json")
+
+
+def test_dual_profile_generate_event_requires_native_t2i_route() -> None:
+    event = {
+        "schema_version": "0.2",
+        "event_id": "evt_9996",
+        "episode_id": "ep_demo_001",
+        "turn_id": "turn_000",
+        "event_type": "image_execution_started",
+        "created_at": "2026-07-14T06:00:00Z",
+        "producer": "qwen_image_adapter",
+        "input_refs": ["evt_9995"],
+        "payload": {
+            "request_id": "req_ep_demo_001_turn_000",
+            "operation": "generate",
+            "backend": "qwen_image",
+            "execution_profile_id": "qwen_dual_backend",
+            "execution_profile_version": "1",
+            "logical_action": "generate_image",
+            "model_id": "Qwen-Image-2512",
+            "model_revision_or_fingerprint": "model_index_sha256:" + "a" * 64,
+            "pipeline_id": "QwenImagePipeline",
+            "adapter_version": "1",
+            "sampling": {
+                "seed": 0,
+                "num_inference_steps": 50,
+                "true_cfg_scale": 4.0,
+                "guidance_scale": None,
+                "width": 1024,
+                "height": 1024,
+                "negative_prompt": "low quality",
+            },
+        },
+    }
+
+    validate_instance(event, "episode_event_v0_2.schema.json")
+    event["payload"]["backend"] = "qianwen_image_edit"
+    with pytest.raises(ValidationError):
+        validate_instance(event, "episode_event_v0_2.schema.json")
+
+
+def test_dual_profile_edit_event_requires_source_digest() -> None:
+    event = {
+        "schema_version": "0.2",
+        "event_id": "evt_9996",
+        "episode_id": "ep_demo_001",
+        "turn_id": "turn_001",
+        "event_type": "image_execution_started",
+        "created_at": "2026-07-14T06:00:00Z",
+        "producer": "qianwen_image_edit_adapter",
+        "input_refs": ["evt_9995"],
+        "payload": {
+            "request_id": "req_ep_demo_001_turn_001",
+            "operation": "edit",
+            "backend": "qianwen_image_edit",
+            "source_attempt_id": "a_000",
+            "execution_profile_id": "qwen_dual_backend",
+            "execution_profile_version": "1",
+            "logical_action": "edit_image",
+            "model_id": "Qwen-Image-Edit-2511",
+            "model_revision_or_fingerprint": "model_index_sha256:" + "b" * 64,
+            "pipeline_id": "QwenImageEditPlusPipeline",
+            "adapter_version": "2",
+            "sampling": {
+                "seed": 1,
+                "num_inference_steps": 40,
+                "true_cfg_scale": 4.0,
+                "guidance_scale": 1.0,
+                "width": 1024,
+                "height": 1024,
+                "negative_prompt": " ",
+            },
+        },
+    }
+
+    with pytest.raises(ValidationError):
+        validate_instance(event, "episode_event_v0_2.schema.json")
+    event["payload"]["source_artifact_sha256"] = "c" * 64
+    validate_instance(event, "episode_event_v0_2.schema.json")
 
 
 def test_image_start_cannot_declare_attempt_lineage() -> None:
@@ -395,6 +509,17 @@ def test_image_start_without_validated_action_is_semantically_invalid() -> None:
         validate_trajectory_events(events)
 
     assert "image_start_action_ref" in str(excinfo.value)
+
+
+def test_image_start_logical_action_must_match_canonical_action() -> None:
+    events = load_events(ROOT / "tests" / "fixtures" / "events" / "one_attempt_events.jsonl")
+    start_event = next(event for event in events if event["event_type"] == "image_execution_started")
+    start_event["payload"]["logical_action"] = "edit_image"
+
+    with pytest.raises(ProtocolValidationError) as excinfo:
+        validate_trajectory_events(events)
+
+    assert "image_logical_action_mismatch" in str(excinfo.value)
 
 
 def test_submission_without_validated_submit_action_is_semantically_invalid() -> None:

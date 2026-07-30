@@ -7,8 +7,14 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from gen_retry.domain.score_policy import (
+    planner_context_version,
+    score_policy_from_task_payload,
+)
 from gen_retry.protocol.schema_loader import validate_instance
+from gen_retry.runtime.event_io import load_events_jsonl
 from gen_retry.runtime.json_canonical import canonical_json
+from gen_retry.runtime.planner_context import build_planner_context_from_events
 
 
 SCHEMA_VERSION = "0.5"
@@ -20,14 +26,17 @@ SYSTEM_PROMPT = (
     "You are the Gen-Retry v0.5 planner. Given the canonical "
     "PlannerContext, visible image references, active skill guidance, and "
     "environment-owned attempt history, emit exactly one strict JSON planner "
-    "action matching action_protocol_v0.5."
+    "action matching action_protocol_v0.5. generate_image is a source-free root "
+    "generation; edit_image modifies one declared historical source attempt. "
+    "Passed-atom count is the primary objective; when it ties, use the "
+    "environment-owned primary_score. Never output backend, mode, or score fields."
 )
 
 
 def default_supervision_policy() -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
-        "policy_id": "phase4_sft_supervision_freeze_v0.5",
+        "policy_id": "phase4_sft_supervision_freeze_v0.6",
         "principal_target": "canonical assistant action JSON",
         "accepted_action_labels": sorted(TRAINING_LABELS),
         "targetable_actions": sorted(TARGETABLE_ACTIONS),
@@ -63,6 +72,20 @@ def default_supervision_policy() -> dict[str, Any]:
             "validation_fraction": 0.1,
             "test_fraction": 0.1,
             "invariant": "one original prompt group appears in exactly one split",
+        },
+        "execution_profile_policy": {
+            "method": "homogeneous_export_only",
+            "invariant": (
+                "one export contains one execution profile; legacy white-canvas "
+                "generation and native T2I generation are never silently mixed"
+            ),
+        },
+        "planner_context_policy": {
+            "method": "homogeneous_context_score_contract_only",
+            "invariant": (
+                "one export contains one PlannerContext version and score-policy "
+                "tuple; every input is rebuilt from its exact temporal event prefix"
+            ),
         },
         "context_budget": {
             "estimated_token_method": "ceil(characters/4)",
@@ -187,6 +210,13 @@ def build_supervised_sample(
     context_ref = request.get("planner_context_ref") or request.get("planner_view_ref")
     planner_context = json.loads((run_dir / context_ref).read_text(encoding="utf-8"))
     task_spec = json.loads((run_dir / "task_spec.json").read_text(encoding="utf-8"))
+    execution_profile = _execution_profile_for_run(run_dir)
+    context_contract = _validate_planner_context_prefix(
+        run_dir=run_dir,
+        context_ref=context_ref,
+        planner_context=planner_context,
+        target_action_event_id=label["action_event_id"],
+    )
     messages = render_messages(
         task_spec=task_spec,
         planner_context=planner_context,
@@ -225,6 +255,8 @@ def build_supervised_sample(
         "target_estimated_tokens": _estimate_tokens(target_chars),
         "truncated": False,
         "policy_id": policy["policy_id"],
+        "execution_profile": execution_profile,
+        **context_contract,
     }
 
 
@@ -296,6 +328,7 @@ def _load_run_index(run_root: Path) -> dict[str, dict[str, Any]]:
             "run_dir": run_dir,
             "original_prompt": task_spec["original_prompt"],
             "prompt_group_sha256": _sha256_text(task_spec["original_prompt"]),
+            "execution_profile": _execution_profile_for_run(run_dir),
         }
     return index
 
@@ -374,6 +407,27 @@ def _build_audit(
     action_counts = Counter(label["action"] for label in labels)
     decision_counts = Counter(decision["decision_reason"] for decision in decisions)
     target_actions = Counter(target["action"] for target in targets)
+    execution_profiles = Counter(
+        "{profile_id}@{profile_version}".format(**target["execution_profile"])
+        for target in targets
+    )
+    mixed_execution_profile_violations = (
+        sorted(execution_profiles) if len(execution_profiles) > 1 else []
+    )
+    context_score_contracts = Counter(
+        canonical_json(
+            {
+                "planner_context_schema_version": target[
+                    "planner_context_schema_version"
+                ],
+                "score_policy": target["score_policy"],
+            }
+        )
+        for target in targets
+    )
+    mixed_context_score_contract_violations = (
+        sorted(context_score_contracts) if len(context_score_contracts) > 1 else []
+    )
     loss_violations = [
         target["sample_id"]
         for target in targets
@@ -400,6 +454,14 @@ def _build_audit(
         "action_counts": dict(sorted(action_counts.items())),
         "decision_counts": dict(sorted(decision_counts.items())),
         "target_action_counts": dict(sorted(target_actions.items())),
+        "execution_profile_counts": dict(sorted(execution_profiles.items())),
+        "mixed_execution_profile_violations": mixed_execution_profile_violations,
+        "context_score_contract_counts": dict(
+            sorted(context_score_contracts.items())
+        ),
+        "mixed_context_score_contract_violations": (
+            mixed_context_score_contract_violations
+        ),
         "split_counts": split_manifest["split_counts"],
         "prompt_group_cross_split_violations": split_manifest[
             "prompt_group_cross_split_violations"
@@ -411,7 +473,86 @@ def _build_audit(
             not loss_violations
             and not noncanonical_targets
             and not split_manifest["prompt_group_cross_split_violations"]
+            and not mixed_execution_profile_violations
+            and not mixed_context_score_contract_violations
         ),
+    }
+
+
+def _execution_profile_for_run(run_dir: Path) -> dict[str, str]:
+    plan_path = run_dir / "rollout_plan.json"
+    if not plan_path.exists():
+        return {
+            "profile_id": "qwen_image_edit_only",
+            "profile_version": "1",
+        }
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    profile = plan.get("execution_profile") or {}
+    return {
+        "profile_id": str(profile.get("profile_id", "qwen_image_edit_only")),
+        "profile_version": str(profile.get("profile_version", "1")),
+    }
+
+
+def _validate_planner_context_prefix(
+    *,
+    run_dir: Path,
+    context_ref: str,
+    planner_context: dict[str, Any],
+    target_action_event_id: str,
+) -> dict[str, Any]:
+    events = load_events_jsonl(run_dir / "events.jsonl")
+    matches = [
+        (index, event)
+        for index, event in enumerate(events)
+        if event["event_type"] == "planner_context_built"
+        and (
+            event["payload"].get("planner_context_ref")
+            or event["payload"].get("planner_view_ref")
+        )
+        == context_ref
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            f"expected one planner_context_built event for {context_ref}, "
+            f"found {len(matches)}"
+        )
+    context_index, context_event = matches[0]
+    target_indices = [
+        index
+        for index, event in enumerate(events)
+        if event["event_id"] == target_action_event_id
+    ]
+    if len(target_indices) != 1 or target_indices[0] <= context_index:
+        raise ValueError(
+            "SFT target action must occur after its planner context event"
+        )
+    score_policy = score_policy_from_task_payload(events[0]["payload"])
+    expected_version = planner_context_version(score_policy)
+    context_version = str(
+        context_event["payload"].get(
+            "planner_context_schema_version",
+            planner_context.get("planner_context_schema_version", "0.5"),
+        )
+    )
+    if context_version != expected_version:
+        raise ValueError(
+            "planner context and score policy are incompatible: "
+            f"context={context_version}, expected={expected_version}"
+        )
+    rebuilt = build_planner_context_from_events(
+        events[: context_index + 1],
+        task_spec_ref="task_spec.json",
+        schema_version=context_version,
+    )
+    if canonical_json(rebuilt) != canonical_json(planner_context):
+        raise ValueError(
+            f"persisted PlannerContext is not reproducible from its event prefix: "
+            f"{context_ref}"
+        )
+    return {
+        "planner_context_schema_version": context_version,
+        "score_policy": score_policy,
     }
 
 

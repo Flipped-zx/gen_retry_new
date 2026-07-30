@@ -405,6 +405,163 @@ local_adaptation: Gen-Retry v3 outputs verifier-grounded retry actions (`query_s
 copy_code: no
 notes: Do not copy GenEvolve's search/reference final schema directly; v3 uses Geneval2 atom feedback, best-so-far state, rollback source selection, and executable retry actions.
 
+### Meta Muse Image Agentic Generation Blog
+
+source_name: Meta Muse Image official technical blog
+title: `Introducing Muse Image and Muse Video`
+official_url: `https://ai.meta.com/blog/introducing-muse-image-muse-video-msl/`
+publisher: Meta Superintelligence Labs
+published_date: `2026-07-07`
+accessed_date: `2026-07-29`
+evidence_type: official-blog-grounded via `source_researcher`
+local_source_record:
+  `references/web/muse_image_meta_2026-07-07/technical_blog_snapshot.md`
+exact_sections:
+- section: `Muse Image: Agentic Image Generation / Tool Use`
+  evidence: the system can invoke search and code tools; the blog presents an
+    internal search win-rate ablation but does not disclose the complete prompt
+    set, sample size, judge protocol, uncertainty, or numeric table.
+- section: `Self-Refinement`
+  evidence: the described policy can locally edit a narrow defect, regenerate
+    when larger parts are wrong, or switch to tool use; Meta attributes the
+    behavior to reinforcement-learning reward rather than a hand-coded route.
+    The internal chart reports pairwise preference of 57.1% versus 42.9% for
+    text-to-image, 56.3% versus 43.7% for single-image editing, and 56.6%
+    versus 43.4% for multi-image editing with refinement enabled versus
+    disabled; sample counts and uncertainty are not disclosed.
+- section: `Test-Time Compute Scaling`
+  evidence: the blog compares deliberate reasoning/tool/refinement compute with
+    Best-of-N sampling and says Best-of-N saturates earlier; the public post
+    does not expose a reproducible protocol or raw numeric results.
+- section: `Image Editing`
+  evidence: the product is described as maintaining coherence across editing
+    turns, but no public preservation benchmark is specified.
+- section: `Image Benchmarks`
+  evidence: Arena human-preference rankings are reported as of 2026-07-05;
+    these are not comparable to Gen-Retry's Qianwen/Geneval2 protocol.
+borrowed_idea: Treat edit versus regenerate as a learned routing decision;
+  compare adaptive retry to equal-image-call-budget Best-of-N; report anytime
+  quality/cost curves and source-relative target-fix versus preserve-regression.
+local_adaptation: Gen-Retry keeps only its current action set and explicit
+  Geneval2/canonical-memory ownership. Search, code, Muse Spark,
+  personalization, multi-reference composition, and product features remain
+  out of scope.
+copy_code: no
+notes: This 2026 system is from Meta, not Google. Google's 2023 `Muse:
+  Text-To-Image Generation via Masked Generative Transformers`
+  (`https://muse-model.github.io/`) is a different generator architecture.
+  Targeted primary-source searches found no public Muse Image paper, model
+  card, code, weights, reward definition, or reproducible ablation protocol as
+  of the access date. Muse Image is related-work motivation, not an executable
+  or numerically comparable baseline. The page does not publish a reusable
+  content license, so the repository stores a canonical URL and selective
+  paraphrase rather than vendoring the page or its media.
+
+### Google Rich Human Feedback for T2I
+
+source_name: Google RichHF/RAHF paper, official blog, and utility repository
+paper: `Rich Human Feedback for Text-to-Image Generation`
+arxiv_url: `https://arxiv.org/abs/2312.10240`
+version: v2, last revised 2024-04-09
+venue: CVPR 2024
+official_blog:
+  `https://research.google/blog/rich-human-feedback-for-text-to-image-generation/`
+official_blog_date: `2024-06-26`
+google_publication:
+  `https://research.google/pubs/rich-human-feedback-for-text-to-image-generation/`
+repository_url:
+  `https://github.com/google-research/google-research/tree/master/richhf_18k`
+repository_commit_observed: `a1fcc2d2e342c59ecff810eea28edb010f654a10`
+paper_license: CC BY 4.0 on arXiv
+utility_license: parent `google-research` repository is Apache-2.0
+accessed_date: `2026-07-29`
+evidence_type: paper-grounded, official-blog-grounded, and
+  repository-grounded via `source_researcher`
+exact_sections:
+- section: `Paper Sections 3.1--3.3 / Official Blog "Rich human feedback
+    collection" and "Rich human feedback prediction"`
+  evidence: RichHF annotates global plausibility/alignment/aesthetic/overall
+    scores, pixel-level implausibility and misalignment locations, and
+    misrepresented or missing prompt words; RAHF predicts score, heatmap, and
+    misalignment-sequence outputs.
+- section: `Paper Section 4 / Official Blog "Learning from rich human
+    feedback"`
+  evidence: predicted feedback is used to filter Muse candidates for LoRA
+    fine-tuning, guide other generators, and convert implausibility heatmaps
+    into masks for Muse inpainting.
+- section: `Official Blog region-inpainting procedure`
+  evidence: multiple repaired images are generated and the final result is
+    selected by the highest RAHF-predicted plausibility score.
+- section: `Paper Section 4.1 human evaluation`
+  evidence: evaluation uses 100 new TIFA prompts and randomized side-by-side
+    judgments; fine-tuned Muse is reported significantly/slightly better in
+    21.50%/30.33%, about the same in 31.33%, and
+    slightly/significantly worse in 12.67%/4.17%. The paper reports no
+    confidence interval for this comparison.
+exact_repository_paths:
+- path: `richhf_18k/`
+  evidence: public utilities and annotation-format support live under the
+    Apache-2.0 Google Research parent repository; they are not the full RAHF
+    training or inference implementation.
+borrowed_idea: Separate the value of detailed atom-level feedback from an
+  aggregate-only verifier signal; pair verifier-guided selection with an
+  independent human or held-out evaluator audit; measure localized repair and
+  unintended regressions separately.
+local_adaptation: Gen-Retry retains Geneval2 atom facts rather than importing
+  RAHF. A nested `atom-level feedback vs aggregate-only counts vs no verifier`
+  ablation can test feedback specificity without adding a heatmap model or
+  changing the v0.5 action protocol.
+copy_code: no
+notes: RichHF supplies learned feedback, candidate filtering, and a fixed
+  score/inpainting/select pipeline. It does not provide a sequential
+  edit-versus-regenerate planner, immutable event history, historical
+  best/lineage, strict one-action output, or recovery supervision. The separate
+  RichHF dataset repository has no observed dataset-specific license, so do
+  not infer Apache-2.0 for the dataset itself.
+
+### Gen-Searcher Dual Qwen Execution And Local Qwen Model Cards
+
+source_name: Gen-Searcher Qwen evaluation runtime and local Qwen model cards
+gen_searcher_commit: `e5078d31859bafee6b6b610f0cd40095cc72e2a4`
+accessed_date: `2026-07-29`
+evidence_type: repository-grounded and local-model-card-grounded via
+  `source_researcher`
+exact_repository_paths:
+- path: `Gen-DeepResearch-RL/rllm/eval/gen_image_from_results.py:88-108`
+  evidence: records with valid reference images use the generated edit prompt
+    and image paths; otherwise the original prompt is treated as text-only.
+- path: `Gen-DeepResearch-RL/rllm/eval/gen_image_from_results.py:406-506`
+  evidence: `DiffuserQwenGenerator` routes text-only calls to Qwen-Image and
+    text-plus-image calls to Qwen-Image-Edit; its defaults use 50 generation
+    steps with `true_cfg_scale=4.0` and 40 edit steps with
+    `true_cfg_scale=4.0`, `guidance_scale=1.0`.
+- path: `Gen-DeepResearch-RL/rllm/eval/run_gen_image_from_results.sh:17-37`
+  evidence: the evaluation entrypoint defaults to the dual Qwen generator with
+    separate generation and editing model IDs.
+exact_local_model_paths:
+- path: `/root/private_data/agentic_image/models/Qwen-Image-2512/model_index.json`
+  evidence: concrete diffusers class is `QwenImagePipeline`.
+- path: `/root/private_data/agentic_image/models/Qwen-Image-2512/README.md:47-89`
+  evidence: source-free Qwen-Image-2512 usage documents 50 steps,
+    `true_cfg_scale=4.0`, and a quality-oriented negative prompt.
+- path: `/root/private_data/agentic_image/models/Qwen-Image-Edit-2511/model_index.json`
+  evidence: concrete diffusers class is `QwenImageEditPlusPipeline`.
+- path: `/root/private_data/agentic_image/models/Qwen-Image-Edit-2511/README.md:39-65`
+  evidence: source-conditioned edit usage documents 40 steps,
+    `true_cfg_scale=4.0`, and `guidance_scale=1.0`.
+borrowed_idea: Route source-free generation and source-conditioned editing to
+  their native local Qwen pipelines while retaining one planner action space.
+local_adaptation: `qwen_dual_backend@1` maps existing `generate_image` to
+  Qwen-Image-2512 and `edit_image` to Qwen-Image-Edit-2511. Backend, model,
+  mode, and sampling stay environment-owned and are recorded as provenance,
+  not assistant targets.
+copy_code: no
+notes: Gen-Searcher's cited default model IDs are older Qwen-Image and
+  Qwen-Image-Edit-2509 releases. Its FastAPI rollout server is edit-only; the
+  dual-route evidence is specifically the evaluation runtime. The local model
+  directories are not Git repositories, so their model cards/configs have no
+  local commit hash.
+
 ## Prior Broad Notes
 
 | Source | Evidence | Borrowed idea | Not reused directly | Status |

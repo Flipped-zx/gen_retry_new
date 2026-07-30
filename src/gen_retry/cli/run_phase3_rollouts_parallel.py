@@ -12,7 +12,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from gen_retry.phase3.model_config import load_model_config
+from gen_retry.phase3.model_config import (
+    load_model_config,
+    select_image_execution_profile,
+)
 from gen_retry.runtime.event_io import load_events_jsonl
 from gen_retry.runtime.reducer import reduce_events
 
@@ -45,6 +48,8 @@ def main() -> None:
     parser.add_argument("--run-root", type=Path, default=Path("runs/phase3_hq5"))
     parser.add_argument("--episode-id", action="append", dest="episode_ids")
     parser.add_argument("--image-steps", type=int, default=40)
+    parser.add_argument("--generate-image-steps", type=int)
+    parser.add_argument("--edit-image-steps", type=int)
     parser.add_argument("--image-height", type=int, default=1024)
     parser.add_argument("--image-width", type=int, default=1024)
     parser.add_argument("--teacher-max-completion-tokens", type=int, default=1400)
@@ -55,12 +60,19 @@ def main() -> None:
     parser.add_argument("--include-submitted", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--log-dir", type=Path)
+    parser.add_argument(
+        "--execution-profile-id",
+        choices=["qwen_dual_backend", "qwen_image_edit_only"],
+    )
     args = parser.parse_args()
 
     if not args.allow_low_quality:
         _enforce_quality_floor(args.image_steps, args.image_height, args.image_width)
 
-    config = load_model_config()
+    config = select_image_execution_profile(
+        load_model_config(),
+        args.execution_profile_id,
+    )
     _preflight_config(config)
     episodes = _episode_runs(
         run_root=args.run_root,
@@ -77,7 +89,11 @@ def main() -> None:
         for device in devices
         if device.vram_percent is None or device.vram_percent <= args.max_start_vram_percent
     ]
-    if config.image_backend.provider == "local":
+    execution = config.resolved_image_execution
+    if {
+        execution.generate_backend.provider,
+        execution.edit_backend.provider,
+    } == {"local"}:
         if not eligible_devices and not args.allow_cpu:
             raise SystemExit(
                 "no eligible GPU devices found; refusing local Qwen rollout without --allow-cpu"
@@ -101,6 +117,8 @@ def main() -> None:
         episodes=episodes,
         worker_devices=worker_devices,
         image_steps=args.image_steps,
+        generate_image_steps=args.generate_image_steps,
+        edit_image_steps=args.edit_image_steps,
         image_height=args.image_height,
         image_width=args.image_width,
         log_dir=log_dir,
@@ -114,17 +132,20 @@ def main() -> None:
         worker_devices=worker_devices,
         run_root=args.run_root,
         image_steps=args.image_steps,
+        generate_image_steps=args.generate_image_steps,
+        edit_image_steps=args.edit_image_steps,
         image_height=args.image_height,
         image_width=args.image_width,
         teacher_max_completion_tokens=args.teacher_max_completion_tokens,
+        execution_profile_id=args.execution_profile_id,
         log_dir=log_dir,
     )
     for result in results:
-            print(
-                f"{result.episode_id}: returncode={result.returncode}; "
-                f"device={result.device_index if result.device_index is not None else 'cpu'}; "
-                f"log={result.log_path}"
-            )
+        print(
+            f"{result.episode_id}: returncode={result.returncode}; "
+            f"device={result.device_index if result.device_index is not None else 'cpu'}; "
+            f"log={result.log_path}"
+        )
 
     failed = [result for result in results if result.returncode != 0]
     if failed:
@@ -146,14 +167,30 @@ def _preflight_config(config: Any) -> None:
     print(f"{config.teacher.api_key_env}={api_key_state}")
     print(f"{config.teacher.base_url_env}={base_url_state}")
     print(f"teacher_model_id={config.teacher.model_id}")
-    print(f"image_provider={config.image_backend.provider}")
-    print(f"image_model_path_exists={config.image_backend.model_path.exists()}")
+    execution = config.resolved_image_execution
+    print(
+        "execution_profile="
+        f"{execution.profile_id}@{execution.profile_version}"
+    )
+    for operation, backend in (
+        ("generate", execution.generate_backend),
+        ("edit", execution.edit_backend),
+    ):
+        print(f"{operation}_image_provider={backend.provider}")
+        print(f"{operation}_image_backend={backend.backend_id}")
+        print(f"{operation}_image_model_path_exists={backend.model_path.exists()}")
     if api_key_state != "SET" or base_url_state != "SET":
         raise SystemExit("teacher environment is incomplete")
-    if config.image_backend.provider != "local":
-        raise SystemExit(f"unsupported image provider for this runner: {config.image_backend.provider}")
-    if not config.image_backend.model_path.exists():
-        raise SystemExit(f"missing image model path: {config.image_backend.model_path}")
+    for operation, backend in (
+        ("generate", execution.generate_backend),
+        ("edit", execution.edit_backend),
+    ):
+        if backend.provider != "local":
+            raise SystemExit(
+                f"unsupported {operation} image provider for this runner: {backend.provider}"
+            )
+        if not backend.model_path.exists():
+            raise SystemExit(f"missing {operation} model path: {backend.model_path}")
 
 
 def _episode_runs(
@@ -248,6 +285,8 @@ def _print_plan(
     episodes: list[EpisodeRun],
     worker_devices: list[DeviceInfo | None],
     image_steps: int,
+    generate_image_steps: int | None = None,
+    edit_image_steps: int | None = None,
     image_height: int,
     image_width: int,
     log_dir: Path,
@@ -270,6 +309,10 @@ def _print_plan(
     print(f"workers={len(worker_devices)}")
     print(f"worker_devices={','.join(device_labels)}")
     print(f"render_params=steps:{image_steps},height:{image_height},width:{image_width}")
+    print(
+        "profile_step_overrides="
+        f"generate:{generate_image_steps},edit:{edit_image_steps}"
+    )
     print(f"log_dir={log_dir}")
     print(f"dry_run={dry_run}")
 
@@ -280,9 +323,12 @@ def _run_one_episode(
     run_root: Path,
     device: DeviceInfo | None,
     image_steps: int,
+    generate_image_steps: int | None = None,
+    edit_image_steps: int | None = None,
     image_height: int,
     image_width: int,
     teacher_max_completion_tokens: int,
+    execution_profile_id: str | None = None,
     log_dir: Path,
 ) -> WorkerResult:
     log_path = log_dir / f"{episode.episode_id}.log"
@@ -318,6 +364,12 @@ def _run_one_episode(
         "--teacher-max-completion-tokens",
         str(teacher_max_completion_tokens),
     ]
+    if generate_image_steps is not None:
+        command.extend(["--generate-image-steps", str(generate_image_steps)])
+    if edit_image_steps is not None:
+        command.extend(["--edit-image-steps", str(edit_image_steps)])
+    if execution_profile_id is not None:
+        command.extend(["--execution-profile-id", execution_profile_id])
     with log_path.open("a", encoding="utf-8") as log_file:
         log_file.write(
             f"run_started_at={datetime.now(UTC).isoformat().replace('+00:00', 'Z')}\n"
@@ -353,9 +405,12 @@ def _execute_worker_plan(
     worker_devices: list[DeviceInfo | None],
     run_root: Path,
     image_steps: int,
+    generate_image_steps: int | None = None,
+    edit_image_steps: int | None = None,
     image_height: int,
     image_width: int,
     teacher_max_completion_tokens: int,
+    execution_profile_id: str | None = None,
     log_dir: Path,
 ) -> list[WorkerResult]:
     pending: queue.Queue[EpisodeRun] = queue.Queue()
@@ -371,9 +426,12 @@ def _execute_worker_plan(
                 run_root=run_root,
                 device=device,
                 image_steps=image_steps,
+                generate_image_steps=generate_image_steps,
+                edit_image_steps=edit_image_steps,
                 image_height=image_height,
                 image_width=image_width,
                 teacher_max_completion_tokens=teacher_max_completion_tokens,
+                execution_profile_id=execution_profile_id,
                 log_dir=log_dir,
             )
             for device in worker_devices
@@ -389,9 +447,12 @@ def _run_device_worker(
     run_root: Path,
     device: DeviceInfo | None,
     image_steps: int,
+    generate_image_steps: int | None = None,
+    edit_image_steps: int | None = None,
     image_height: int,
     image_width: int,
     teacher_max_completion_tokens: int,
+    execution_profile_id: str | None = None,
     log_dir: Path,
 ) -> list[WorkerResult]:
     results: list[WorkerResult] = []
@@ -406,9 +467,12 @@ def _run_device_worker(
                 run_root=run_root,
                 device=device,
                 image_steps=image_steps,
+                generate_image_steps=generate_image_steps,
+                edit_image_steps=edit_image_steps,
                 image_height=image_height,
                 image_width=image_width,
                 teacher_max_completion_tokens=teacher_max_completion_tokens,
+                execution_profile_id=execution_profile_id,
                 log_dir=log_dir,
             )
             results.append(result)

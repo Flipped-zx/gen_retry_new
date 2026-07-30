@@ -100,9 +100,11 @@ def test_child_process_sees_exactly_one_physical_device(
     monkeypatch,
 ) -> None:
     captured_env = {}
+    captured_command = []
 
     def fake_subprocess_run(command, *, env, **kwargs):
-        del command, kwargs
+        del kwargs
+        captured_command.extend(command)
         captured_env.update(env)
         return SimpleNamespace(returncode=0)
 
@@ -115,6 +117,7 @@ def test_child_process_sees_exactly_one_physical_device(
         image_height=1024,
         image_width=1024,
         teacher_max_completion_tokens=1400,
+        execution_profile_id="qwen_dual_backend",
         log_dir=tmp_path,
     )
 
@@ -122,3 +125,5 @@ def test_child_process_sees_exactly_one_physical_device(
     assert captured_env["ROCR_VISIBLE_DEVICES"] == "1"
     assert "CUDA_VISIBLE_DEVICES" not in captured_env
     assert "HIP_VISIBLE_DEVICES" not in captured_env
+    profile_index = captured_command.index("--execution-profile-id")
+    assert captured_command[profile_index + 1] == "qwen_dual_backend"

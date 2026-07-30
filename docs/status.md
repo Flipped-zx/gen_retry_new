@@ -2,10 +2,12 @@
 
 ## Current Phase
 
-The Flow-DPPO 20-trajectory native Planner I/O v0.5 batch is complete and
-passed deterministic validation plus final GPT-5.6 Sol review. No rollout
-process is active. Phase 5 dataset assembly may use the 59 accepted
-generate/edit/submit candidate actions; `query_skill` remains masked at loss 0.
+The five-trajectory `qwen_dual_backend@1` / PlannerContext v0.6 diagnostic is
+complete and passed deterministic closure plus final GPT-5.6 Sol review. No
+rollout process is active. The matched result is mechanistically positive but
+performance-mixed: submitted atom pass improved 39/50 to 40/50, while submitted
+GM fell 19.70 to 18.32 and AM fell 77.68 to 77.33. Action Protocol remains
+v0.5; best selection uses pass-count, then GM, then earlier Attempt.
 
 ## Gate State
 
@@ -15,14 +17,26 @@ generate/edit/submit candidate actions; `query_skill` remains masked at loss 0.
 - PlannerContext / Round Memory final review: APPROVED
 - Planner I/O v0.5 Sol amendment: IMPLEMENTED
 - Gate 4 Flow-DPPO 20-Trajectory Final Review: PASS
+- Qwen dual-backend execution-profile review: APPROVE
+- PlannerContext v0.6 score-policy review: APPROVE
+- v0.7 / PlannerContext v0.6 five-trajectory final review: PASS
+- Muse Image-informed ablation claim-sufficiency review:
+  PASS_WITH_REQUIRED_CHANGES (not a protocol gate)
 
 ## Protocol
 
 - Current action protocol: v0.5 for new rollout/SFT records; v0.2-v0.4 remain valid historical event schemas.
-- Current planner input: `PlannerContext` v0.5; the builder retains an explicit v0.4 compatibility mode.
+- Current planner input: `PlannerContext` v0.6 for new score-policy episodes;
+  v0.4/v0.5 remain historical replay modes.
 - Live APIs run: yes
 - Teacher policy: GPT-5.5 through `TEACHER_API_KEY` and `TEACHER_BASE_URL`
-- Image backend: local Qwen-Image-Edit direct runtime through configured `model_path`
+- Current image execution profile: `qwen_dual_backend@1`
+- `generate_image`: local Qwen-Image-2512 direct runtime, source-free root Attempt
+- `edit_image`: local Qwen-Image-Edit-2511 direct runtime, declared-source child Attempt
+- Backend/model/mode remain environment-owned and are not Planner/SFT fields
+- New score policy: higher atom pass-count, then higher
+  `geneval2_soft_tifa_gm@flow_dppo_v1`, then earlier Attempt
+- Geneval2 score and score deltas are environment/context-only, never Action fields
 - Rendering quality baseline: `docs/operations/qwen_rendering_quality_baseline.md`
 - External roots configured: yes
 - Active completion record: `docs/checkpoints/phase4_sft_supervision_freeze.md`
@@ -179,6 +193,84 @@ generate/edit/submit candidate actions; `query_skill` remains masked at loss 0.
   - SFT export dry run:
     `docs/phase5/flow_dppo20_sft_dry_run_report.md` (`PASS`, 59 targets and
     105 context-only records).
+- Muse Image related-work and ablation-design package:
+  - corrected source identity: the 2026 agentic Muse Image release is from
+    Meta Superintelligence Labs, not Google's 2023 Muse generator;
+  - source record:
+    `references/web/muse_image_meta_2026-07-07/technical_blog_snapshot.md`;
+  - selective lessons and staged comparison/ablation plan:
+    `docs/research/muse_image_selective_lessons_and_ablation_plan.md`;
+  - the design prioritizes zero-GPU trajectory analysis, a planner-only
+    `V x I x H` screen, matched one-step mechanism tests, and an
+    equal-image-call-budget four-arm live pilot before any full factorial;
+  - Muse Image remains related-work motivation rather than an executable or
+    numerically comparable baseline because no public reproducible protocol was
+    found;
+  - Google RichHF + Muse was added as the closer verifier-guided precedent,
+    motivating a nested atom-level versus aggregate-only versus no-verifier
+    feedback ablation without importing RAHF into the runtime;
+  - GPT-5.6 Sol claim-sufficiency review:
+    `docs/reviews/muse_image_ablation_design_sol_review.md`
+    (`PASS_WITH_REQUIRED_CHANGES`);
+  - required pre-live decisions are to keep operational pass-count selection,
+    use submitted GM as primary, keep best-by-GM as a post-hoc oracle, run live
+    atom-level versus aggregate/no-verifier outcomes for the grounding claim,
+    and require an independent blinded audit for any general image-quality
+    claim.
+- Qwen dual-backend execution profile:
+  - accepted ADR:
+    `docs/decisions/ADR-0006-qwen-dual-backend-execution-profile.md`;
+  - design and final GPT-5.6 Sol review:
+    `docs/architecture/planner_execution_v0_7_dual_backend.md` and
+    `docs/reviews/planner_execution_v07_dual_backend_review.md`;
+  - Action Protocol remains v0.5; new diagnostic runs use PlannerContext v0.6;
+    `v0.7` is an experiment design label, while the serialized environment
+    profile is `qwen_dual_backend@1`;
+  - image execution events now persist route/model/pipeline/sampling/source and
+    output provenance and reject resume under a different profile;
+  - SFT dry-run export rejects mixed execution profiles;
+  - five failure-diverse Flow-DPPO prompts are frozen in
+    `artifacts/phase6/v07_dual_backend_selected_prompts.json`;
+  - five dual-backend trajectories completed at
+    `runs/phase6_v07_dual_backend5_score_v06/`;
+  - the matched edit-only v0.6 arm remains prepared and unexecuted at
+    `runs/phase6_v07_legacy_edit_only5_score_v06/`.
+- PlannerContext v0.6 Geneval2 score policy:
+  - accepted ADR:
+    `docs/decisions/ADR-0007-geneval2-primary-score-selection.md`;
+  - frozen design and GPT-5.6 Sol final `APPROVE`:
+    `docs/architecture/planner_score_semantics_v0_6.md` and
+    `docs/reviews/planner_score_v06_sol_review_request.md`;
+  - new Geneval2 events persist a recomputable prompt-level GM;
+  - reducer ranking is pass-count first and GM only on ties;
+  - historical Flow-DPPO20 counterfactual changes 8/20 selected Attempts and
+    raises mean GM from 47.25 to 53.33 without reducing pass-count;
+  - SFT exports group the full context/score tuple and rebuild each context
+    from the exact pre-action event prefix.
+- v0.7 / PlannerContext v0.6 five-trajectory diagnostic:
+  - five valid submitted trajectories and 25 complete Geneval2 evaluations;
+  - 7 source-free Qwen-Image generations and 18 Qwen-Image-Edit edits;
+  - first-to-submitted atom pass improved 35/50 to 40/50;
+  - first-to-submitted GM improved 7.81 to 18.32 and AM 69.21 to 77.33;
+  - versus the same five historical prompts, submitted atom pass improved
+    39/50 to 40/50, while GM fell 19.70 to 18.32 and AM 77.68 to 77.33;
+  - four paired trajectories improved under pass-first/GM-second ordering and
+    one easy verb/count trajectory regressed;
+  - GM triggered six best updates, pass-first rejected two higher-GM
+    lower-pass attempts, four edits branched from historical sources, and two
+    post-initial source-free regenerations occurred;
+  - bounded runtime correction now permits at most two successful novel
+    `query_skill` interactions per image-producing Round and resumes an
+    interrupted Skill response idempotently;
+  - validation:
+    `docs/phase6/v07_dual_backend5_score_v06_validation_report.md`;
+  - paired and final analysis:
+    `docs/phase6/v07_dual_backend5_score_v06_paired_comparison.md` and
+    `docs/phase6/v07_dual_backend5_score_v06_final_analysis.md`;
+  - representative real I/O walkthrough:
+    `docs/phase6/planner_io_v06_round_memory_walkthrough_phase3_ep012.md`;
+  - final Sol verdict:
+    `docs/reviews/v07_dual_backend5_score_v06_final_sol_review.md` (`PASS`).
 
 ## Tests And Results
 
@@ -238,6 +330,41 @@ generate/edit/submit candidate actions; `query_skill` remains masked at loss 0.
     105 context-only records.
   - `pytest tests/unit/test_phase5_rollout_audit.py -q` — passed, 11 tests for
     Geneval2-compatible Soft-TIFA AM/GM calculation and input validation.
+- Qwen dual-backend execution-profile validation:
+  - `pytest tests/contract -q` — passed, 77 tests;
+  - `pytest tests/unit -q` — passed, 91 tests;
+  - `python -m gen_retry.cli.validate_schemas` — passed, 11 schemas;
+  - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records;
+  - `python -m gen_retry.cli.replay_episode
+    examples/one_episode_trajectory.jsonl --planner-context` — passed;
+  - ten selected fresh run scaffolds validate with zero attempts: five lock
+    `qwen_dual_backend@1` and five lock `qwen_image_edit_only@1`;
+  - `git diff --check` — passed;
+  - no Teacher, Qwen, or Geneval2 live call was made.
+- PlannerContext v0.6 score-policy validation:
+  - `pytest tests/contract -q` — passed, 79 tests;
+  - `pytest tests/unit -q` — passed, 103 tests;
+  - `python -m gen_retry.cli.validate_schemas` — passed, 12 schemas;
+  - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records;
+  - historical example replay — passed with legacy v0.5 ordering;
+  - Flow-DPPO20 counterfactual — 8/20 best selections changed, 47.25 to
+    53.33 mean GM, zero pass-count regressions;
+  - historical 59-target SFT dry run — passed with exact temporal-prefix
+    reconstruction and homogeneous context/score contract;
+  - ten fresh comparison scaffolds validate with PlannerContext v0.6 and zero
+    image attempts;
+  - `git diff --check` — passed;
+  - no Teacher, Qwen, or Geneval2 live call was made.
+- v0.7 / PlannerContext v0.6 five-trajectory live validation:
+  - `python -m gen_retry.cli.audit_phase5_rollouts ... --expected-count 5`
+    — passed, 5 episodes and 25 attempts;
+  - `python -m gen_retry.cli.compare_paired_rollouts ...`
+    — passed, atom delta +1 and GM delta -1.38;
+  - `pytest tests/contract -q` — passed, 79 tests;
+  - `pytest tests/unit -q` — passed, 108 tests;
+  - `python -m gen_retry.cli.validate_schemas` — passed, 12 schemas;
+  - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records;
+  - `git diff --check` — passed.
 
 ## Active Risks
 
@@ -246,12 +373,23 @@ generate/edit/submit candidate actions; `query_skill` remains masked at loss 0.
 - Geneval2 is CC BY-NC 4.0 and should remain an external evaluator/runtime unless licensing is explicitly reviewed.
 - The 20-trajectory batch is not evidence of model-level improvement. Verb
   atoms remain the weakest category at 7/15 best-attempt passes.
+- The five-trajectory dual-backend diagnostic is not evidence of aggregate
+  Geneval2 improvement: submitted GM and AM both fell slightly, and
+  `phase3_ep_020` regressed from 5/6 to 4/6 despite sharper rendering.
+- `phase3_ep_001` contains four obsolete pre-image
+  `consecutive_query_skill` rejection events. Its image/score/submission
+  comparison is valid, but planner-call count, repair count, latency, and cost
+  are not directly comparable.
+- The current first-to-best gains do not isolate adaptive planner value from
+  extra image calls, verifier selection, or stochastic resampling. A
+  equal-image-call-budget Best-of-K and fixed-heuristic comparison is still
+  required, with total compute reported separately.
 - Eligible actions span rollout-only Teacher prompt v4/v5 provenance. Exact
   version/hash metadata is retained; SFT rendering uses one frozen v0.5
   training system contract.
-- Reducer best is currently ordered by thresholded passed-atom count with
-  earlier-attempt tie breaking, not by Soft-TIFA GM. The submitted 20-image GM
-  is 47.25 while the per-trajectory peak-GM selection would be 53.33.
+- Completed v0.5 trajectories retain the old earlier-Attempt tie rule and must
+  not be relabeled as v0.6. New v0.6 trajectories may therefore not be mixed
+  into one SFT export with those historical contexts.
 - Edit supervision is thin in the Phase 4 freeze: 2 `edit_image` targets versus 16 `generate_image` and 10 `submit_attempt`.
 - Under v0.5, `query_skill` and its linked Skill response both have loss 0
   until capability-isolated utility validation is accepted.
@@ -269,13 +407,26 @@ generate/edit/submit candidate actions; `query_skill` remains masked at loss 0.
 
 ## Last Reviewer Verdict
 
-Planner I/O native `decision_summary` pilot verdict is `FAIL_KEEP_V05`: two
-broad-failure regeneration summaries did not explain generate-over-edit
-selection, so canonical v0.5 remains unchanged and Gate 3 is closed on this
-question. Gate 3a Skill-v1 Trace I/O Clarity remains `APPROVE`; Skill utility
-remains `REQUEST_CHANGES`.
+The latest review is the v0.7 / PlannerContext v0.6 five-trajectory final
+review: `PASS`. It accepts the claim "mechanistically positive but
+performance-mixed" and rejects any general metric-improvement or causal
+renderer claim. The accepted score contract remains ADR-0007. The earlier Muse
+Image-informed ablation claim-sufficiency verdict remains
+`PASS_WITH_REQUIRED_CHANGES`.
+
+Earlier active verdicts remain unchanged. Planner I/O native
+`decision_summary` is `FAIL_KEEP_V05`; Gate 3a Skill-v1 Trace I/O Clarity is
+`APPROVE`; Skill utility remains `REQUEST_CHANGES`.
 
 ## Next Autonomous Action
+
+If prioritizing ablation evidence, first run the zero-image-call Stage 0
+analysis and planner-only Stage 1 screen in
+`docs/research/muse_image_selective_lessons_and_ablation_plan.md`. Before any
+live ablation, satisfy the selector/estimand, live feedback-granularity,
+independent-audit, information-isolation, and cost-accounting requirements in
+the Sol review. Do not change selector semantics without a separate ADR and
+protocol validation.
 
 If collecting more live evidence before Phase 5, resume the high-quality batch from `runs/phase3_hq5/` using the state in `docs/operations/phase3_hq5_interruption_status.md`: keep `phase3_ep_001`, `phase3_ep_002`, and `phase3_ep_003` as valid completed trajectories, exclude `phase3_ep_004` until deliberately completed, and finish two more valid submissions to reach five HQ trajectories. Use the policy in `docs/operations/qwen_rendering_quality_baseline.md`: no standalone image smoke by default, `40` steps at `1024 x 1024`, no legacy image reuse, and episode-level parallelism whenever resources allow. Within each episode, preserve sequential canonical history.
 

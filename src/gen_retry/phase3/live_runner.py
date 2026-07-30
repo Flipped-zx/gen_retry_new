@@ -14,6 +14,11 @@ from gen_retry.agent.teacher_client import (
 )
 from gen_retry.agent.instruction_quality import evaluate_instruction_quality
 from gen_retry.domain.artifacts import artifact_manifest_entry, sha256_file, sha256_bytes
+from gen_retry.domain.score_policy import (
+    legacy_score_policy,
+    planner_context_version,
+    score_policy_from_task_payload,
+)
 from gen_retry.phase3.model_config import ModelConfig, load_model_config
 from gen_retry.protocol.action_parser import ActionParseError, parse_action
 from gen_retry.protocol.reference_validator import ActionReferenceError, validate_action_references
@@ -29,7 +34,9 @@ from gen_retry.runtime.planner_context import (
 from gen_retry.runtime.planner_view import DEFAULT_SKILL_MANIFEST
 from gen_retry.runtime.reducer import EpisodeState, reduce_events
 from gen_retry.tools.geneval2_adapter import LocalGeneval2Adapter
+from gen_retry.tools.image_execution_profile import resolve_execution_route
 from gen_retry.tools.qianwen_image_edit_adapter import QianwenImageEditAdapter
+from gen_retry.tools.qwen_image_adapter import QwenImageAdapter
 from gen_retry.tools.skill_store import LocalSkillStore
 
 
@@ -38,6 +45,8 @@ class RuntimeParams:
     image_height: int = 1024
     image_width: int = 1024
     image_steps: int = 40
+    generate_image_steps: int | None = None
+    edit_image_steps: int | None = None
     image_seed: int = 0
     teacher_max_completion_tokens: int = 1400
     max_format_repairs: int = 3
@@ -77,6 +86,8 @@ class Phase3LiveRunner:
     def run_episode(self, run_dir: Path) -> RolloutResult:
         task_spec = json.loads((run_dir / "task_spec.json").read_text(encoding="utf-8"))
         episode_id = task_spec["episode_id"]
+        self._validate_execution_profile_lock(run_dir)
+        self._validate_score_policy_lock(run_dir)
         events = self._events(run_dir)
         state = reduce_events(events)
         if state.submitted_attempt_id is not None:
@@ -96,6 +107,10 @@ class Phase3LiveRunner:
 
             events = self._events(run_dir)
             state = reduce_events(events)
+            if self._recover_incomplete_skill_query(run_dir, events=events):
+                events = self._events(run_dir)
+                state = reduce_events(events)
+                continue
             if self._recover_incomplete_image_round(
                 run_dir,
                 task_spec=task_spec,
@@ -317,19 +332,83 @@ class Phase3LiveRunner:
         existing_start_event: dict[str, Any] | None = None,
     ) -> None:
         action = action_event["payload"]["action"]
+        execution_profile = self.model_config.resolved_image_execution
+        route = resolve_execution_route(execution_profile, action["action"])
         attempt_number = len(state.attempt_order)
         attempt_id = f"a_{attempt_number:03d}"
         image_artifact_id = f"img_{attempt_number:03d}"
-        operation = "edit" if action["action"] == "edit_image" else "generate"
+        operation = route.operation
         request_id = f"{task_spec['episode_id']}_{attempt_id}_{operation}"
         source_attempt_id = action["arguments"].get("source_attempt_id")
+        source_image_path = (
+            self._image_path_for_attempt(run_dir, state, source_attempt_id)
+            if source_attempt_id
+            else None
+        )
+        source_artifact_sha256 = (
+            sha256_file(source_image_path) if source_image_path is not None else None
+        )
+        num_inference_steps = self._image_steps_for_route(route.operation, route.backend)
+        output_path = run_dir / f"images/{image_artifact_id}.png"
+        if route.backend.backend_id == "qwen_image":
+            adapter = QwenImageAdapter(
+                provider=route.backend.provider,
+                model_id=route.backend.model_id,
+                model_path=route.backend.model_path,
+                artifact_root=run_dir,
+                height=self.params.image_height,
+                width=self.params.image_width,
+                num_inference_steps=num_inference_steps,
+                true_cfg_scale=route.backend.true_cfg_scale,
+                seed=self.params.image_seed + attempt_number,
+            )
+            adapter_metadata = adapter.execution_metadata(cache_hit=output_path.exists())
+        elif route.backend.backend_id == "qianwen_image_edit":
+            adapter = QianwenImageEditAdapter(
+                provider=route.backend.provider,
+                model_id=route.backend.model_id,
+                model_path=route.backend.model_path,
+                artifact_root=run_dir,
+                height=self.params.image_height,
+                width=self.params.image_width,
+                num_inference_steps=num_inference_steps,
+                true_cfg_scale=route.backend.true_cfg_scale,
+                guidance_scale=(
+                    route.backend.guidance_scale
+                    if route.backend.guidance_scale is not None
+                    else 1.0
+                ),
+                seed=self.params.image_seed + attempt_number,
+            )
+            adapter_metadata = adapter.execution_metadata(
+                cache_hit=output_path.exists(),
+                internal_generation_canvas=operation == "generate",
+            )
+        else:
+            raise RuntimeError(
+                f"unsupported routed image backend: {route.backend.backend_id}"
+            )
+        provenance_payload = {
+            "execution_profile_id": execution_profile.profile_id,
+            "execution_profile_version": execution_profile.profile_version,
+            "logical_action": action["action"],
+            "model_id": adapter_metadata["model_id"],
+            "model_revision_or_fingerprint": adapter_metadata[
+                "model_revision_or_fingerprint"
+            ],
+            "pipeline_id": adapter_metadata["pipeline_id"],
+            "adapter_version": adapter_metadata["adapter_version"],
+            "sampling": adapter_metadata["sampling"],
+        }
         start_payload = {
             "request_id": request_id,
             "operation": operation,
-            "backend": "qianwen_image_edit",
+            "backend": route.backend.backend_id,
+            **provenance_payload,
         }
         if source_attempt_id:
             start_payload["source_attempt_id"] = source_attempt_id
+            start_payload["source_artifact_sha256"] = source_artifact_sha256
         if existing_start_event is not None:
             if existing_start_event["payload"] != start_payload:
                 raise RuntimeError(
@@ -342,19 +421,10 @@ class Phase3LiveRunner:
                 run_dir,
                 event_type="image_execution_started",
                 turn_id=action_event["turn_id"],
-                producer="qianwen_image_edit_adapter",
+                producer=route.producer,
                 input_refs=[action_event["event_id"]],
                 payload=start_payload,
             )
-        adapter = QianwenImageEditAdapter(
-            provider=self.model_config.image_backend.provider,
-            model_path=self.model_config.image_backend.model_path,
-            artifact_root=run_dir,
-            height=self.params.image_height,
-            width=self.params.image_width,
-            num_inference_steps=self.params.image_steps,
-            seed=self.params.image_seed + attempt_number,
-        )
         if operation == "generate":
             image_result = adapter.generate(
                 request_id=request_id,
@@ -367,7 +437,7 @@ class Phase3LiveRunner:
                 request_id=request_id,
                 attempt_id=attempt_id,
                 source_attempt_id=source_attempt_id,
-                source_image_path=self._image_path_for_attempt(run_dir, state, source_attempt_id),
+                source_image_path=source_image_path,
                 image_artifact_id=image_artifact_id,
                 instruction=_execution_instruction(action),
             )
@@ -377,18 +447,20 @@ class Phase3LiveRunner:
             "attempt_id": attempt_id,
             "parent_attempt_id": image_result.parent_attempt_id,
             "operation": operation,
-            "backend": "qianwen_image_edit",
+            "backend": route.backend.backend_id,
+            **provenance_payload,
             "image_artifact_id": image_artifact_id,
             "artifact_manifest_ref": image_result.artifact_manifest_ref,
             "artifact_sha256": image_result.artifact_sha256,
         }
         if source_attempt_id:
             complete_payload["source_attempt_id"] = source_attempt_id
+            complete_payload["source_artifact_sha256"] = source_artifact_sha256
         complete_event = self._append_event(
             run_dir,
             event_type="image_execution_completed",
             turn_id=action_event["turn_id"],
-            producer="qianwen_image_edit_adapter",
+            producer=route.producer,
             input_refs=[start_event["event_id"]],
             payload=complete_payload,
         )
@@ -401,7 +473,12 @@ class Phase3LiveRunner:
                 "request_id": request_id,
                 "attempt_id": attempt_id,
                 "image_artifact_id": image_artifact_id,
-                "metadata": image_result.metadata,
+                "metadata": {
+                    "execution_profile_id": execution_profile.profile_id,
+                    "execution_profile_version": execution_profile.profile_version,
+                    "logical_action": action["action"],
+                    **image_result.metadata,
+                },
             },
         )
         geneval_event = self._evaluate_completed_image(
@@ -415,6 +492,68 @@ class Phase3LiveRunner:
             action_event=action_event,
             geneval_event=geneval_event,
         )
+
+    def _validate_execution_profile_lock(self, run_dir: Path) -> None:
+        plan_path = run_dir / "rollout_plan.json"
+        if not plan_path.exists():
+            raise RuntimeError(f"missing rollout execution profile: {plan_path}")
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        expected = plan.get("execution_profile") or {
+            "profile_id": "qwen_image_edit_only",
+            "profile_version": "1",
+        }
+        actual = self.model_config.resolved_image_execution
+        if (
+            expected.get("profile_id") != actual.profile_id
+            or str(expected.get("profile_version")) != actual.profile_version
+        ):
+            raise RuntimeError(
+                "execution profile mismatch: "
+                f"run={expected.get('profile_id')}@{expected.get('profile_version')} "
+                f"runtime={actual.profile_id}@{actual.profile_version}"
+            )
+
+    def _validate_score_policy_lock(self, run_dir: Path) -> None:
+        plan_path = run_dir / "rollout_plan.json"
+        if not plan_path.exists():
+            raise RuntimeError(f"missing rollout score policy: {plan_path}")
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        expected_policy = plan.get("score_policy") or legacy_score_policy()
+        expected_context_version = str(
+            plan.get(
+                "planner_context_schema_version",
+                planner_context_version(expected_policy),
+            )
+        )
+        events = self._events(run_dir)
+        if not events or events[0]["event_type"] != "task_created":
+            raise RuntimeError("rollout has no initial task_created event")
+        actual_policy = score_policy_from_task_payload(events[0]["payload"])
+        actual_context_version = planner_context_version(actual_policy)
+        if (
+            expected_policy != actual_policy
+            or expected_context_version != actual_context_version
+        ):
+            raise RuntimeError(
+                "score policy mismatch: "
+                f"run={expected_policy.get('policy_id')}@"
+                f"{expected_policy.get('policy_version')}/context-{expected_context_version} "
+                f"events={actual_policy.get('policy_id')}@"
+                f"{actual_policy.get('policy_version')}/context-{actual_context_version}"
+            )
+
+    def _image_steps_for_route(self, operation: str, backend: Any) -> int:
+        explicit = (
+            self.params.generate_image_steps
+            if operation == "generate"
+            else self.params.edit_image_steps
+        )
+        if explicit is not None:
+            return explicit
+        profile_default = backend.num_inference_steps
+        if profile_default is not None:
+            return profile_default
+        return self.params.image_steps
 
     def _evaluate_completed_image(
         self,
@@ -446,6 +585,7 @@ class Phase3LiveRunner:
             payload={
                 "attempt_id": attempt_id,
                 "constraint_results": report.constraint_results,
+                "primary_score": report.primary_score,
                 "report_ref": report.report_ref,
                 "report_sha256": report.report_sha256,
             },
@@ -636,15 +776,19 @@ class Phase3LiveRunner:
                 "report_sha256": payload["report_sha256"],
                 "normalization": report_payload["normalization"],
                 "constraint_results": payload["constraint_results"],
+                "primary_score": payload.get("primary_score"),
             },
         )
 
     def _build_next_planner_context(self, run_dir: Path, *, input_refs: list[str]) -> dict[str, Any]:
         events = self._events(run_dir)
         next_index = self._next_planner_context_index(events)
+        score_policy = score_policy_from_task_payload(events[0]["payload"])
+        context_version = planner_context_version(score_policy)
         planner_context = build_planner_context_from_events(
             events,
             task_spec_ref="task_spec.json",
+            schema_version=context_version,
         )
         ref = f"planner_contexts/planner_context_{next_index:03d}.json"
         sha = self._write_json_artifact(run_dir, ref, planner_context)
@@ -654,7 +798,11 @@ class Phase3LiveRunner:
             turn_id=f"turn_{next_index:03d}",
             producer="planner_context_builder",
             input_refs=input_refs,
-            payload={"planner_context_ref": ref, "planner_context_sha256": sha},
+            payload={
+                "planner_context_ref": ref,
+                "planner_context_sha256": sha,
+                "planner_context_schema_version": context_version,
+            },
         )
         self._upsert_manifest_entry(
             run_dir,
@@ -842,10 +990,11 @@ class Phase3LiveRunner:
             observations.append("No image attempts exist yet; do not edit or submit.")
         last_event = events[-1]
         if last_event["event_type"] == "format_error":
-            observations.append(
-                "Previous output was rejected by the action schema: "
-                + last_event["payload"]["message"]
-            )
+            if last_event["payload"].get("error_code") != "consecutive_query_skill":
+                observations.append(
+                    "Previous output was rejected by the action schema: "
+                    + last_event["payload"]["message"]
+                )
         return observations
 
     def _validate_runtime_action(
@@ -893,12 +1042,61 @@ class Phase3LiveRunner:
                     "same Skill ID/version/hash may be retrieved at most once per episode by default: "
                     + ", ".join(repeated),
                 )
-            previous_action = _latest_validated_action(events)
-            if previous_action and previous_action["action"] == "query_skill":
+            active_round_events = _events_in_active_image_round(events)
+            returned_query_ids = {
+                event["payload"]["query_action_event_id"]
+                for event in active_round_events
+                if event["event_type"] == "skill_returned"
+                and event["payload"].get("query_action_event_id")
+            }
+            pending_query_ids = [
+                event["event_id"]
+                for event in active_round_events
+                if event["event_type"] == "action_validated"
+                and event["payload"]["action"]["action"] == "query_skill"
+                and event["event_id"] not in returned_query_ids
+            ]
+            if pending_query_ids:
                 raise RuntimeActionError(
-                    "consecutive_query_skill",
-                    "consecutive query_skill-only loops are forbidden",
+                    "pending_skill_query",
+                    "a validated query_skill must receive its tool response "
+                    "before another planner action",
                 )
+            if len(returned_query_ids) >= 2:
+                raise RuntimeActionError(
+                    "round_skill_query_limit",
+                    "at most two successful query_skill interactions are "
+                    "allowed per image-producing round",
+                )
+
+    def _recover_incomplete_skill_query(
+        self,
+        run_dir: Path,
+        *,
+        events: list[dict[str, Any]],
+    ) -> bool:
+        returned_query_ids = {
+            event["payload"]["query_action_event_id"]
+            for event in events
+            if event["event_type"] == "skill_returned"
+            and event["payload"].get("query_action_event_id")
+        }
+        pending = [
+            event
+            for event in _events_in_active_image_round(events)
+            if event["event_type"] == "action_validated"
+            and event["payload"]["action"]["action"] == "query_skill"
+            and event["event_id"] not in returned_query_ids
+        ]
+        if not pending:
+            return False
+        action_event = pending[-1]
+        skill_event = self._execute_skill(run_dir, action_event)
+        self._build_next_planner_context(
+            run_dir,
+            input_refs=[skill_event["event_id"]],
+        )
+        return True
 
     def _validate_instruction_quality(
         self,
@@ -1128,6 +1326,16 @@ def _dependent_event(
         ),
         None,
     )
+
+
+def _events_in_active_image_round(
+    events: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    start_index = 0
+    for index, event in enumerate(events):
+        if event["event_type"] == "geneval2_completed":
+            start_index = index + 1
+    return events[start_index:]
 
 
 def _event_by_id(events: list[dict[str, Any]], event_id: str) -> dict[str, Any]:

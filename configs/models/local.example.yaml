@@ -11,13 +11,39 @@ teacher:
   base_url_env: TEACHER_BASE_URL
 
 image_backend:
+  provider: local
   backend_id: qianwen_image_edit
   model_id: <qianwen-image-edit-model-id>
-  api_key_env: QIANWEN_IMAGE_API_KEY
-  base_url_env: QIANWEN_IMAGE_BASE_URL
+  model_path: <absolute-qwen-image-edit-model-path>
   supports:
     generate: true
     edit: true
+
+image_execution:
+  profile_id: qwen_dual_backend
+  profile_version: "1"
+  generate_backend:
+    provider: local
+    backend_id: qwen_image
+    model_id: Qwen-Image-2512
+    model_path: <absolute-qwen-image-model-path>
+    num_inference_steps: 50
+    true_cfg_scale: 4.0
+    guidance_scale:
+    supports:
+      generate: true
+      edit: false
+  edit_backend:
+    provider: local
+    backend_id: qianwen_image_edit
+    model_id: Qwen-Image-Edit-2511
+    model_path: <absolute-qwen-image-edit-model-path>
+    num_inference_steps: 40
+    true_cfg_scale: 4.0
+    guidance_scale: 1.0
+    supports:
+      generate: false
+      edit: true
 
 evaluator:
   backend_id: geneval2

@@ -370,8 +370,98 @@
       "properties": {
         "task_spec": {
           "$ref": "https://local/gen-retry/task-spec-v0.2.schema.json"
+        },
+        "score_policy": {
+          "$ref": "#/$defs/scorePolicy"
         }
       }
+    },
+    "primaryScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id",
+        "metric_version",
+        "value"
+      ],
+      "properties": {
+        "metric_id": {
+          "const": "geneval2_soft_tifa_gm"
+        },
+        "metric_version": {
+          "const": "flow_dppo_v1"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "scorePolicy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy_id",
+            "policy_version",
+            "primary_metric",
+            "best_selection_rule"
+          ],
+          "properties": {
+            "policy_id": {
+              "const": "pass_count_only_then_earlier"
+            },
+            "policy_version": {
+              "const": "1"
+            },
+            "primary_metric": {
+              "type": "null"
+            },
+            "best_selection_rule": {
+              "const": "higher_pass_count_then_earlier"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy_id",
+            "policy_version",
+            "primary_metric",
+            "best_selection_rule"
+          ],
+          "properties": {
+            "policy_id": {
+              "const": "geneval2_pass_count_then_gm"
+            },
+            "policy_version": {
+              "const": "1"
+            },
+            "primary_metric": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "metric_id",
+                "metric_version"
+              ],
+              "properties": {
+                "metric_id": {
+                  "const": "geneval2_soft_tifa_gm"
+                },
+                "metric_version": {
+                  "const": "flow_dppo_v1"
+                }
+              }
+            },
+            "best_selection_rule": {
+              "const": "higher_pass_count_then_higher_primary_score_then_earlier"
+            }
+          }
+        }
+      ]
     },
     "plannerViewBuiltPayload": {
       "type": "object",
@@ -404,6 +494,12 @@
         },
         "planner_context_sha256": {
           "$ref": "#/$defs/sha256"
+        },
+        "planner_context_schema_version": {
+          "enum": [
+            "0.5",
+            "0.6"
+          ]
         },
         "planner_view_ref": {
           "type": "string",
@@ -520,6 +616,50 @@
         }
       }
     },
+    "imageSampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "seed",
+        "num_inference_steps",
+        "true_cfg_scale",
+        "guidance_scale",
+        "width",
+        "height",
+        "negative_prompt"
+      ],
+      "properties": {
+        "seed": {
+          "type": "integer"
+        },
+        "num_inference_steps": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "true_cfg_scale": {
+          "type": "number",
+          "minimum": 0
+        },
+        "guidance_scale": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "negative_prompt": {
+          "type": "string"
+        }
+      }
+    },
     "imageExecutionStartedPayload": {
       "type": "object",
       "additionalProperties": false,
@@ -540,13 +680,75 @@
           ]
         },
         "backend": {
-          "const": "qianwen_image_edit"
+          "enum": [
+            "qianwen_image_edit",
+            "qwen_image"
+          ]
         },
         "source_attempt_id": {
           "$ref": "#/$defs/attemptId"
+        },
+        "source_artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "execution_profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "execution_profile_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "logical_action": {
+          "enum": [
+            "generate_image",
+            "edit_image"
+          ]
+        },
+        "model_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_revision_or_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pipeline_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sampling": {
+          "$ref": "#/$defs/imageSampling"
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "execution_profile_id": {
+                "const": "qwen_dual_backend"
+              }
+            },
+            "required": [
+              "execution_profile_id"
+            ]
+          },
+          "then": {
+            "required": [
+              "execution_profile_version",
+              "logical_action",
+              "model_id",
+              "model_revision_or_fingerprint",
+              "pipeline_id",
+              "adapter_version",
+              "sampling"
+            ]
+          }
+        },
         {
           "if": {
             "properties": {
@@ -580,6 +782,67 @@
               "required": [
                 "source_attempt_id"
               ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "execution_profile_id": {
+                "const": "qwen_dual_backend"
+              },
+              "operation": {
+                "const": "generate"
+              }
+            },
+            "required": [
+              "execution_profile_id",
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "backend": {
+                "const": "qwen_image"
+              },
+              "logical_action": {
+                "const": "generate_image"
+              },
+              "pipeline_id": {
+                "const": "QwenImagePipeline"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "execution_profile_id": {
+                "const": "qwen_dual_backend"
+              },
+              "operation": {
+                "const": "edit"
+              }
+            },
+            "required": [
+              "execution_profile_id",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "source_artifact_sha256"
+            ],
+            "properties": {
+              "backend": {
+                "const": "qianwen_image_edit"
+              },
+              "logical_action": {
+                "const": "edit_image"
+              },
+              "pipeline_id": {
+                "const": "QwenImageEditPlusPipeline"
+              }
             }
           }
         }
@@ -623,10 +886,49 @@
           ]
         },
         "backend": {
-          "const": "qianwen_image_edit"
+          "enum": [
+            "qianwen_image_edit",
+            "qwen_image"
+          ]
         },
         "source_attempt_id": {
           "$ref": "#/$defs/attemptId"
+        },
+        "source_artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "execution_profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "execution_profile_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "logical_action": {
+          "enum": [
+            "generate_image",
+            "edit_image"
+          ]
+        },
+        "model_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_revision_or_fingerprint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pipeline_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sampling": {
+          "$ref": "#/$defs/imageSampling"
         },
         "image_artifact_id": {
           "type": "string",
@@ -641,6 +943,29 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "execution_profile_id": {
+                "const": "qwen_dual_backend"
+              }
+            },
+            "required": [
+              "execution_profile_id"
+            ]
+          },
+          "then": {
+            "required": [
+              "execution_profile_version",
+              "logical_action",
+              "model_id",
+              "model_revision_or_fingerprint",
+              "pipeline_id",
+              "adapter_version",
+              "sampling"
+            ]
+          }
+        },
         {
           "if": {
             "properties": {
@@ -686,6 +1011,67 @@
               ]
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "execution_profile_id": {
+                "const": "qwen_dual_backend"
+              },
+              "operation": {
+                "const": "generate"
+              }
+            },
+            "required": [
+              "execution_profile_id",
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "backend": {
+                "const": "qwen_image"
+              },
+              "logical_action": {
+                "const": "generate_image"
+              },
+              "pipeline_id": {
+                "const": "QwenImagePipeline"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "execution_profile_id": {
+                "const": "qwen_dual_backend"
+              },
+              "operation": {
+                "const": "edit"
+              }
+            },
+            "required": [
+              "execution_profile_id",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "source_artifact_sha256"
+            ],
+            "properties": {
+              "backend": {
+                "const": "qianwen_image_edit"
+              },
+              "logical_action": {
+                "const": "edit_image"
+              },
+              "pipeline_id": {
+                "const": "QwenImageEditPlusPipeline"
+              }
+            }
+          }
         }
       ]
     },
@@ -717,7 +1103,8 @@
         "confidence": {
           "type": "number",
           "minimum": 0,
-          "maximum": 1
+          "maximum": 1,
+          "description": "Persisted correct-answer probability used by Soft-TIFA scoring."
         }
       }
     },
@@ -738,6 +1125,9 @@
           "items": {
             "$ref": "#/$defs/constraintObservation"
           }
+        },
+        "primary_score": {
+          "$ref": "#/$defs/primaryScore"
         },
         "report_ref": {
           "type": "string",

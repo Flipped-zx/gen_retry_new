@@ -4,6 +4,13 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from gen_retry.domain.score_policy import (
+    PRIMARY_POLICY_ID,
+    candidate_is_better,
+    planner_context_version,
+    primary_score_value,
+    score_policy_from_task_payload,
+)
 from gen_retry.protocol.schema_loader import validate_instance
 from gen_retry.runtime.planner_view import DEFAULT_SKILL_MANIFEST
 from gen_retry.runtime.reducer import AttemptRecord, EpisodeState, default_tool_manifest, reduce_events
@@ -29,7 +36,7 @@ def build_planner_context_from_events(
 
     if not events:
         raise ValueError("cannot build PlannerContext without events")
-    if schema_version not in {"0.4", "0.5"}:
+    if schema_version not in {"0.4", "0.5", "0.6"}:
         raise ValueError(f"unsupported PlannerContext schema version: {schema_version}")
     state = reduce_events(events)
     timeline = _round_timeline(events)
@@ -45,7 +52,7 @@ def build_planner_context_from_events(
             "episode_memory": _episode_memory_v04(timeline["completed_rounds"], state),
             "runtime_state": _runtime_state(state),
         }
-    else:
+    elif schema_version == "0.5":
         context = {
             "task_context": _task_context(state.task_spec),
             "latest_attempt": _observation(
@@ -56,6 +63,31 @@ def build_planner_context_from_events(
             "skill_context": _skill_context(timeline),
             "episode_memory": _episode_memory_v05(timeline["completed_rounds"], state),
             "runtime_state": _runtime_state(state),
+        }
+    else:
+        expected_version = planner_context_version(state.score_policy)
+        if expected_version != "0.6":
+            raise ValueError(
+                "PlannerContext v0.6 requires the primary Geneval2 score policy"
+            )
+        context = {
+            "planner_context_schema_version": "0.6",
+            "task_context": _task_context(state.task_spec),
+            "latest_attempt": _observation(
+                state,
+                state.latest_attempt_id,
+                include_status=True,
+                include_primary_score=True,
+            ),
+            "skill_context": _skill_context(timeline),
+            "episode_memory": _episode_memory_v06(
+                timeline["completed_rounds"],
+                state,
+            ),
+            "runtime_state": _runtime_state(
+                state,
+                include_score_policy=True,
+            ),
         }
     validate_instance(context, f"planner_context_v{schema_version.replace('.', '_')}.schema.json")
     return context
@@ -81,6 +113,7 @@ def _round_timeline(events: list[dict[str, Any]]) -> dict[str, Any]:
     if task_spec_event is None:
         raise ValueError("task_created event is required")
     task_spec = task_spec_event["payload"]["task_spec"]
+    score_policy = score_policy_from_task_payload(task_spec_event["payload"])
     constraints = {constraint["constraint_id"] for constraint in task_spec.get("constraints", [])}
     constraints_by_id = {
         constraint["constraint_id"]: constraint
@@ -89,7 +122,7 @@ def _round_timeline(events: list[dict[str, Any]]) -> dict[str, Any]:
 
     attempts: dict[str, AttemptRecord] = {}
     latest_attempt_id: str | None = None
-    best_pass_count = -1
+    best_attempt: AttemptRecord | None = None
     action_by_event_id: dict[str, dict[str, Any]] = {}
     action_event_by_request_id: dict[str, str] = {}
     completion_by_attempt_id: dict[str, dict[str, Any]] = {}
@@ -185,6 +218,7 @@ def _round_timeline(events: list[dict[str, Any]]) -> dict[str, Any]:
                 operation=completion["payload"]["operation"],
                 image_artifact_id=completion["payload"]["image_artifact_id"],
                 constraint_results=constraint_results,
+                primary_score=primary_score_value(payload, score_policy),
             )
 
             comparison_attempt = _comparison_attempt(
@@ -194,7 +228,16 @@ def _round_timeline(events: list[dict[str, Any]]) -> dict[str, Any]:
             )
             previous_pass_count = comparison_attempt.pass_count if comparison_attempt else 0
             current_pass_count = attempt.pass_count
-            became_best = current_pass_count > best_pass_count
+            became_best = (
+                best_attempt is None
+                or candidate_is_better(
+                    candidate_pass_count=attempt.pass_count,
+                    candidate_primary_score=attempt.primary_score,
+                    current_pass_count=best_attempt.pass_count,
+                    current_primary_score=best_attempt.primary_score,
+                    score_policy=score_policy,
+                )
+            )
             observed_outcome = _observed_outcome(
                 previous=comparison_attempt,
                 current=attempt,
@@ -205,7 +248,25 @@ def _round_timeline(events: list[dict[str, Any]]) -> dict[str, Any]:
             attempts[attempt.attempt_id] = attempt
             latest_attempt_id = attempt.attempt_id
             if became_best:
-                best_pass_count = current_pass_count
+                best_attempt = attempt
+
+            primary_score_delta = (
+                attempt.primary_score - comparison_attempt.primary_score
+                if comparison_attempt is not None
+                and attempt.primary_score is not None
+                and comparison_attempt.primary_score is not None
+                else None
+            )
+
+            round_value = {
+                "score_delta": (current_pass_count - previous_pass_count)
+                / max(1, len(constraints)),
+                "net_atom_gain": len(observed_outcome["fixed_constraint_ids"])
+                - len(observed_outcome["regressed_constraint_ids"]),
+                "became_best": became_best,
+            }
+            if score_policy["policy_id"] == PRIMARY_POLICY_ID:
+                round_value["primary_score_delta"] = primary_score_delta
 
             round_record = {
                 "round_id": current_round["round_id"],
@@ -214,12 +275,7 @@ def _round_timeline(events: list[dict[str, Any]]) -> dict[str, Any]:
                 "image_action": current_round["image_action"],
                 "result_attempt_id": attempt.attempt_id,
                 "observed_outcome": observed_outcome,
-                "value": {
-                    "score_delta": (current_pass_count - previous_pass_count) / max(1, len(constraints)),
-                    "net_atom_gain": len(observed_outcome["fixed_constraint_ids"])
-                    - len(observed_outcome["regressed_constraint_ids"]),
-                    "became_best": became_best,
-                },
+                "value": round_value,
             }
             completed_rounds.append(round_record)
             current_round = _new_active_round(len(completed_rounds), latest_attempt_id)
@@ -451,14 +507,20 @@ def _observation(
     attempt_id: str | None,
     *,
     include_status: bool,
+    include_primary_score: bool = False,
 ) -> dict[str, Any] | None:
     if attempt_id is None:
         return None
     attempt = state.attempts[attempt_id]
-    return {
+    observation = {
         "attempt_id": attempt.attempt_id,
         "constraint_results": _constraint_results(attempt, include_status=include_status),
     }
+    if include_primary_score:
+        if attempt.primary_score is None:
+            raise ValueError("PlannerContext v0.6 requires attempt primary scores")
+        observation["primary_score"] = attempt.primary_score
+    return observation
 
 
 def _constraint_results(
@@ -535,6 +597,19 @@ def _episode_memory_v05(rounds: list[dict[str, Any]], state: EpisodeState) -> di
     }
 
 
+def _episode_memory_v06(
+    rounds: list[dict[str, Any]],
+    state: EpisodeState,
+) -> dict[str, Any]:
+    last_completed = _last_completed_image_round_v06(rounds[-1]) if rounds else None
+    prior = [_prior_image_round_v06(round_record, state) for round_record in rounds[:-1]]
+    return {
+        "last_completed_image_round": last_completed,
+        "prior_image_rounds": prior,
+        "best_attempt": _best_attempt_memory_v06(state),
+    }
+
+
 def _recent_round(round_record: dict[str, Any]) -> dict[str, Any]:
     return {
         "skill_queries": round_record["skill_queries"],
@@ -599,6 +674,14 @@ def _last_completed_image_round_v05(round_record: dict[str, Any]) -> dict[str, A
     }
 
 
+def _last_completed_image_round_v06(round_record: dict[str, Any]) -> dict[str, Any]:
+    result = _last_completed_image_round_v05(round_record)
+    result["observed_outcome"]["primary_score_delta"] = round_record["value"][
+        "primary_score_delta"
+    ]
+    return result
+
+
 def _prior_image_round_v05(
     round_record: dict[str, Any],
     state: EpisodeState,
@@ -624,6 +707,20 @@ def _prior_image_round_v05(
             "became_best": outcome["became_best"],
         },
     }
+
+
+def _prior_image_round_v06(
+    round_record: dict[str, Any],
+    state: EpisodeState,
+) -> dict[str, Any]:
+    result = _prior_image_round_v05(round_record, state)
+    result["outcome_summary"]["baseline_attempt_id"] = round_record[
+        "observed_outcome"
+    ]["comparison_attempt_id"]
+    result["outcome_summary"]["primary_score_delta"] = round_record["value"][
+        "primary_score_delta"
+    ]
+    return result
 
 
 def _best_attempt_memory_v04(state: EpisodeState) -> dict[str, Any] | None:
@@ -652,17 +749,42 @@ def _best_attempt_memory_v05(state: EpisodeState) -> dict[str, Any] | None:
     }
 
 
-def _runtime_state(state: EpisodeState) -> dict[str, Any]:
+def _best_attempt_memory_v06(state: EpisodeState) -> dict[str, Any] | None:
+    if state.best_attempt_id is None:
+        return None
+    best_attempt = state.attempts[state.best_attempt_id]
+    if best_attempt.attempt_id == state.latest_attempt_id:
+        return {
+            "attempt_id": best_attempt.attempt_id,
+            "constraint_results_ref": "latest_attempt",
+        }
+    if best_attempt.primary_score is None:
+        raise ValueError("PlannerContext v0.6 requires best-attempt primary score")
+    return {
+        "attempt_id": best_attempt.attempt_id,
+        "primary_score": best_attempt.primary_score,
+        "constraint_results": _constraint_results(best_attempt, include_status=True),
+    }
+
+
+def _runtime_state(
+    state: EpisodeState,
+    *,
+    include_score_policy: bool = False,
+) -> dict[str, Any]:
     if state.remaining_budget == 0:
         available_actions = ["submit_attempt"] if state.best_attempt_id is not None else []
     elif state.attempt_order:
         available_actions = ["query_skill", "generate_image", "edit_image", "submit_attempt"]
     else:
         available_actions = ["query_skill", "generate_image"]
-    return {
+    runtime_state = {
         "remaining_image_budget": state.remaining_budget,
         "available_actions": available_actions,
     }
+    if include_score_policy:
+        runtime_state["score_policy"] = deepcopy(state.score_policy)
+    return runtime_state
 
 
 def default_skill_manifest() -> list[dict[str, Any]]:

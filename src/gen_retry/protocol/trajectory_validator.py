@@ -4,6 +4,13 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Iterable
 
+from gen_retry.domain.score_policy import (
+    PRIMARY_POLICY_ID,
+    legacy_score_policy,
+    planner_context_version,
+    score_policy_from_task_payload,
+    validate_primary_score,
+)
 from gen_retry.protocol.reference_validator import validate_action_references
 from gen_retry.protocol.schema_loader import validate_instance
 
@@ -93,6 +100,8 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
     submit_actions: dict[str, dict[str, Any]] = {}
     starts_by_request_id: dict[str, dict[str, Any]] = {}
     action_execution_started: set[str] = set()
+    execution_profiles: set[tuple[str, str]] = set()
+    score_policy = legacy_score_policy()
 
     if not events:
         raise ProtocolValidationError(
@@ -130,6 +139,10 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
             if task_spec is not None:
                 _problem(problems, "duplicate_task_created", "trajectory has multiple task_created events")
             task_spec = payload["task_spec"]
+            try:
+                score_policy = score_policy_from_task_payload(payload)
+            except ValueError as exc:
+                _problem(problems, "invalid_score_policy", str(exc))
             if task_spec.get("episode_id") != event["episode_id"]:
                 _problem(
                     problems,
@@ -223,7 +236,28 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                     "skills[].skill_id must match skill_returned.skill_ids",
                 )
 
+        if event_type == "planner_context_built":
+            actual_context_version = str(
+                payload.get("planner_context_schema_version", "0.5")
+            )
+            expected_context_version = planner_context_version(score_policy)
+            if actual_context_version != expected_context_version:
+                _problem(
+                    problems,
+                    "planner_context_score_policy_mismatch",
+                    "planner context version "
+                    f"{actual_context_version} is incompatible with score policy "
+                    f"{score_policy['policy_id']}; expected {expected_context_version}",
+                )
+
         if event_type == "image_execution_started":
+            if payload.get("execution_profile_id"):
+                execution_profiles.add(
+                    (
+                        payload["execution_profile_id"],
+                        payload["execution_profile_version"],
+                    )
+                )
             action_refs = [
                 ref for ref in event.get("input_refs", []) if ref in validated_actions
             ]
@@ -257,6 +291,15 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                         problems,
                         "image_action_operation_mismatch",
                         f"{event_id} operation {payload['operation']} cannot execute {action_type}",
+                    )
+                if (
+                    payload.get("logical_action") is not None
+                    and payload["logical_action"] != action_type
+                ):
+                    _problem(
+                        problems,
+                        "image_logical_action_mismatch",
+                        f"{event_id} logical_action differs from canonical action {action_type}",
                     )
                 if payload["operation"] == "edit":
                     action_source = action["arguments"].get("source_attempt_id")
@@ -307,8 +350,21 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                         "missing_completion_start_ref",
                         f"image completion input_refs do not include {start['event_id']}",
                     )
-                for field in ("operation", "backend"):
-                    if payload[field] != start_payload[field]:
+                for field in (
+                    "operation",
+                    "backend",
+                    "execution_profile_id",
+                    "execution_profile_version",
+                    "logical_action",
+                    "model_id",
+                    "model_revision_or_fingerprint",
+                    "pipeline_id",
+                    "adapter_version",
+                    "sampling",
+                ):
+                    if field not in payload and field not in start_payload:
+                        continue
+                    if payload.get(field) != start_payload.get(field):
                         _problem(
                             problems,
                             "image_start_completion_mismatch",
@@ -329,6 +385,21 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                         "image_completion_source_mismatch",
                         "image completion source_attempt_id differs from matching start",
                     )
+                if payload["operation"] == "edit" and payload.get(
+                    "source_artifact_sha256"
+                ) != start_payload.get("source_artifact_sha256"):
+                    _problem(
+                        problems,
+                        "image_completion_source_digest_mismatch",
+                        "image completion source digest differs from matching start",
+                    )
+            if payload.get("execution_profile_id"):
+                execution_profiles.add(
+                    (
+                        payload["execution_profile_id"],
+                        payload["execution_profile_version"],
+                    )
+                )
             if request_id in completed_request_ids:
                 _problem(
                     problems,
@@ -402,6 +473,21 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                             "unknown_observed_constraint",
                             f"Geneval2 result references unknown constraint {result['constraint_id']}",
                         )
+            primary_score = payload.get("primary_score")
+            if score_policy["policy_id"] == PRIMARY_POLICY_ID and primary_score is None:
+                _problem(
+                    problems,
+                    "missing_primary_score",
+                    "primary-score policy requires primary_score on every Geneval2 result",
+                )
+            if primary_score is not None:
+                try:
+                    validate_primary_score(
+                        primary_score,
+                        payload["constraint_results"],
+                    )
+                except ValueError as exc:
+                    _problem(problems, "invalid_primary_score", str(exc))
 
         if event_type == "attempt_submitted":
             submit_action_event_id = payload["submit_action_event_id"]
@@ -447,6 +533,13 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
 
     if task_spec is None:
         _problem(problems, "missing_task_created", "trajectory must include task_created")
+    if len(execution_profiles) > 1:
+        labels = sorted(f"{profile_id}@{version}" for profile_id, version in execution_profiles)
+        _problem(
+            problems,
+            "mixed_execution_profiles",
+            "one episode cannot mix execution profiles: " + ", ".join(labels),
+        )
 
     if problems:
         raise ProtocolValidationError(problems)

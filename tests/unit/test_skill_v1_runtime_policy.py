@@ -189,10 +189,140 @@ def test_query_skill_runtime_limits() -> None:
                     },
                 }
             },
+        },
+        {
+            "event_id": "evt_0002",
+            "event_type": "skill_returned",
+            "payload": {
+                "query_action_event_id": "evt_0001",
+                "skills": [
+                    {
+                        "skill_id": "spatial_relation_layout",
+                        "version": "1.0.0",
+                    }
+                ],
+            },
+        },
+    ]
+    novel_second_query = {
+        "action": "query_skill",
+        "arguments": {
+            "skill_ids": ["object_identity_presence"],
+            "target_constraint_ids": ["c_001"],
+        },
+    }
+    runner._validate_runtime_action(
+        novel_second_query,
+        state,
+        [],
+        events=consecutive_events,
+    )
+
+    two_completed_queries = [
+        *consecutive_events,
+        {
+            "event_id": "evt_0003",
+            "event_type": "action_validated",
+            "payload": {"action": novel_second_query},
+        },
+        {
+            "event_id": "evt_0004",
+            "event_type": "skill_returned",
+            "payload": {
+                "query_action_event_id": "evt_0003",
+                "skills": [
+                    {
+                        "skill_id": "object_identity_presence",
+                        "version": "1.0.0",
+                    }
+                ],
+            },
+        },
+    ]
+    third_query = {
+        "action": "query_skill",
+        "arguments": {
+            "skill_ids": ["attribute_entity_binding"],
+            "target_constraint_ids": ["c_001"],
+        },
+    }
+    with pytest.raises(RuntimeActionError, match="at most two"):
+        runner._validate_runtime_action(
+            third_query,
+            state,
+            [],
+            events=two_completed_queries,
+        )
+
+
+def test_query_skill_rejects_new_action_while_tool_response_is_pending() -> None:
+    runner = _runner()
+    state = type("State", (), {"attempt_order": [], "remaining_budget": 5})()
+    events = [
+        {
+            "event_id": "evt_0001",
+            "event_type": "action_validated",
+            "payload": {
+                "action": {
+                    "action": "query_skill",
+                    "arguments": {
+                        "skill_ids": ["spatial_relation_layout"],
+                        "target_constraint_ids": ["c_001"],
+                    },
+                }
+            },
         }
     ]
-    with pytest.raises(RuntimeActionError, match="Consecutive|consecutive"):
-        runner._validate_runtime_action(repeated, state, [], events=consecutive_events)
+    action = {
+        "action": "query_skill",
+        "arguments": {
+            "skill_ids": ["object_identity_presence"],
+            "target_constraint_ids": ["c_001"],
+        },
+    }
+
+    with pytest.raises(RuntimeActionError, match="tool response"):
+        runner._validate_runtime_action(action, state, [], events=events)
+
+
+def test_incomplete_query_skill_resumes_tool_response_before_planning(
+    tmp_path,
+) -> None:
+    runner = _runner()
+    action_event = {
+        "event_id": "evt_0001",
+        "event_type": "action_validated",
+        "turn_id": "turn_000",
+        "payload": {
+            "action": {
+                "action": "query_skill",
+                "arguments": {
+                    "skill_ids": ["spatial_relation_layout"],
+                    "target_constraint_ids": ["c_001"],
+                },
+            }
+        },
+    }
+    observed: dict[str, object] = {}
+
+    def execute_skill(run_dir, event):
+        observed["action_event"] = event
+        return {"event_id": "evt_0002"}
+
+    def build_context(run_dir, *, input_refs):
+        observed["input_refs"] = input_refs
+
+    runner._execute_skill = execute_skill
+    runner._build_next_planner_context = build_context
+
+    assert runner._recover_incomplete_skill_query(
+        tmp_path,
+        events=[action_event],
+    )
+    assert observed == {
+        "action_event": action_event,
+        "input_refs": ["evt_0002"],
+    }
 
 
 def test_active_skill_operator_retention_and_grounding(tmp_path) -> None:
