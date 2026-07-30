@@ -13,6 +13,11 @@
 - Started the continuous 51-200 queue with 16 logical workers, eight Teacher
   slots, interleaved HCU assignment, asynchronous audits, and five-second
   resource sampling.
+- Completed and audited episodes 51-60: 36 evaluated images, submitted atom
+  pass 63/69, Soft-TIFA GM 75.00, and zero submitted-to-peak GM gap.
+- Recorded GPT-5.6 Sol's checkpoint-60 verdict `PASS_CONTINUE_QUEUE`.
+- Measured the continuous queue at 5.92/8 mean active HCUs with 16 workers
+  always present and no all-idle sample through checkpoint 60.
 - Completed and audited the first 40 fresh 8-HCU official-mix trajectories:
   121 evaluated images, submitted atom pass 278/296, Soft-TIFA GM 82.45, and
   27/40 all-pass episodes.

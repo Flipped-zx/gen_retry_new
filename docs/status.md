@@ -150,6 +150,17 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
     retained 117 context-only records, and passed all mask and contract
     invariants:
     `docs/phase7/checkpoints/fresh8_v1_ckpt_050_sft_reconciliation.md`;
+  - range 51-60 completed with 10/10 valid submissions and 36 evaluated image
+    attempts; submitted atom pass improved from 53/69 to 63/69 and Soft-TIFA
+    GM from 32.52 to 75.00;
+  - cumulative 1-60 submitted atom pass is 402/430 and GM is 80.85, with 41/60
+    all-pass episodes;
+  - checkpoint-60 Sol light review:
+    `docs/reviews/phase7_fresh8_ckpt_060_sol_review.md`
+    (`PASS_CONTINUE_QUEUE`);
+  - continuous-queue startup resource evidence averaged 5.92/8 active HCUs
+    with 16 workers always present and no all-idle sample:
+    `docs/phase7/checkpoints/fresh8_v1_queue_start_to_ckpt_060_resource_profile.md`;
   - one global continuous queue for episodes 51-200 is active, with checkpoint
     audits running asynchronously;
   - the continuous queue preserves two workers per HCU, eight Teacher slots,
