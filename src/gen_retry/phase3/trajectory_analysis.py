@@ -60,8 +60,10 @@ def analyze_phase3_rollouts(
     artifact_root: Path = Path("artifacts/phase3"),
     docs_root: Path = Path("docs/phase3"),
     expected_count: int = 10,
+    episode_ids: list[str] | None = None,
 ) -> dict[str, Any]:
-    episodes = [_analyze_episode(path) for path in sorted(run_root.glob("phase3_ep_*"))]
+    run_dirs = _select_analysis_run_dirs(run_root, episode_ids)
+    episodes = [_analyze_episode(path) for path in run_dirs]
     if len(episodes) != expected_count:
         raise ValueError(f"expected {expected_count} episodes, found {len(episodes)}")
     incomplete = [episode["episode_id"] for episode in episodes if not episode["submitted_attempt_id"]]
@@ -113,6 +115,21 @@ def analyze_phase3_rollouts(
         "episode_count": len(episodes),
         "invalid_run_count": len(invalid_runs),
     }
+
+
+def _select_analysis_run_dirs(
+    run_root: Path,
+    episode_ids: list[str] | None,
+) -> list[Path]:
+    if episode_ids is None:
+        return sorted(path for path in run_root.glob("phase3_ep_*") if path.is_dir())
+    if len(episode_ids) != len(set(episode_ids)):
+        raise ValueError("episode_ids must be unique")
+    run_dirs = sorted(run_root / episode_id for episode_id in episode_ids)
+    missing = [path.name for path in run_dirs if not path.is_dir()]
+    if missing:
+        raise ValueError("missing rollout directories: " + ", ".join(missing))
+    return run_dirs
 
 
 def _analyze_episode(run_dir: Path) -> dict[str, Any]:

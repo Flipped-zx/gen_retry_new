@@ -1,7 +1,13 @@
+from pathlib import Path
+
+import pytest
+
+from gen_retry.cli.analyze_phase3_rollouts import _resolve_episode_ids
 from gen_retry.phase3.trajectory_analysis import (
     LABEL_TRAINABLE,
     _base_label,
     _label_query_skill_action,
+    _select_analysis_run_dirs,
 )
 
 
@@ -46,3 +52,29 @@ def test_only_native_v05_targetable_actions_can_be_sft_candidates() -> None:
 
     assert native_generate["sft_candidate"] is True
     assert legacy_generate["sft_candidate"] is False
+
+
+def test_select_analysis_run_dirs_limits_checkpoint_subset(tmp_path: Path) -> None:
+    for episode_id in ("phase3_ep_001", "phase3_ep_002", "phase3_ep_003"):
+        (tmp_path / episode_id).mkdir()
+
+    assert _select_analysis_run_dirs(
+        tmp_path,
+        ["phase3_ep_003", "phase3_ep_001"],
+    ) == [
+        tmp_path / "phase3_ep_001",
+        tmp_path / "phase3_ep_003",
+    ]
+
+
+def test_select_analysis_run_dirs_rejects_missing_id(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="phase3_ep_001"):
+        _select_analysis_run_dirs(tmp_path, ["phase3_ep_001"])
+
+
+def test_analysis_cli_resolves_inclusive_episode_range() -> None:
+    assert _resolve_episode_ids(
+        episode_ids=None,
+        episode_start=41,
+        episode_end=50,
+    ) == [f"phase3_ep_{index:03d}" for index in range(41, 51)]
