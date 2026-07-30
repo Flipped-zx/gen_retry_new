@@ -8,6 +8,7 @@ from gen_retry.agent.teacher_client import (
     AVAILABLE_SKILL_IDS,
     OpenAICompatibleTeacherClient,
     TeacherImageRef,
+    TEACHER_SYSTEM_PROMPT_TEXT,
     TEACHER_SYSTEM_PROMPT_VERSION,
     teacher_system_prompt_sha256,
 )
@@ -17,6 +18,7 @@ from gen_retry.phase3.live_runner import (
     _execution_instruction,
 )
 from gen_retry.phase3.model_config import TeacherConfig
+from gen_retry.runtime.reducer import AttemptRecord, EpisodeState
 
 
 PNG_1X1 = (
@@ -173,6 +175,14 @@ def test_teacher_messages_label_actual_latest_and_best_images(tmp_path: Path) ->
     assert [part["type"] for part in content].count("image_url") == 2
     assert content[2]["image_url"]["url"].startswith("data:image/png;base64,")
     assert content[4]["image_url"]["url"].startswith("data:image/png;base64,")
+
+
+def test_teacher_prompt_versions_retry_closure_policy() -> None:
+    assert TEACHER_SYSTEM_PROMPT_VERSION == "teacher_system_prompt_v8_retry_closure_policy"
+    assert "do not repeat the same action, source attempt, and target constraint set" in (
+        TEACHER_SYSTEM_PROMPT_TEXT
+    )
+    assert "default source_attempt_id to the reducer-best attempt" in TEACHER_SYSTEM_PROMPT_TEXT
 
 
 def test_sanitized_request_records_prompt_hash_and_redacts_paths(tmp_path: Path) -> None:
@@ -501,3 +511,159 @@ def test_live_runner_reads_native_and_legacy_instruction_fields() -> None:
 
     assert _execution_instruction(native) == "native v0.5 instruction"
     assert _execution_instruction(legacy) == "legacy v0.4 instruction"
+
+
+def test_retry_closure_rejects_repeated_strategy_after_regression() -> None:
+    runner = Phase3LiveRunner.__new__(Phase3LiveRunner)
+    previous_action = _edit_action(source_attempt_id="a_000")
+    state = _retry_state(
+        previous_action=previous_action,
+        latest_transition={
+            "fixed": [],
+            "regressed": ["c_001"],
+            "persistent_failed": ["c_002"],
+            "stable_pass": [],
+        },
+    )
+
+    try:
+        runner._validate_retry_closure_policy(previous_action, state)
+    except RuntimeActionError as exc:
+        assert exc.error_code == "repeated_failed_retry_strategy"
+    else:
+        raise AssertionError("expected repeated retry strategy rejection")
+
+
+def test_retry_closure_rejects_repeated_strategy_after_strict_no_progress() -> None:
+    runner = Phase3LiveRunner.__new__(Phase3LiveRunner)
+    previous_action = _edit_action(source_attempt_id="a_000")
+    state = _retry_state(
+        previous_action=previous_action,
+        latest_transition={
+            "fixed": [],
+            "regressed": [],
+            "persistent_failed": ["c_002", "c_003"],
+            "stable_pass": ["c_001"],
+        },
+    )
+
+    try:
+        runner._validate_retry_closure_policy(previous_action, state)
+    except RuntimeActionError as exc:
+        assert exc.error_code == "repeated_failed_retry_strategy"
+    else:
+        raise AssertionError("expected repeated no-progress strategy rejection")
+
+
+def test_retry_closure_rejects_nonbest_source_without_relevant_evidence() -> None:
+    runner = Phase3LiveRunner.__new__(Phase3LiveRunner)
+    state = _retry_state(
+        previous_action=_edit_action(source_attempt_id="a_000"),
+        latest_transition={
+            "fixed": ["c_001"],
+            "regressed": [],
+            "persistent_failed": ["c_002"],
+            "stable_pass": [],
+        },
+    )
+    action = _edit_action(source_attempt_id="a_001")
+
+    try:
+        runner._validate_retry_closure_policy(action, state)
+    except RuntimeActionError as exc:
+        assert exc.error_code == "historical_source_without_constraint_evidence"
+    else:
+        raise AssertionError("expected historical source evidence rejection")
+
+
+def test_retry_closure_allows_nonbest_source_with_relevant_pass_evidence() -> None:
+    runner = Phase3LiveRunner.__new__(Phase3LiveRunner)
+    state = _retry_state(
+        previous_action=_edit_action(source_attempt_id="a_000"),
+        latest_transition={
+            "fixed": ["c_001"],
+            "regressed": [],
+            "persistent_failed": ["c_002"],
+            "stable_pass": [],
+        },
+        source_unique_pass=True,
+    )
+    action = _edit_action(
+        source_attempt_id="a_001",
+        preserve_constraint_ids=["c_003"],
+    )
+
+    runner._validate_retry_closure_policy(action, state)
+
+
+def _edit_action(
+    *,
+    source_attempt_id: str,
+    preserve_constraint_ids: list[str] | None = None,
+) -> dict:
+    return {
+        "schema_version": "0.5",
+        "action": "edit_image",
+        "arguments": {
+            "source_attempt_id": source_attempt_id,
+            "target_constraint_ids": ["c_002"],
+            "preserve_constraint_ids": preserve_constraint_ids or ["c_001"],
+            "instruction": "Executable test instruction.",
+        },
+    }
+
+
+def _retry_state(
+    *,
+    previous_action: dict,
+    latest_transition: dict,
+    source_unique_pass: bool = False,
+) -> EpisodeState:
+    best = AttemptRecord(
+        attempt_id="a_000",
+        parent_attempt_id=None,
+        action_event_id="evt_000",
+        action={
+            "schema_version": "0.5",
+            "action": "generate_image",
+            "arguments": {
+                "target_constraint_ids": ["c_001", "c_002", "c_003"],
+                "preserve_constraint_ids": [],
+                "instruction": "Initial test instruction.",
+            },
+        },
+        operation="generate",
+        image_artifact_id="img_000",
+        constraint_results={
+            "c_001": {"status": "pass"},
+            "c_002": {"status": "fail"},
+            "c_003": {"status": "fail"},
+        },
+        primary_score=0.5,
+    )
+    latest = AttemptRecord(
+        attempt_id="a_001",
+        parent_attempt_id="a_000",
+        action_event_id="evt_001",
+        action=previous_action,
+        operation="edit",
+        image_artifact_id="img_001",
+        constraint_results={
+            "c_001": {"status": "pass"},
+            "c_002": {"status": "fail"},
+            "c_003": {"status": "pass" if source_unique_pass else "fail"},
+        },
+        primary_score=0.4,
+    )
+    return EpisodeState(
+        schema_version="0.2",
+        episode_id="ep_retry_policy",
+        task_spec={"max_image_attempts": 5},
+        score_policy={},
+        attempts={"a_000": best, "a_001": latest},
+        attempt_order=["a_000", "a_001"],
+        latest_attempt_id="a_001",
+        best_attempt_id="a_000",
+        latest_transition=latest_transition,
+        remaining_budget=3,
+    )

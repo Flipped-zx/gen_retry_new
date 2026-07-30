@@ -495,6 +495,26 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
   - `python -m gen_retry.cli.validate_schemas` — passed, 12 schemas;
   - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records;
   - `git diff --check` — passed.
+- Fresh 8-HCU checkpoint-140 and retry-closure validation:
+  - cumulative completed-quality cohort — 140 valid trajectories and 451
+    evaluated images, submitted atom pass 924/997, Soft-TIFA GM 75.50, and
+    85/140 all-pass submissions;
+  - checkpoint-140 increment — 79 evaluated images, submitted atom pass
+    135/148, Soft-TIFA GM 58.59, and 7/20 all-pass submissions;
+  - fixed ID 121-140 admission snapshot — 18 completed, two active, zero
+    failed;
+  - resource samples through checkpoint 140 — 5.89/8 mean active HCUs,
+    median six, and no all-idle sample;
+  - GPT-5.6 Sol verdict — `PASS_WITH_PROSPECTIVE_CHANGE`, with no validity
+    blocker and a required forward-only retry closure policy;
+  - Teacher policy v8 rejects equivalent retries after regression or strict
+    no-progress, defaults edits to reducer-best, and requires relevant
+    constraint evidence for another historical source;
+  - `pytest tests/contract -q` — passed, 79 tests;
+  - `pytest tests/unit -q` — passed, 133 tests;
+  - `python -m gen_retry.cli.validate_schemas` — passed, 12 schemas;
+  - `python -m gen_retry.cli.validate_fixtures` — passed, 104 fixture records;
+  - historical example replay — passed.
 
 ## Active Risks
 
@@ -529,6 +549,10 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
 - The high-quality `runs/phase3_hq5/phase3_ep_004` directory contains an interrupted `image_execution_started` event without an image, evaluator result, or submission; do not count it as a valid trajectory until it is deliberately resumed and completed.
 - `docs/phase3/planner_io_v04_sft_message_view_phase3_ep001.json` is a human display artifact only; it contains notes and old empty `decision_summary` values and must not be used as trainable data.
 - `query_skill` remains context-only for SFT until skill utility is accepted, despite being a real planner action in the trajectory protocol.
+- Checkpoint 140 exposed 23 regressive image actions in 79 attempts. The v8
+  retry closure policy is prospective, so its effect must be measured only on
+  requests that persist `teacher_system_prompt_v8_retry_closure_policy`; v7
+  and v8 episodes must not be pooled as if all received the change.
 
 ## Unresolved Decisions
 
@@ -537,18 +561,26 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
 
 ## Last Reviewer Verdict
 
-The latest review is the v0.7 / PlannerContext v0.6 five-trajectory final
-review: `PASS`. It accepts the claim "mechanistically positive but
-performance-mixed" and rejects any general metric-improvement or causal
-renderer claim. The accepted score contract remains ADR-0007. The earlier Muse
-Image-informed ablation claim-sufficiency verdict remains
-`PASS_WITH_REQUIRED_CHANGES`.
+The latest review is the fresh 8-HCU checkpoint-140 review:
+`PASS_WITH_PROSPECTIVE_CHANGE`. It found no routing, lineage, evaluator,
+memory, SFT-masking, or future-leakage blocker, but required a versioned
+forward-only retry closure policy because regressive actions concentrated at
+23/79 attempts. Teacher policy v8 implements that requirement without changing
+Action Protocol 0.5, PlannerContext 0.6, scoring, routing, or completed
+artifacts. Post-change evidence must be reported separately by persisted
+system-prompt version.
 
 Earlier active verdicts remain unchanged. Planner I/O native
 `decision_summary` is `FAIL_KEEP_V05`; Gate 3a Skill-v1 Trace I/O Clarity is
 `APPROVE`; Skill utility remains `REQUEST_CHANGES`.
 
 ## Next Autonomous Action
+
+Continue the fresh 8-HCU queue through checkpoint 150 while preserving
+completion-quality and fixed-admission denominators. At checkpoint 150, run
+the deep Sol review and report v7/v8 evidence separately using each sanitized
+Planner request's persisted system-prompt version and hash. Do not rerun valid
+v7 trajectories to manufacture a post-change comparison.
 
 If prioritizing ablation evidence, first run the zero-image-call Stage 0
 analysis and planner-only Stage 1 screen in

@@ -2,6 +2,25 @@
 
 ## 2026-07-30
 
+- Completed the checkpoint-140 quality audit: the 20-trajectory increment used
+  79 evaluated images, improved submitted atom pass from 124/148 to 135/148,
+  improved Soft-TIFA GM from 30.63 to 58.59, and produced 7/20 all-pass
+  submissions.
+- Recorded the fixed ID 121-140 admission snapshot with 18 completed, two
+  active, and zero failed episodes.
+- Recorded GPT-5.6 Sol's checkpoint-140 verdict
+  `PASS_WITH_PROSPECTIVE_CHANGE`: no validity blocker was found, but the 23/79
+  regressive-action concentration required a forward-only retry closure
+  policy.
+- Added Teacher policy v8 and runtime checks that reject an identical
+  action/source/target retry after regression or strict no-progress, default
+  edits to reducer-best, and require relevant constraint-pass evidence before
+  editing from another historical source.
+- Kept Action Protocol 0.5, PlannerContext 0.6, the score policy, execution
+  profile, completed trajectories, and SFT ownership unchanged; post-change
+  evidence is separated by persisted Teacher system-prompt version.
+- Validated the v8 policy with 79 contract tests, 133 unit tests, 12 schemas,
+  104 fixture records, and the deterministic historical replay.
 - Completed the checkpoint-50 boundary with 50/50 valid submissions and 148
   evaluated images: submitted atom pass 339/361, Soft-TIFA GM 82.02, and
   35/50 all-pass episodes.

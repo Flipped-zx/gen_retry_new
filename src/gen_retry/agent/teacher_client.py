@@ -15,7 +15,7 @@ from gen_retry.tools.resource_locks import teacher_api_slot
 
 
 TEACHER_SYSTEM_PROMPT_VERSION = (
-    "teacher_system_prompt_v7_planner_context_v0_6_primary_score"
+    "teacher_system_prompt_v8_retry_closure_policy"
 )
 AVAILABLE_SKILL_IDS = tuple(entry["skill_id"] for entry in DEFAULT_SKILL_MANIFEST)
 
@@ -37,7 +37,12 @@ TEACHER_SYSTEM_PROMPT_TEXT = (
     "output a backend or mode field. Use fixed, regressed, persistent, and "
     "stable-pass history. Do "
     "not repeat a materially equivalent ineffective instruction unless the new "
-    "instruction contains a concrete change. When using query_skill, select skill_ids "
+    "instruction contains a concrete change. After a regressive or no-progress "
+    "image result, do not repeat the same action, source attempt, and target "
+    "constraint set. For edit_image, default source_attempt_id to the reducer-best "
+    "attempt. Use a different historical source only when its constraint results "
+    "contain explicit relevant pass evidence that the reducer-best attempt lacks. "
+    "When using query_skill, select skill_ids "
     "only from this exact catalog: "
     + ", ".join(AVAILABLE_SKILL_IDS)
     + ". Follow action_protocol_v0_5 exactly."
@@ -282,7 +287,15 @@ class OpenAICompatibleTeacherClient:
                 "PlannerContext latest_attempt or episode_memory. "
                 "Use visible LATEST_IMAGE and BEST_IMAGE inputs; never decide from a path "
                 "string alone. Compare latest and best when they differ before choosing "
-                "source_attempt_id. Do not blindly continue from the latest attempt.",
+                "source_attempt_id. Do not blindly continue from the latest attempt. "
+                "For source-conditioned retries, default to the reducer-best attempt. "
+                "A different historical source is allowed only when its recorded "
+                "constraint results provide relevant pass evidence absent from best.",
+                "Retry closure policy: when the preceding image result regressed any "
+                "constraint, or made no fixed-atom/best-so-far progress, do not repeat "
+                "the same action type, source_attempt_id, and target_constraint_ids. "
+                "Change the source, action type, or target set instead of replaying an "
+                "equivalent failed route.",
                 "If remaining_image_budget is 0, submit the best available attempt with "
                 "reason_code exactly best_available_under_budget.",
                 "Allowed submit reason_code values are exactly: all_constraints_passed, "

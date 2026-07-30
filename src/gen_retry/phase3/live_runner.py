@@ -1017,6 +1017,8 @@ class Phase3LiveRunner:
             raise RuntimeActionError("budget_exhausted", "no image attempts remain; submit an attempt")
         if action_type in {"generate_image", "edit_image"} and state.remaining_budget <= 0:
             raise RuntimeActionError("budget_exhausted", "image attempt budget is exhausted")
+        if action_type in {"generate_image", "edit_image"}:
+            self._validate_retry_closure_policy(action, state)
         if action_type == "query_skill":
             skill_ids = action["arguments"].get("skill_ids", [])
             if len(skill_ids) > 3:
@@ -1073,6 +1075,61 @@ class Phase3LiveRunner:
                     "at most two successful query_skill interactions are "
                     "allowed per image-producing round",
                 )
+
+    def _validate_retry_closure_policy(
+        self,
+        action: dict[str, Any],
+        state: EpisodeState,
+    ) -> None:
+        if not state.attempt_order:
+            return
+
+        arguments = action["arguments"]
+        best_attempt_id = getattr(state, "best_attempt_id", None)
+        if action["action"] == "edit_image" and best_attempt_id is not None:
+            source_attempt_id = arguments["source_attempt_id"]
+            if source_attempt_id != best_attempt_id:
+                source = state.attempts[source_attempt_id]
+                best = state.attempts[best_attempt_id]
+                relevant_constraint_ids = set(arguments["target_constraint_ids"])
+                relevant_constraint_ids.update(
+                    arguments.get("preserve_constraint_ids", [])
+                )
+                evidence_ids = sorted(
+                    constraint_id
+                    for constraint_id in relevant_constraint_ids
+                    if source.constraint_results[constraint_id]["status"] == "pass"
+                    and best.constraint_results[constraint_id]["status"] != "pass"
+                )
+                if not evidence_ids:
+                    raise RuntimeActionError(
+                        "historical_source_without_constraint_evidence",
+                        "edit_image must default to reducer-best source "
+                        f"{best_attempt_id}; historical source {source_attempt_id} "
+                        "has no relevant passed constraint that best lacks",
+                    )
+
+        transition = getattr(state, "latest_transition", None)
+        latest_attempt_id = getattr(state, "latest_attempt_id", None)
+        if transition is None or latest_attempt_id is None:
+            return
+        regressive = bool(transition["regressed"])
+        no_progress = (
+            not transition["fixed"]
+            and not transition["regressed"]
+            and latest_attempt_id != best_attempt_id
+        )
+        if not regressive and not no_progress:
+            return
+
+        previous_action = state.attempts[latest_attempt_id].action
+        if _retry_strategy_key(action) == _retry_strategy_key(previous_action):
+            raise RuntimeActionError(
+                "repeated_failed_retry_strategy",
+                "after a regressive or no-progress result, do not repeat the same "
+                "action/source/target strategy; change the source, action type, or "
+                "target_constraint_ids",
+            )
 
     def _recover_incomplete_skill_query(
         self,
@@ -1454,6 +1511,15 @@ def _skill_identity_from_event_payload(skill: dict[str, Any]) -> tuple[str, str,
 
 def _resolved_skill_identity(skill: Any) -> tuple[str, str, str]:
     return (skill.skill_id, skill.version, skill.content_sha256)
+
+
+def _retry_strategy_key(action: dict[str, Any]) -> tuple[str, str | None, tuple[str, ...]]:
+    arguments = action["arguments"]
+    return (
+        action["action"],
+        arguments.get("source_attempt_id"),
+        tuple(sorted(arguments.get("target_constraint_ids", []))),
+    )
 
 
 def _execution_instruction(action: dict[str, Any]) -> str:
