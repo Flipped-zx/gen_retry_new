@@ -557,6 +557,23 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
     images, submitted atom pass 1168/1263 and Soft-TIFA GM 75.19;
   - GPT-5.6 Sol verdict — `PASS_CONTINUE_QUEUE`; v8 supports descriptive
     retry-closure consistency but no causal performance claim.
+- Fresh 8-HCU final checkpoint-200 review:
+  - 200/200 fixed IDs completed with 684 evaluated images; no valid trajectory
+    was rerun;
+  - submitted atom pass 1301/1419, Soft-TIFA AM 90.90, Soft-TIFA GM 73.50,
+    and 111/200 all-pass trajectories;
+  - 162 v7-only, 37 v8-only, and one mixed-resume trajectory; v8-only had zero
+    equivalent repeats across 32 retry-closure opportunities;
+  - final SFT reconciliation — 663 canonical targets and 496 context-only
+    records with all ownership, profile, score-contract, and split invariants
+    passing;
+  - `pytest tests/contract -q` — passed, 79 tests;
+  - `pytest tests/unit -q` — passed, 133 tests;
+  - schema validation — passed, 12 schemas;
+  - fixture validation — passed, 104 records;
+  - historical replay — passed;
+  - GPT-5.6 Sol verdict — `PASS_FINAL`; the dataset may proceed to the next
+    SFT supervision gate.
 
 ## Active Risks
 
@@ -595,6 +612,11 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
   retry closure policy is prospective, so its effect must be measured only on
   requests that persist `teacher_system_prompt_v8_retry_closure_policy`; v7
   and v8 episodes must not be pooled as if all received the change.
+- The final batch is held-out-safe Flow-DPPO synthetic-train evidence, not an
+  official Geneval2 800-row leaderboard result.
+- Verb atoms remain the main content limitation: 10/22 passed at submission,
+  with chasing at 2/12. The batch does not isolate generator difficulty from
+  VQA sensitivity.
 
 ## Unresolved Decisions
 
@@ -603,12 +625,12 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
 
 ## Last Reviewer Verdict
 
-The latest review is the fresh 8-HCU checkpoint-180 light review:
-`PASS_CONTINUE_QUEUE`. It found no cohort, evaluator, lineage, routing, memory,
-SFT-masking, or future-leakage blocker. Across six observed v8 retry-closure
-opportunities, the next action never repeated the same action/source/target
-tuple and required no runtime rejection. This is accepted as descriptive
-mechanism evidence only. Continue unchanged through the all-ID checkpoint 200.
+The latest review is the fresh 8-HCU checkpoint-200 final review:
+`PASS_FINAL`. It found no data-validity, routing, evaluator, memory, resume,
+SFT-boundary, score-selection, cohort, or future-leakage blocker. All 200 fixed
+IDs closed, the mixed v7/v8 resume is counted once and separately, and the
+dataset may proceed to the next SFT supervision gate. v8 remains a descriptive
+retry-closure mechanism claim, not a causal performance claim.
 
 Earlier active verdicts remain unchanged. Planner I/O native
 `decision_summary` is `FAIL_KEEP_V05`; Gate 3a Skill-v1 Trace I/O Clarity is
@@ -616,12 +638,11 @@ Earlier active verdicts remain unchanged. Planner I/O native
 
 ## Next Autonomous Action
 
-Continue the fresh 8-HCU queue until every fixed episode ID 1-200 has a valid
-submission. The final checkpoint is not completion-conditioned and must not
-substitute another episode for any slow or failed ID. Report v7/v8
-regressions, no-progress retries, closure opportunities/rejections, quality,
-and throughput using persisted system-prompt versions. Do not rerun any valid
-trajectory.
+Proceed to the next SFT supervision gate using the final 663 canonical
+positive/recovery targets and 496 context-only records. Keep Query-Skill and
+its tool response loss-zero until Skill utility is separately accepted. Do not
+claim official leaderboard performance or causal v8 improvement without the
+corresponding controlled experiments.
 
 If prioritizing ablation evidence, first run the zero-image-call Stage 0
 analysis and planner-only Stage 1 screen in

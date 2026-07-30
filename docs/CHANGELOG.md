@@ -2,6 +2,25 @@
 
 ## 2026-07-30
 
+- Completed all 200 fixed fresh trajectories with 684 evaluated images; the
+  continuous first pass closed 198 and a pending-only resume closed the final
+  two without rerunning any valid trajectory.
+- Improved submitted atom pass from 1159/1419 to 1301/1419, Soft-TIFA AM from
+  81.87 to 90.90, Soft-TIFA GM from 42.58 to 73.50, and all-pass trajectories
+  from 51/200 to 111/200.
+- Recorded final easy/medium/hard and atom-type results. Count gained 92 atoms
+  and attribute gained 40; verb remained weakest at 10/22, including chasing
+  at 2/12.
+- Separated 162 v7-only, 37 v8-only, and one mixed-resume trajectory. v8-only
+  produced zero equivalent failed-route repeats across 32 closure
+  opportunities; this is descriptive mechanism evidence only.
+- Reconciled final SFT supervision to 663 canonical targets and 496
+  context-only records with no mask, canonical-target, profile,
+  context/score-contract, or prompt-split violation.
+- Added the final 200-trajectory report and a real v8 round-by-round Planner
+  I/O walkthrough for `phase3_ep_176`.
+- Recorded GPT-5.6 Sol's final verdict `PASS_FINAL`: no blocker remains and the
+  dataset may proceed to the next SFT supervision gate.
 - Completed the checkpoint-180 light audit: the 20-trajectory increment used
   64 evaluated images, improved submitted atom pass from 109/130 to 122/130,
   improved Soft-TIFA GM from 49.10 to 80.41, and produced 13/20 all-pass
