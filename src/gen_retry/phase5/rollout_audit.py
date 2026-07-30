@@ -38,10 +38,11 @@ def audit_rollout_batch(
     artifact_path: Path,
     report_path: Path,
     expected_count: int,
+    episode_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     selection = json.loads(selection_path.read_text(encoding="utf-8"))
     selected = selection["selected_prompts"]
-    run_dirs = sorted(path for path in run_root.glob("phase3_ep_*") if path.is_dir())
+    run_dirs = _select_run_dirs(run_root, episode_ids)
     if len(run_dirs) != expected_count:
         raise ValueError(
             f"expected {expected_count} runs, got {len(run_dirs)}"
@@ -67,7 +68,9 @@ def audit_rollout_batch(
             strict=True,
         )
     ]
-    secret_scan = _scan_for_key_like_text([run_root, artifact_path.parent, report_path.parent])
+    secret_scan = _scan_for_key_like_text(
+        [*run_dirs, artifact_path.parent, report_path.parent]
+    )
     if secret_scan["matches"]:
         raise ValueError(
             f"credential-like text found in {secret_scan['matching_file_count']} files"
@@ -227,6 +230,21 @@ def audit_rollout_batch(
     artifact_path.write_text(canonical_json(summary) + "\n", encoding="utf-8")
     report_path.write_text(_render_report(summary), encoding="utf-8")
     return summary
+
+
+def _select_run_dirs(
+    run_root: Path,
+    episode_ids: list[str] | None,
+) -> list[Path]:
+    if episode_ids is None:
+        return sorted(path for path in run_root.glob("phase3_ep_*") if path.is_dir())
+    if len(episode_ids) != len(set(episode_ids)):
+        raise ValueError("episode_ids must be unique")
+    run_dirs = sorted(run_root / episode_id for episode_id in episode_ids)
+    missing = [path.name for path in run_dirs if not path.is_dir()]
+    if missing:
+        raise ValueError("missing rollout directories: " + ", ".join(missing))
+    return run_dirs
 
 
 def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:

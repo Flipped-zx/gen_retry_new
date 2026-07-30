@@ -2,13 +2,16 @@
 
 ## Current Phase
 
-The official-atomicity-matched Flow-DPPO 200-trajectory batch is active in
-tmux session `gen_retry_phase7_flow200`. The frozen pool has 25 prompts for
-every `atom_count` from 3 through 10; local reporting tiers are 75 easy,
-75 medium, and 50 hard. Two fixed HCU workers are processing independent
-episodes from the 200 fresh PlannerContext v0.6 / `qwen_dual_backend@1`
-directories. Selection and preparation are locked at commit `3a6ef8f`;
-GPT-5.6 Sol's focused distribution review is `PASS`.
+The official-atomicity-matched Flow-DPPO 200-trajectory batch has restarted
+from 200 empty episode states under
+`runs/phase7_flow_dppo200_fresh8_v1`. Eight fixed HCU workers are processing
+the first 20-episode range in tmux session
+`gen_retry_fresh8_001_020`. The frozen pool still has 25 prompts for every
+`atom_count` from 3 through 10; local reporting tiers are 75 easy, 75 medium,
+and 50 hard. The earlier interrupted run root remains untouched and is not
+reused. Checkpoints use a 20-episode light audit and a 50-episode GPT-5.6 Sol
+deep review, overlapped with subsequent generation unless a blocking issue is
+found.
 
 ## Gate State
 
@@ -97,6 +100,14 @@ GPT-5.6 Sol's focused distribution review is `PASS`.
     `docs/operations/phase7_flow_dppo200_parallel_run.md`;
   - final focused Sol review:
     `docs/reviews/flow_dppo200_official_mix_sol_review.md` (`PASS`).
+- Flow-DPPO official-mix fresh 8-HCU execution:
+  - 200 new empty PlannerContext v0.6 / `qwen_dual_backend@1` episode
+    directories prepared under `runs/phase7_flow_dppo200_fresh8_v1`;
+  - no old image, Attempt, evaluator result, or submission was imported;
+  - range 1-20 launched with eight fixed HCU workers;
+  - checkpoint audit supports explicit episode subsets and inclusive ranges;
+  - run and 20-light/50-deep review policy:
+    `docs/operations/phase7_flow_dppo200_fresh8_run.md`.
 - Gate 2 review approved in `docs/reviews/gate2_five_trajectory_pilot_review.md`.
 - Phase 4 SFT supervision freeze complete:
   - `docs/decisions/ADR-0005-sft-supervision-freeze.md`
