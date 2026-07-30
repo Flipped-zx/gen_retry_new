@@ -68,6 +68,12 @@ def audit_rollout_batch(
             strict=True,
         )
     ]
+    audited_episode_ids = {run_dir.name for run_dir in run_dirs}
+    scheduler_profiles = [
+        record
+        for record in _load_jsonl_if_exists(run_root / "scheduler_profiles.jsonl")
+        if audited_episode_ids.intersection(record.get("episode_ids", []))
+    ]
     secret_scan = _scan_for_key_like_text(
         [*run_dirs, artifact_path.parent, report_path.parent]
     )
@@ -252,6 +258,7 @@ def audit_rollout_batch(
             "width": 1024,
             "height": 1024,
         },
+        "scheduler_profiles": scheduler_profiles,
         "credential_scan": {
             "status": "PASS",
             "matching_file_count": 0,
@@ -798,6 +805,10 @@ def _render_report(summary: dict[str, Any]) -> str:
         f"- Historical edit branches: {summary['historical_branch_count']}",
         f"- Canonical action counts: {summary['canonical_action_counts']}",
         f"- Action/backend counts: {summary['action_backend_counts']}",
+        (
+            "- Scheduler profiles: "
+            f"{len(summary['scheduler_profiles'])} recorded launches"
+        ),
         f"- Teacher model IDs: {summary['teacher_model_ids']}",
         (
             "- Rejected raw Teacher turns: "
@@ -1093,3 +1104,9 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+
+
+def _load_jsonl_if_exists(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    return _load_jsonl(path)

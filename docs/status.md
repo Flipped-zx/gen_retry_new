@@ -11,7 +11,9 @@ the first 20-episode range in tmux session
 and 50 hard. The earlier interrupted run root remains untouched and is not
 reused. Checkpoints use a 20-episode light audit and a 50-episode GPT-5.6 Sol
 deep review, overlapped with subsequent generation unless a blocking issue is
-found.
+found. Range 1-20 uses eight logical workers; later ranges use the Sol-reviewed
+Teacher/GPU overlap profile with sixteen logical episode workers, eight
+Teacher slots, and one complete local GPU stage per physical HCU.
 
 ## Gate State
 
@@ -106,6 +108,12 @@ found.
   - no old image, Attempt, evaluator result, or submission was imported;
   - range 1-20 launched with eight fixed HCU workers;
   - checkpoint audit supports explicit episode subsets and inclusive ranges;
+  - prospective 2-workers-per-HCU scheduling is protected by physical-HCU,
+    scheduler, and episode locks, bounded Teacher slots, atomic image writes,
+    and scheduler provenance;
+  - concurrency review:
+    `docs/reviews/phase7_api_gpu_overlap_sol_review.md`
+    (`APPROVE_WITH_REQUIRED_CHANGES`, implemented);
   - run and 20-light/50-deep review policy:
     `docs/operations/phase7_flow_dppo200_fresh8_run.md`.
 - Gate 2 review approved in `docs/reviews/gate2_five_trajectory_pilot_review.md`.

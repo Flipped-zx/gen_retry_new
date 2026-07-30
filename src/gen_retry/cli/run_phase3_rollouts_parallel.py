@@ -17,7 +17,12 @@ from gen_retry.phase3.model_config import (
     select_image_execution_profile,
 )
 from gen_retry.runtime.event_io import load_events_jsonl
+from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.runtime.reducer import reduce_events
+from gen_retry.tools.resource_locks import (
+    LOCK_VERSION,
+    exclusive_scheduler_execution,
+)
 
 
 @dataclass(frozen=True)
@@ -54,6 +59,8 @@ def main() -> None:
     parser.add_argument("--image-width", type=int, default=1024)
     parser.add_argument("--teacher-max-completion-tokens", type=int, default=1400)
     parser.add_argument("--max-workers", type=int)
+    parser.add_argument("--workers-per-device", type=int, default=1)
+    parser.add_argument("--teacher-concurrency", type=int, default=8)
     parser.add_argument("--max-start-vram-percent", type=int, default=15)
     parser.add_argument("--allow-cpu", action="store_true")
     parser.add_argument("--allow-low-quality", action="store_true")
@@ -68,6 +75,10 @@ def main() -> None:
 
     if not args.allow_low_quality:
         _enforce_quality_floor(args.image_steps, args.image_height, args.image_width)
+    if args.workers_per_device <= 0:
+        raise SystemExit("--workers-per-device must be positive")
+    if args.teacher_concurrency <= 0:
+        raise SystemExit("--teacher-concurrency must be positive")
 
     config = select_image_execution_profile(
         load_model_config(),
@@ -101,9 +112,14 @@ def main() -> None:
         if args.allow_cpu and not eligible_devices:
             worker_devices: list[DeviceInfo | None] = [None]
         else:
-            worker_devices = eligible_devices
+            physical_devices = eligible_devices
             if args.max_workers is not None:
-                worker_devices = worker_devices[: args.max_workers]
+                physical_devices = physical_devices[: args.max_workers]
+            worker_devices = [
+                device
+                for device in physical_devices
+                for _ in range(args.workers_per_device)
+            ]
     else:
         max_workers = args.max_workers or 1
         worker_devices = [None for _ in range(max_workers)]
@@ -123,23 +139,34 @@ def main() -> None:
         image_width=args.image_width,
         log_dir=log_dir,
         dry_run=args.dry_run,
+        workers_per_device=args.workers_per_device,
+        teacher_concurrency=args.teacher_concurrency,
     )
     if args.dry_run:
         return
 
-    results = _execute_worker_plan(
-        episodes=episodes,
-        worker_devices=worker_devices,
-        run_root=args.run_root,
-        image_steps=args.image_steps,
-        generate_image_steps=args.generate_image_steps,
-        edit_image_steps=args.edit_image_steps,
-        image_height=args.image_height,
-        image_width=args.image_width,
-        teacher_max_completion_tokens=args.teacher_max_completion_tokens,
-        execution_profile_id=args.execution_profile_id,
-        log_dir=log_dir,
-    )
+    with exclusive_scheduler_execution(args.run_root):
+        _record_scheduler_profile(
+            run_root=args.run_root,
+            episodes=episodes,
+            worker_devices=worker_devices,
+            workers_per_device=args.workers_per_device,
+            teacher_concurrency=args.teacher_concurrency,
+        )
+        results = _execute_worker_plan(
+            episodes=episodes,
+            worker_devices=worker_devices,
+            run_root=args.run_root,
+            image_steps=args.image_steps,
+            generate_image_steps=args.generate_image_steps,
+            edit_image_steps=args.edit_image_steps,
+            image_height=args.image_height,
+            image_width=args.image_width,
+            teacher_max_completion_tokens=args.teacher_max_completion_tokens,
+            teacher_concurrency=args.teacher_concurrency,
+            execution_profile_id=args.execution_profile_id,
+            log_dir=log_dir,
+        )
     for result in results:
         print(
             f"{result.episode_id}: returncode={result.returncode}; "
@@ -291,6 +318,8 @@ def _print_plan(
     image_width: int,
     log_dir: Path,
     dry_run: bool,
+    workers_per_device: int = 1,
+    teacher_concurrency: int = 8,
 ) -> None:
     device_labels = [
         (
@@ -307,6 +336,8 @@ def _print_plan(
     ]
     print(f"episodes={len(episodes)}")
     print(f"workers={len(worker_devices)}")
+    print(f"workers_per_device={workers_per_device}")
+    print(f"teacher_concurrency={teacher_concurrency}")
     print(f"worker_devices={','.join(device_labels)}")
     print(f"render_params=steps:{image_steps},height:{image_height},width:{image_width}")
     print(
@@ -328,6 +359,7 @@ def _run_one_episode(
     image_height: int,
     image_width: int,
     teacher_max_completion_tokens: int,
+    teacher_concurrency: int = 8,
     execution_profile_id: str | None = None,
     log_dir: Path,
 ) -> WorkerResult:
@@ -343,10 +375,14 @@ def _run_one_episode(
         env.pop(variable, None)
     if device is not None:
         device_value = str(device.index)
+        env["GEN_RETRY_PHYSICAL_DEVICE_ID"] = device_value
         if device.source == "hy-smi":
             env["ROCR_VISIBLE_DEVICES"] = device_value
         else:
             env["CUDA_VISIBLE_DEVICES"] = device_value
+    else:
+        env["GEN_RETRY_PHYSICAL_DEVICE_ID"] = "cpu"
+    env["GEN_RETRY_TEACHER_CONCURRENCY"] = str(teacher_concurrency)
     command = [
         sys.executable,
         "-m",
@@ -410,6 +446,7 @@ def _execute_worker_plan(
     image_height: int,
     image_width: int,
     teacher_max_completion_tokens: int,
+    teacher_concurrency: int = 8,
     execution_profile_id: str | None = None,
     log_dir: Path,
 ) -> list[WorkerResult]:
@@ -431,6 +468,7 @@ def _execute_worker_plan(
                 image_height=image_height,
                 image_width=image_width,
                 teacher_max_completion_tokens=teacher_max_completion_tokens,
+                teacher_concurrency=teacher_concurrency,
                 execution_profile_id=execution_profile_id,
                 log_dir=log_dir,
             )
@@ -452,6 +490,7 @@ def _run_device_worker(
     image_height: int,
     image_width: int,
     teacher_max_completion_tokens: int,
+    teacher_concurrency: int = 8,
     execution_profile_id: str | None = None,
     log_dir: Path,
 ) -> list[WorkerResult]:
@@ -472,12 +511,44 @@ def _run_device_worker(
                 image_height=image_height,
                 image_width=image_width,
                 teacher_max_completion_tokens=teacher_max_completion_tokens,
+                teacher_concurrency=teacher_concurrency,
                 execution_profile_id=execution_profile_id,
                 log_dir=log_dir,
             )
             results.append(result)
         finally:
             pending.task_done()
+
+
+def _record_scheduler_profile(
+    *,
+    run_root: Path,
+    episodes: list[EpisodeRun],
+    worker_devices: list[DeviceInfo | None],
+    workers_per_device: int,
+    teacher_concurrency: int,
+) -> None:
+    physical_devices = sorted(
+        {
+            device.index
+            for device in worker_devices
+            if device is not None
+        }
+    )
+    record = {
+        "schema_version": "0.1",
+        "started_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "pid": os.getpid(),
+        "episode_ids": [episode.episode_id for episode in episodes],
+        "physical_device_ids": physical_devices,
+        "logical_worker_count": len(worker_devices),
+        "workers_per_device": workers_per_device,
+        "teacher_concurrency": teacher_concurrency,
+        "resource_lock_version": LOCK_VERSION,
+    }
+    with (run_root / "scheduler_profiles.jsonl").open("a", encoding="utf-8") as fh:
+        fh.write(canonical_json(record))
+        fh.write("\n")
 
 
 if __name__ == "__main__":

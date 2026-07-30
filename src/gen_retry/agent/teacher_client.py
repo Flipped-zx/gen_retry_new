@@ -11,6 +11,7 @@ from gen_retry.domain.artifacts import sha256_bytes
 from gen_retry.phase3.model_config import TeacherConfig
 from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.runtime.planner_view import DEFAULT_SKILL_MANIFEST
+from gen_retry.tools.resource_locks import teacher_api_slot
 
 
 TEACHER_SYSTEM_PROMPT_VERSION = (
@@ -117,11 +118,12 @@ class OpenAICompatibleTeacherClient:
             retrieved_skills=retrieved_skills,
             extra_observations=extra_observations or [],
         )
-        response = client.chat.completions.create(
-            model=self.config.model_id,
-            messages=messages,
-            max_completion_tokens=max_completion_tokens,
-        )
+        with teacher_api_slot():
+            response = client.chat.completions.create(
+                model=self.config.model_id,
+                messages=messages,
+                max_completion_tokens=max_completion_tokens,
+            )
         choice = response.choices[0]
         raw_text = choice.message.content or ""
         usage = getattr(response, "usage", None)

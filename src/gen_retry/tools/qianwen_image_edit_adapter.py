@@ -11,8 +11,10 @@ from gen_retry.tools.model_load_lock import exclusive_model_load
 from gen_retry.tools.qwen_common import (
     QwenImageResult,
     model_revision_or_fingerprint,
+    reuse_valid_cached_image,
     save_output_image,
 )
+from gen_retry.tools.resource_locks import exclusive_device_execution
 
 
 class QianwenImageEditAdapter:
@@ -106,7 +108,10 @@ class QianwenImageEditAdapter:
             raise FileNotFoundError(f"missing Qwen-Image-Edit model path: {self.model_path}")
         artifact_uri = f"images/{image_artifact_id}.png"
         output_path = self.artifact_root / artifact_uri
-        if output_path.exists():
+        if reuse_valid_cached_image(
+            output_path,
+            expected_size=(self.width, self.height),
+        ):
             artifact_sha256 = sha256_file(output_path)
             return self._result(
                 request_id=request_id,
@@ -123,44 +128,58 @@ class QianwenImageEditAdapter:
             )
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with exclusive_model_load():
-            pipeline = self._load_pipeline()
-        source_image = (
-            Image.open(source_image_path).convert("RGB")
-            if source_image_path is not None
-            else Image.new("RGB", (self.width, self.height), color="white")
-        )
-        try:
-            import torch
-
-            generator = torch.Generator(device="cuda" if torch.cuda.is_available() else "cpu")
-            generator = generator.manual_seed(self.seed)
-            pipeline.set_progress_bar_config(disable=True)
-            with torch.inference_mode():
-                output = pipeline(
-                    image=source_image,
-                    prompt=instruction,
-                    generator=generator,
-                    true_cfg_scale=self.true_cfg_scale,
-                    negative_prompt=" ",
-                    num_inference_steps=self.num_inference_steps,
-                    guidance_scale=self.guidance_scale,
-                    num_images_per_prompt=1,
-                    height=self.height,
-                    width=self.width,
-                    output_type="pt",
-                )
-            save_output_image(output.images[0], output_path)
-        finally:
-            del pipeline
-            gc.collect()
+        with exclusive_device_execution():
+            pipeline = None
+            output = None
+            source_image = None
             try:
+                with exclusive_model_load():
+                    pipeline = self._load_pipeline()
+                if source_image_path is not None:
+                    with Image.open(source_image_path) as source:
+                        source_image = source.convert("RGB")
+                else:
+                    source_image = Image.new(
+                        "RGB",
+                        (self.width, self.height),
+                        color="white",
+                    )
                 import torch
 
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-            except Exception:
-                pass
+                generator = torch.Generator(
+                    device="cuda" if torch.cuda.is_available() else "cpu"
+                )
+                generator = generator.manual_seed(self.seed)
+                pipeline.set_progress_bar_config(disable=True)
+                with torch.inference_mode():
+                    output = pipeline(
+                        image=source_image,
+                        prompt=instruction,
+                        generator=generator,
+                        true_cfg_scale=self.true_cfg_scale,
+                        negative_prompt=" ",
+                        num_inference_steps=self.num_inference_steps,
+                        guidance_scale=self.guidance_scale,
+                        num_images_per_prompt=1,
+                        height=self.height,
+                        width=self.width,
+                        output_type="pt",
+                    )
+                save_output_image(output.images[0], output_path)
+            finally:
+                if source_image is not None:
+                    source_image.close()
+                del output
+                del pipeline
+                gc.collect()
+                try:
+                    import torch
+
+                    if torch.cuda.is_available():
+                        torch.cuda.synchronize()
+                        torch.cuda.empty_cache()
+                except Exception:
+                    pass
 
         artifact_sha256 = sha256_file(output_path)
         return self._result(

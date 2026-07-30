@@ -13,6 +13,7 @@ from gen_retry.domain.score_policy import (
 from gen_retry.domain.artifacts import artifact_manifest_entry, sha256_file
 from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.tools.model_load_lock import exclusive_model_load
+from gen_retry.tools.resource_locks import exclusive_device_execution
 
 
 @dataclass(frozen=True)
@@ -207,6 +208,18 @@ class LocalGeneval2Adapter:
         }
 
     def _evaluate(self, *, task_spec: dict[str, Any], image_path: Path) -> list[dict[str, Any]]:
+        with exclusive_device_execution():
+            return self._evaluate_on_locked_device(
+                task_spec=task_spec,
+                image_path=image_path,
+            )
+
+    def _evaluate_on_locked_device(
+        self,
+        *,
+        task_spec: dict[str, Any],
+        image_path: Path,
+    ) -> list[dict[str, Any]]:
         import torch
         from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
@@ -280,12 +293,16 @@ class LocalGeneval2Adapter:
                         "status": self._status(float(answer_probability)),
                     }
                 )
+                del outputs
+                del probs
+                del inputs
             return results
         finally:
             del model
             del processor
             gc.collect()
             if torch.cuda.is_available():
+                torch.cuda.synchronize()
                 torch.cuda.empty_cache()
 
     def _status(self, answer_probability: float) -> str:

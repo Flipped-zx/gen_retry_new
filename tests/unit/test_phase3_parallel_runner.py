@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import threading
 import time
 from pathlib import Path
@@ -123,7 +124,33 @@ def test_child_process_sees_exactly_one_physical_device(
 
     assert result.returncode == 0
     assert captured_env["ROCR_VISIBLE_DEVICES"] == "1"
+    assert captured_env["GEN_RETRY_PHYSICAL_DEVICE_ID"] == "1"
+    assert captured_env["GEN_RETRY_TEACHER_CONCURRENCY"] == "8"
     assert "CUDA_VISIBLE_DEVICES" not in captured_env
     assert "HIP_VISIBLE_DEVICES" not in captured_env
     profile_index = captured_command.index("--execution-profile-id")
     assert captured_command[profile_index + 1] == "qwen_dual_backend"
+
+
+def test_scheduler_profile_records_overlap_controls(tmp_path: Path) -> None:
+    parallel._record_scheduler_profile(
+        run_root=tmp_path,
+        episodes=_episodes(2),
+        worker_devices=[
+            parallel.DeviceInfo(0, 0, "test"),
+            parallel.DeviceInfo(0, 0, "test"),
+            parallel.DeviceInfo(1, 0, "test"),
+            parallel.DeviceInfo(1, 0, "test"),
+        ],
+        workers_per_device=2,
+        teacher_concurrency=8,
+    )
+
+    record = json.loads(
+        (tmp_path / "scheduler_profiles.jsonl").read_text(encoding="utf-8")
+    )
+    assert record["physical_device_ids"] == [0, 1]
+    assert record["logical_worker_count"] == 4
+    assert record["workers_per_device"] == 2
+    assert record["teacher_concurrency"] == 8
+    assert record["resource_lock_version"] == "1"

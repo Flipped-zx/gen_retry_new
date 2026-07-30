@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,50 @@ def model_revision_or_fingerprint(model_path: Path) -> str:
 
 
 def save_output_image(image: Any, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = output_path.with_name(
+        f".{output_path.name}.{os.getpid()}.tmp.png"
+    )
+    temporary_path.unlink(missing_ok=True)
+    try:
+        _save_image_payload(image, temporary_path)
+        validate_cached_image(temporary_path)
+        os.replace(temporary_path, output_path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
+def validate_cached_image(
+    image_path: Path,
+    *,
+    expected_size: tuple[int, int] | None = None,
+) -> None:
+    with Image.open(image_path) as image:
+        actual_size = image.size
+        image.verify()
+    if expected_size is not None and actual_size != expected_size:
+        raise ValueError(
+            f"cached image size mismatch: expected {expected_size}, got {actual_size}"
+        )
+    sha256_file(image_path)
+
+
+def reuse_valid_cached_image(
+    image_path: Path,
+    *,
+    expected_size: tuple[int, int],
+) -> bool:
+    if not image_path.exists():
+        return False
+    try:
+        validate_cached_image(image_path, expected_size=expected_size)
+    except (OSError, ValueError):
+        image_path.unlink(missing_ok=True)
+        return False
+    return True
+
+
+def _save_image_payload(image: Any, output_path: Path) -> None:
     if isinstance(image, Image.Image):
         image.save(output_path)
         return

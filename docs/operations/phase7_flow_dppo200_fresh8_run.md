@@ -29,6 +29,27 @@ inside one episode remain sequential because the next PlannerContext depends
 on the preceding image and Geneval2 result. The existing model-load lock
 serializes only transient pipeline loading; inference can overlap across HCUs.
 
+Range 1-20 uses one logical episode worker per HCU. Beginning at the complete
+21-40 boundary, the Sol-approved overlap profile uses two logical episode
+workers per HCU and eight cross-process Teacher slots. A physical-HCU lock
+allows only one complete Qwen/Geneval2 load-through-unload stage on each card.
+This overlaps Teacher planning and local Skill work with another episode's GPU
+stage without prefetching across an unevaluated Attempt.
+
+The overlap safety contract includes:
+
+- fixed lock order `physical_device_lock -> global_model_load_lock`;
+- one active scheduler per run root and one active executor per episode;
+- atomic image save plus decode, dimension, and hash validation before reuse;
+- explicit GPU synchronization and cache release before the HCU lock releases;
+- scheduler provenance in `scheduler_profiles.jsonl`;
+- Teacher concurrency initially capped at eight, prospectively reduced to six
+  only if the next checkpoint still shows material timeouts.
+
+Design review:
+`docs/reviews/phase7_api_gpu_overlap_sol_review.md`
+(`APPROVE_WITH_REQUIRED_CHANGES`, required changes implemented).
+
 The launch ranges are:
 
 - 1-20, 21-40
@@ -80,3 +101,5 @@ immutable trajectories are retained rather than rewritten.
 - tmux session: `gen_retry_fresh8_001_020`
 - Workers: 8
 - Started: 2026-07-30
+- Resume policy: up to five exact-range scheduler retries; completed
+  submissions are skipped and incomplete event suffixes resume.

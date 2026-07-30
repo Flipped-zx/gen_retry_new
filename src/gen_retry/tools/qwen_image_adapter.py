@@ -9,8 +9,10 @@ from gen_retry.tools.model_load_lock import exclusive_model_load
 from gen_retry.tools.qwen_common import (
     QwenImageResult,
     model_revision_or_fingerprint,
+    reuse_valid_cached_image,
     save_output_image,
 )
+from gen_retry.tools.resource_locks import exclusive_device_execution
 
 
 class QwenImageAdapter:
@@ -89,7 +91,10 @@ class QwenImageAdapter:
             raise FileNotFoundError(f"missing Qwen-Image model path: {self.model_path}")
         artifact_uri = f"images/{image_artifact_id}.png"
         output_path = self.artifact_root / artifact_uri
-        if output_path.exists():
+        if reuse_valid_cached_image(
+            output_path,
+            expected_size=(self.width, self.height),
+        ):
             return self._result(
                 request_id=request_id,
                 attempt_id=attempt_id,
@@ -100,36 +105,41 @@ class QwenImageAdapter:
             )
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with exclusive_model_load():
-            pipeline = self._load_pipeline()
-        try:
-            import torch
-
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            generator = torch.Generator(device=device).manual_seed(self.seed)
-            pipeline.set_progress_bar_config(disable=True)
-            with torch.inference_mode():
-                output = pipeline(
-                    prompt=instruction,
-                    negative_prompt=self.negative_prompt,
-                    width=self.width,
-                    height=self.height,
-                    num_inference_steps=self.num_inference_steps,
-                    true_cfg_scale=self.true_cfg_scale,
-                    generator=generator,
-                    output_type="pt",
-                )
-            save_output_image(output.images[0], output_path)
-        finally:
-            del pipeline
-            gc.collect()
+        with exclusive_device_execution():
+            pipeline = None
+            output = None
             try:
+                with exclusive_model_load():
+                    pipeline = self._load_pipeline()
                 import torch
 
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-            except Exception:
-                pass
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+                generator = torch.Generator(device=device).manual_seed(self.seed)
+                pipeline.set_progress_bar_config(disable=True)
+                with torch.inference_mode():
+                    output = pipeline(
+                        prompt=instruction,
+                        negative_prompt=self.negative_prompt,
+                        width=self.width,
+                        height=self.height,
+                        num_inference_steps=self.num_inference_steps,
+                        true_cfg_scale=self.true_cfg_scale,
+                        generator=generator,
+                        output_type="pt",
+                    )
+                save_output_image(output.images[0], output_path)
+            finally:
+                del output
+                del pipeline
+                gc.collect()
+                try:
+                    import torch
+
+                    if torch.cuda.is_available():
+                        torch.cuda.synchronize()
+                        torch.cuda.empty_cache()
+                except Exception:
+                    pass
 
         return self._result(
             request_id=request_id,

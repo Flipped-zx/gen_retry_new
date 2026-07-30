@@ -37,6 +37,7 @@ from gen_retry.tools.geneval2_adapter import LocalGeneval2Adapter
 from gen_retry.tools.image_execution_profile import resolve_execution_route
 from gen_retry.tools.qianwen_image_edit_adapter import QianwenImageEditAdapter
 from gen_retry.tools.qwen_image_adapter import QwenImageAdapter
+from gen_retry.tools.resource_locks import exclusive_episode_execution
 from gen_retry.tools.skill_store import LocalSkillStore
 
 
@@ -84,6 +85,10 @@ class Phase3LiveRunner:
         return results
 
     def run_episode(self, run_dir: Path) -> RolloutResult:
+        with exclusive_episode_execution(run_dir):
+            return self._run_episode_locked(run_dir)
+
+    def _run_episode_locked(self, run_dir: Path) -> RolloutResult:
         task_spec = json.loads((run_dir / "task_spec.json").read_text(encoding="utf-8"))
         episode_id = task_spec["episode_id"]
         self._validate_execution_profile_lock(run_dir)
