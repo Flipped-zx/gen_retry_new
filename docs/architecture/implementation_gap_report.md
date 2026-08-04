@@ -1,5 +1,9 @@
 # Implementation Gap Report
 
+> Historical Phase 0 snapshot. This file records the gap before Gate 1 and is
+> not a statement of the current implementation. Use `docs/status.md` for the
+> current phase and accepted ADRs for current protocol/backend semantics.
+
 Phase 0 confirms that the local environment has the needed evidence roots and
 runtime artifacts, but v3 runtime code is not implemented yet.
 

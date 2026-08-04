@@ -2,28 +2,202 @@
 
 ## Current Phase
 
-The official-atomicity-matched Flow-DPPO 200-trajectory batch has restarted
-from 200 empty episode states under
-`runs/phase7_flow_dppo200_fresh8_v1`. Eight fixed HCU workers are processing
-the batch in tmux session
-`gen_retry_fresh8_001_020`. The frozen pool still has 25 prompts for every
-`atom_count` from 3 through 10; local reporting tiers are 75 easy, 75 medium,
-and 50 hard. The earlier interrupted run root remains untouched and is not
-reused. Checkpoints use a 20-episode light audit and a 50-episode GPT-5.6 Sol
-deep review, overlapped with subsequent generation unless a blocking issue is
-found. Range 1-20 uses eight logical workers; later ranges use the Sol-reviewed
-Teacher/GPU overlap profile with sixteen logical episode workers, eight
-Teacher slots, and one complete local GPU stage per physical HCU.
-Episodes 1-40 are complete and passed deterministic audit plus Sol light
-reviews. Episodes 41-50 are running under the overlap profile. Sol approved a
-continuous global queue for episodes 51-200 with the same hard concurrency
-limits, durable admission stop, canonical resume, and five-pass retry bound.
+The formal Flow-DPPO 1000 v9 cold-start SFT is complete. Gate 3 returned
+`PASS_FREEZE_WITH_MONITORING`, and the frozen export contains 4302 positive
+targets split by trajectory into 3450 train, 438 validation, and 414 test
+rows. Positive targets include 1191 `edit_image`, 1112 `generate_image`, 999
+validated `query_skill`, and 1000 `submit_attempt` actions. Another 1205
+harmful, ineffective, invalid, tool-response, or otherwise context-only
+records retain zero loss; this includes 52 unvalidated Skill calls.
+
+The main run fine-tuned Qwen3-VL-8B-Instruct with full SFT while freezing the
+vision tower and projector. It used BF16, FlashAttention-2, ZeRO-3, global
+batch size 32, two epochs, and eight 64 GiB HCUs. All 216 optimizer steps
+completed in 2492.6 seconds with no NaN/Inf or stability failure. Final train
+loss was 0.3071 and final validation loss was 0.2712. The output is
+`runs/sft_checkpoints/flow1000_v9_selective_skill_full_s42`, with resumable
+checkpoints at steps 100, 200, and 216.
+
+W&B online monitoring completed under entity `Gen_retry`, project
+`gen-retry-sft`, group `v9-cold-start`, and run
+`gen-retry-flow1000-v9-selective-skill-full-s42`. Local curve/HTML/Markdown
+reports are under
+`artifacts/sft/flow1000_v9_selective_skill_full_s42_monitor`.
+The read-only W&B API check reports state `finished`; run URL:
+`https://wandb.ai/Gen_retry/gen-retry-sft/runs/kf975j1w`.
+
+A fixed 16-row balanced validation probe compared checkpoint 100 with the
+final model. Both produced 16/16 schema-valid actions and the expected 4/16
+`query_skill` rate. Action-type accuracy improved from 15/16 to 16/16; target
+and preserve-constraint overlap improved to 1.0; attempt-reference accuracy
+remained 1.0. This is a policy-format sanity check, not image execution or a
+Geneval2 quality claim. Results are under
+`artifacts/sft/checkpoint_eval/flow1000_v9_full_s42`.
+
+The final checkpoint has now completed a production-path rollout on 20 frozen
+SFT-test episodes under `runs/phase7_sft_frozen_test20_v2`. The run used the
+training system prompt, PlannerContext v0.7, action protocol v0.5, the existing
+Qwen generation/edit and Geneval2 adapters, 50 generation steps, 40 edit
+steps, 1024 x 1024 images, and at most five image calls. It produced 108/108
+schema-valid planner outputs, 20/20 matched Skill queries/tool responses, and
+20/20 submissions with no Teacher fallback. Across 68 image calls, submitted
+atoms improved from 121/146 to 134/146 and mean Soft-TIFA GM from 46.43 to
+69.14; 11/20 submissions were all-pass. Canonical history was actively used:
+17 edits branched from a non-latest `source_attempt_id`, five submissions
+selected a historical attempt, and seven episodes recovered after regression.
+There were six successful same-request transport retries during the fully
+concurrent run, with no duplicate successful outputs or canonical actions.
+Formal report: `docs/phase7/sft_frozen_test20_v2_report.md`; machine-readable
+artifact: `artifacts/phase7/sft_frozen_test20_v2_report.json`.
+
+A paired raw-original-prompt baseline is prepared but not yet executed for the
+same frozen 20 TaskSpecs. Its new root is
+`runs/phase7_sft_frozen_test20_qwen_raw_b5_v1`; the frozen plan contains 20
+episodes x 5 variants using seeds 0--4, the existing Qwen-Image generate route,
+50 steps, 1024 x 1024, and the existing Geneval2 adapter. The single-image arm
+is seed 0; both highest-GM and pass-count-first Best-of-5 selectors will be
+reported. Preparation imported only TaskSpecs and produced no image,
+Geneval2, or result artifact. Launch and resume instructions:
+`docs/operations/sft_frozen_test20_qwen_raw_baseline.md`.
+
+The official-atomicity-matched Flow-DPPO 200-trajectory batch is complete
+under `runs/phase7_flow_dppo200_fresh8_v1`: 1301/1419 submitted atoms,
+Soft-TIFA GM 73.50, and 111/200 all-pass trajectories.
+
+A paired comparison with the user-supplied original-prompt Qwen-Image
+Best-of-5 baseline is complete. The aligned baseline reaches 1042/1419 atoms,
+Soft-TIFA GM 31.53, and 42/200 all-pass prompts; the Agent leads by 259 atoms,
+41.97 GM points, and 69 all-pass prompts while using 684 versus 1000 image
+calls. A pass-count-first baseline sensitivity check still leaves a
+229-atom and 42.36-GM-point Agent lead. This is integrated-system evidence,
+not a compute-normalized causal policy ablation.
+
+The public trajectory showcase was refreshed on 2026-08-02 to foreground the
+trajectory evidence itself. The first viewport now presents four canonical
+episodes at once, supports dimension filters and two four-item batches, and
+opens the selected episode into the existing full Attempt strip and prompt
+comparison. The archive contains eight grounded examples spanning count,
+attribute, spatial, action, and history-recovery behavior. This was a
+frontend-only presentation change; protocol semantics and review gates were
+not affected. Public site:
+`https://gen-retry-trajectories.ryuuikujyunn.chatgpt.site/`.
+
+The follow-up two-HCU verb generation study is also complete. It evaluated six
+prompt-composition formulations against the complete 12-prompt `chasing`
+cohort. `focal_action_anchor` was selected as a targeted retry technique: it
+reached 3/12 chasing passes versus the current submitted 2/12, and produced a
+paired 5/5 result on `phase3_ep_098` without regressing any previously passed
+atom. Replaying observed candidates through the frozen historical-best
+comparator yields 1303/1419 atoms, 11/22 verbs, and 112/200 all-pass
+trajectories. This is a counterfactual compatibility result, not a fresh
+200-episode rollout.
+
+The earlier `action_pose_relation@2.0.0` pilot introduced a targeted focal
+operator rather than a global prompt prefix. Full methodology and limitations
+are recorded in
+`docs/phase7/verb_generation_technique_experiment.md`.
+
+A fresh two-episode multi-round Teacher pilot has now validated the operator
+inside the actual retry loop. Both episodes autonomously queried the Skill.
+`phase3_ep_098` improved from the historical 4/5 verb-fail submission to 5/5
+all-pass after four image attempts; `phase3_ep_014` tied its historical 7/8
+atom result and still failed chasing. Across the frozen pair, submitted atoms
+improved 11/13 -> 12/13, verb passes 0/2 -> 1/2, all-pass episodes 0/2 -> 1/2,
+and image attempts fell 10 -> 9. An experiment-only forced verb-route closure
+improved retry diversity but regressed the hard episode to 5/8, so it was
+rejected and removed; it is not part of the promoted policy. Details:
+`docs/phase7/verb_multiround_teacher_pilot.md`.
+
+The complete official-current verb-nonpass cohort has now been rerun as a
+two-HCU multi-round A/B. On the ten primary episodes not used in the earlier
+pilot, Candidate B improved 54/71 -> 56/71 submitted atoms, 0/10 -> 3/10 verb
+passes, and mean GM 27.70 -> 31.97 with the same 50 image attempts. Across all
+twelve failures it improved Production A from 66/84 atoms and 1/12 verbs to
+67/84 and 4/12; relative to official current it improved 64/84 and 0/12 to
+67/84 and 4/12. The predeclared promotion rule passed.
+
+The prospective rollout policy now uses `action_pose_relation@2.1.0` and
+`teacher_system_prompt_v9_meaningful_retry_verb_retention`. The action Skill is
+retrieved only after an evaluated verb failure or uncertainty, exposes typed
+chasing/playing/jumping topologies, and preserves historical verb-pass
+evidence during non-verb repair. Candidate B delayed action-Skill retrieval in
+12/12 episodes; Production A retrieved it before the first image in 12/12.
+`phase3_ep_135` verified the intended history-aware behavior by branching from
+a non-reducer-best verb-pass attempt after a same-count higher-GM edit
+regressed the verb, then recovering reducer-best to a verb-pass attempt.
+The v9 merge adds PlannerContext v0.7 prior instructions, removes the coarse
+runtime tuple rejection, restores Skill guidance from hash-verified immutable
+tool observations, and exposes same-count historical evidence images. The
+action schema, reducer, score, Qwen, Geneval2, and SFT inclusion policy remain
+unchanged. Details:
+`docs/phase7/verb_failed12_multiround_experiment.md`.
+
+The meaningful-retry v9 design completed Sol design review with `PASS`, and
+the rollout-side Teacher/PlannerContext/runtime changes were implemented.
+Its formerly open SFT requirements were subsequently resolved by the formal
+Gate 3 freeze described above.
+
+A new prospective 1000-prompt Flow-DPPO batch has been selected and its fixed
+20-ID admission pilot has passed. It exactly mirrors the official Geneval2
+test-set atom-count marginal
+with 125 prompts at every `atom_count` from 3 through 10, yielding local
+easy/medium/hard counts of 375/375/250. It excludes the 220 source rows used
+by the earlier 20- and 200-prompt batches and keeps the official 800 rows held
+out. The frozen selection SHA256 is
+`9f5fca671e42bbb68577cb1513e072f7c020e59131dfa1989bb2c5c5f4fa0eba`.
+All 1000 fresh PlannerContext v0.7 directories are prepared. The fixed pilot
+has 20/20 valid submissions and 65 Attempts; best atom pass rate is 93.48%,
+and submitted Soft-TIFA GM improves from 41.42 initially to 77.94. A
+regex-derived instruction-quality false positive stopped `phase3_ep_004`;
+ADR-0009 now makes the linter advisory while retaining schema, reference,
+budget, lineage, and source-selection hard gates. Only `phase3_ep_004` was
+resumed, and the deterministic fixed-20 audit passed. Empirical timing puts
+1000 trajectories at 27-30 hours P50 and 34-40 hours P80. The continuous
+`phase3_ep_021` through `phase3_ep_1000` queue started at
+`2026-08-01T08:28:42Z` in tmux session `flow1000_v9_queue`. Details:
+`docs/operations/phase7_flow_dppo1000_v9_parallel_run.md`. Independent
+parallel review:
+`docs/reviews/flow_dppo1000_v9_parallel_5_5_review.md`
+(`APPROVE_WITH_20_TRAJECTORY_ADMISSION_PILOT`).
+Live status: `docs/operations/phase7_flow_dppo1000_v9_live_status.md`.
+
+The Flow-DPPO 1000 v9 fixed-ID checkpoint 100 audit has passed with 337 image
+Attempts. Best atom pass rate is 91.09% versus 79.89% initially; submitted
+Soft-TIFA GM is 73.12 versus 36.09 initially, and 59/100 episodes are all-pass.
+At audit completion 119/1000 trajectories were submitted, 16 were active, and
+no admission stop was present.
+
+The fixed-ID checkpoint 200 audit also passed with 665 image Attempts. Best
+atom pass rate is 91.55% versus 80.46% initially, submitted Soft-TIFA GM is
+72.40 versus 38.86 initially, and 120/200 episodes are all-pass. GPT-5.6 Sol
+returned `PASS_CONTINUE_WITH_MONITORING`: 128 regressive and 107 ineffective
+Actions require monitoring but are not a direction blocker because reducer
+rollback keeps the submitted-to-peak GM gap to 1.47 points. Before checkpoint
+400, report linter verdict by outcome/SFT inclusion and explicit recovery after
+regression/no-progress.
+
+The Flow-DPPO 1000 v9 batch is complete. The first queue stopped at 917/1000
+after sanitized Teacher `403 insufficient balance` responses; the remaining
+83 requests resumed once from persisted PlannerContext state. Existing
+Attempts and submitted trajectories were reused. The resume scheduler exited
+with code 0, and final event/file reconciliation found zero orphan images,
+half-written Attempts, or duplicate image executions.
+
+The final deterministic audit passed with 1000 submitted episodes and 3443
+image Attempts. Atom pass improved from 5540/6937 (79.86%) to 6302/6937
+(90.85%), Soft-TIFA AM from 80.60 to 90.25, and submitted Soft-TIFA GM from
+40.32 to 71.14. There are 552 all-pass episodes. The post-hoc GM peak is 72.30,
+so the actual submission gap is 1.16 points. At that stage GPT-5.6 Sol returned
+`PASS_WITH_BLOCKED_SFT_EXPORT`; the later compatibility, labeling, and Gate 3
+work resolved that historical block. Details:
+`docs/phase7/flow_dppo1000_v9_final_analysis_report.md`.
 
 ## Gate State
 
 - Gate 1 Protocol Freeze: APPROVED after user-authorized extra final correction cycle
 - Gate 2 Five-Trajectory Pilot Review: APPROVED
-- Gate 3 SFT Supervision Freeze: APPROVED
+- Gate 3 legacy SFT Supervision Freeze: APPROVED; v9 re-freeze:
+  PASS_FREEZE_WITH_MONITORING; formal SFT complete
 - PlannerContext / Round Memory final review: APPROVED
 - Planner I/O v0.5 Sol amendment: IMPLEMENTED
 - Gate 4 Flow-DPPO 20-Trajectory Final Review: PASS
@@ -32,6 +206,11 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
 - v0.7 / PlannerContext v0.6 five-trajectory final review: PASS
 - Flow-DPPO 200 official-mix distribution review: PASS
 - Flow-DPPO fresh-8 checkpoint 20 light review: PASS_CONTINUE
+- Flow-DPPO 1000 v9 fixed-20 admission audit: PASS
+- Flow-DPPO 1000 v9 final trajectory pool: PASS; positive SFT export frozen
+  and formal 8-HCU SFT complete
+- Advisory instruction-quality boundary: PASS_WITH_REQUIRED_CHANGES,
+  required metadata persistence implemented
 - Flow-DPPO fresh-8 checkpoint 40 / continuous queue review:
   PASS_CONTINUE_QUEUE
 - Muse Image-informed ablation claim-sufficiency review:
@@ -40,10 +219,12 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
 ## Protocol
 
 - Current action protocol: v0.5 for new rollout/SFT records; v0.2-v0.4 remain valid historical event schemas.
-- Current planner input: `PlannerContext` v0.6 for new score-policy episodes;
+- Current planner input: `PlannerContext` v0.7 for newly prepared score-policy
+  episodes; v0.6 remains a compatible immutable replay/resume mode and
   v0.4/v0.5 remain historical replay modes.
 - Live APIs run: yes
-- Teacher policy: GPT-5.5 through `TEACHER_API_KEY` and `TEACHER_BASE_URL`
+- Teacher policy: GPT-5.5 through `TEACHER_API_KEY` and `TEACHER_BASE_URL`;
+  prospective prompt version `teacher_system_prompt_v9_meaningful_retry_verb_retention`
 - Current image execution profile: `qwen_dual_backend@1`
 - `generate_image`: local Qwen-Image-2512 direct runtime, source-free root Attempt
 - `edit_image`: local Qwen-Image-Edit-2511 direct runtime, declared-source child Attempt
@@ -57,6 +238,44 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
 
 ## Completed Deliverables
 
+- Reference evidence governance reorganized:
+  - external sources now have a repository-local index under `references/`;
+  - `paper/` is reserved for Gen-Retry-authored manuscript assets;
+  - the user-supplied Generation Navigator v1 PDF is an ignored local cache
+    with a versioned URL/hash manifest, section-level ledger entry, and
+    Gen-Retry comparison in `docs/research/related_work_evidence_map.md`;
+  - Gen-Searcher, GenEvolve, and GEMS now have versioned paper manifests;
+    Gen-Searcher and GEMS were promoted to section-level paper evidence;
+  - Gen-Searcher and GenEvolve remain read-only evidence roots, while sibling
+    Gen-Retry versions remain excluded;
+  - historical Phase 0 architecture reports now identify their superseded
+    status instead of competing with current ADR-0006 semantics;
+  - no Action, schema, reducer, score, backend, or SFT rule changed.
+- GenEvolve evaluation reference complete:
+  - formal benchmark contains 594 prompt/ground-truth pairs, split into 335
+    Knowledge-Anchored and 259 Quality-Anchored cases;
+  - training reward, formal image KScore, and qualitative gallery evidence are
+    recorded as three distinct evidence layers;
+  - KScore is documented as `0.1 F + 0.4 V + 0.4 T + 0.1 A`, so aggregate
+    improvement cannot establish aesthetics or texture preservation;
+  - released no-text scoring conflicts with the paper's renormalization rule
+    and remains explicitly unresolved;
+  - GenEvolve's open Qwen path is confirmed as one reference-conditioned final
+    render rather than edit-on-edit retry;
+  - local design lessons preserve separate semantic and quality views, require
+    per-edit source/output quality auditing, and treat edit-depth limits as a
+    secondary guard;
+  - reference: `docs/research/genevolve_evaluation_reference.md`;
+  - provenance: `docs/SOURCE_LEDGER.md`.
+- Canonical trajectory web showcase complete:
+  - private Sites deployment: `https://gen-retry-trajectories.ryuuikujyunn.chatgpt.site`;
+  - source surface: `showcase/`;
+  - four grounded examples cover count/layout repair, attribute binding,
+    action/spatial repair, and non-monotonic historical recovery;
+  - image comparison, attempt lineage, atom pass progression, and exact
+    initial/final canonical instructions are displayed without reading raw
+    teacher output at runtime;
+  - vinext build, rendered-HTML tests, and TypeScript checks pass.
 - Phase 0 repository archaeology complete.
 - Phase 1 protocol implementation and Gate 1 approval complete.
 - Phase 2 deterministic mock replay runtime complete.
@@ -209,6 +428,15 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
     (`APPROVE_WITH_REQUIRED_CHANGES`, implemented);
   - run and 20-light/50-deep review policy:
     `docs/operations/phase7_flow_dppo200_fresh8_run.md`.
+- Qwen-Image Best-of-5 paired baseline analysis:
+  - exact prompt and ordered VQA alignment passed for 200/200 rows;
+  - highest-GM baseline: 1042/1419 atoms, Soft-TIFA AM 74.32, GM 31.53,
+    and 42/200 all-pass prompts;
+  - Agent delta: +259 atoms, +16.58 AM, +41.97 GM, and +69 all-pass prompts;
+  - protocol-selector sensitivity baseline: 1072/1419 atoms and GM 31.14,
+    leaving the Agent +229 atoms and +42.36 GM;
+  - report: `docs/phase7/qwen_best_of_5_baseline_comparison.md`;
+  - artifact: `artifacts/phase7/qwen_best_of_5_baseline_comparison.json`.
 - Gate 2 review approved in `docs/reviews/gate2_five_trajectory_pilot_review.md`.
 - Phase 4 SFT supervision freeze complete:
   - `docs/decisions/ADR-0005-sft-supervision-freeze.md`
@@ -574,6 +802,17 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
   - historical replay — passed;
   - GPT-5.6 Sol verdict — `PASS_FINAL`; the dataset may proceed to the next
     SFT supervision gate.
+- Meaningful-retry v9 SFT design review:
+  - same action/source/targets is no longer treated as proof of an equivalent
+    retry strategy;
+  - PlannerContext v0.7 retains prior instructions from past-only events;
+  - compatibility review is outcome-blind and outcome tiers compare with
+    `best_before`;
+  - candidate full-weight retry rules retain 124/129 atom-gain and 73/130
+    GM-only provisional targets before semantic review;
+  - Sol design verdict — `PASS`;
+  - this was a design-stage verdict; the later implementation and Gate 3
+    review are now complete.
 
 ## Active Risks
 
@@ -589,10 +828,12 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
   `consecutive_query_skill` rejection events. Its image/score/submission
   comparison is valid, but planner-call count, repair count, latency, and cost
   are not directly comparable.
-- The current first-to-best gains do not isolate adaptive planner value from
-  extra image calls, verifier selection, or stochastic resampling. A
-  equal-image-call-budget Best-of-K and fixed-heuristic comparison is still
-  required, with total compute reported separately.
+- The paired Qwen-Image Best-of-5 result establishes integrated-system
+  improvement but still does not isolate adaptive planner value from prompt
+  rewriting, verifier selection, editing, or stochastic resampling. The
+  baseline file omits renderer/model/evaluator provenance, and generate/edit
+  costs are not normalized. A provenance-matched, compute-normalized
+  Best-of-K and fixed-heuristic comparison is still required.
 - Eligible actions span rollout-only Teacher prompt v4/v5 provenance. Exact
   version/hash metadata is retained; SFT rendering uses one frozen v0.5
   training system contract.
@@ -600,49 +841,67 @@ limits, durable admission stop, canonical resume, and five-pass retry bound.
   not be relabeled as v0.6. New v0.6 trajectories may therefore not be mixed
   into one SFT export with those historical contexts.
 - Edit supervision is thin in the Phase 4 freeze: 2 `edit_image` targets versus 16 `generate_image` and 10 `submit_attempt`.
-- Under v0.5, `query_skill` and its linked Skill response both have loss 0
-  until capability-isolated utility validation is accepted.
+- Under the formal v9 freeze, 999 validated productive `query_skill` actions
+  receive positive supervision. Skill/tool responses and 52 unvalidated Skill
+  calls remain context-only with loss zero.
 - Phase 4 truncation policy is documented but unexercised because no dry-run record required truncation.
 - Phase 5 must use the same renderer and policy shape documented in `docs/phase4/sft_supervision_freeze.md`.
 - The ten Phase 3 images were rendered with low-quality pilot parameters (`4` steps, `512 x 512`); do not use their visual sharpness to judge Qwen-Image-Edit capability.
 - The high-quality `runs/phase3_hq5/phase3_ep_004` directory contains an interrupted `image_execution_started` event without an image, evaluator result, or submission; do not count it as a valid trajectory until it is deliberately resumed and completed.
 - `docs/phase3/planner_io_v04_sft_message_view_phase3_ep001.json` is a human display artifact only; it contains notes and old empty `decision_summary` values and must not be used as trainable data.
-- `query_skill` remains context-only for SFT until skill utility is accepted, despite being a real planner action in the trajectory protocol.
+- The checkpoint action probe covers only 16 balanced validation targets. It
+  establishes schema/action/constraint behavior, but not downstream image or
+  Geneval2 improvement; that must be measured in the later policy evaluation.
 - Checkpoint 140 exposed 23 regressive image actions in 79 attempts. The v8
   retry closure policy is prospective, so its effect must be measured only on
   requests that persist `teacher_system_prompt_v8_retry_closure_policy`; v7
   and v8 episodes must not be pooled as if all received the change.
 - The final batch is held-out-safe Flow-DPPO synthetic-train evidence, not an
   official Geneval2 800-row leaderboard result.
+- The 20-episode frozen-test SFT rollout establishes executable closed-loop
+  behavior and within-episode improvement, but its sample is too small for an
+  official 800-row claim and it is not a causal SFT-versus-Teacher ablation.
 - Verb atoms remain the main content limitation: 10/22 passed at submission,
-  with chasing at 2/12. The batch does not isolate generator difficulty from
-  VQA sensitivity.
+  with chasing at 2/12. The targeted failed-12 rerun raises the observed
+  replacement counterfactual to 14/22 but is not a fresh 200-episode rerun;
+  seven Candidate-B submitted chasing atoms still fail. The evidence does not
+  isolate generator difficulty from VQA sensitivity.
+- The 663-target checkpoint-200 SFT dry run is provisional under the new
+  meaningful-retry policy. Its source trajectories use PlannerContext v0.6
+  and v7/v8 Teacher provenance, and its exporter predates the final v9
+  compatibility audit. Do not train it as the final v9 dataset.
+- Verb topology is currently enforced by Teacher/Skill guidance, not by a
+  dedicated runtime instruction validator. Audit typed-operator adherence in
+  the paired pilot before adding a hard validator.
+- Qwen cache reuse is artifact-path based. Changed prompt/config experiments
+  must always use new empty run directories; do not reuse an experiment path.
 
 ## Unresolved Decisions
 
-- Whether future capability-isolated Skill utility evidence is sufficient to
-  promote selected `query_skill` actions from loss 0 to positive supervision.
+- Model-level image execution must determine whether the accepted selective
+  `query_skill` supervision improves downstream generation quality; the
+  16-row action probe cannot establish that claim.
 
 ## Last Reviewer Verdict
 
-The latest review is the fresh 8-HCU checkpoint-200 final review:
-`PASS_FINAL`. It found no data-validity, routing, evaluator, memory, resume,
-SFT-boundary, score-selection, cohort, or future-leakage blocker. All 200 fixed
-IDs closed, the mixed v7/v8 resume is counted once and separately, and the
-dataset may proceed to the next SFT supervision gate. v8 remains a descriptive
-retry-closure mechanism claim, not a causal performance claim.
+The latest review is the Flow-DPPO 1000 v9 selective-Skill SFT Gate 3 review.
+GPT-5.6 Sol returned `PASS_FREEZE_WITH_MONITORING`. The reviewed frozen export
+was used unchanged for the completed formal run.
 
 Earlier active verdicts remain unchanged. Planner I/O native
 `decision_summary` is `FAIL_KEEP_V05`; Gate 3a Skill-v1 Trace I/O Clarity is
-`APPROVE`; Skill utility remains `REQUEST_CHANGES`.
+`APPROVE`. The older general Skill-attribution review remains
+`REQUEST_CHANGES`, while the later Gate 3 freeze accepts only the 999
+validated productive Skill calls for this run.
 
 ## Next Autonomous Action
 
-Proceed to the next SFT supervision gate using the final 663 canonical
-positive/recovery targets and 496 context-only records. Keep Query-Skill and
-its tool response loss-zero until Skill utility is separately accepted. Do not
-claim official leaderboard performance or causal v8 improvement without the
-corresponding controlled experiments.
+Preserve the completed trajectories, frozen SFT export, formal full-SFT
+checkpoints, and frozen-test-20 production rollout unchanged. The immediate
+paired-evidence step is the prepared same-20 Qwen raw-prompt single/Best-of-5
+baseline. The later model-level scale step is a separately named official
+Geneval2 800-row run; do not mix its official prompts with the frozen SFT-test
+episode report.
 
 If prioritizing ablation evidence, first run the zero-image-call Stage 0
 analysis and planner-only Stage 1 screen in
@@ -652,11 +911,6 @@ independent-audit, information-isolation, and cost-accounting requirements in
 the Sol review. Do not change selector semantics without a separate ADR and
 protocol validation.
 
-If collecting more live evidence before Phase 5, resume the high-quality batch from `runs/phase3_hq5/` using the state in `docs/operations/phase3_hq5_interruption_status.md`: keep `phase3_ep_001`, `phase3_ep_002`, and `phase3_ep_003` as valid completed trajectories, exclude `phase3_ep_004` until deliberately completed, and finish two more valid submissions to reach five HQ trajectories. Use the policy in `docs/operations/qwen_rendering_quality_baseline.md`: no standalone image smoke by default, `40` steps at `1024 x 1024`, no legacy image reuse, and episode-level parallelism whenever resources allow. Within each episode, preserve sequential canonical history.
-
-Otherwise, proceed toward Phase 5 using native v0.5 records. Before writing the
-final dataset, run an export invariant test confirming exactly one schema-valid
-generate/edit/submit assistant action with loss 1 per target sample,
-`query_skill` and all tool/evaluator/raw records with loss 0, no raw rejected
-output, no future outcome leakage, no `_note` fields in assistant targets, and
-split assignments matching the final split manifest.
+The older Phase 3 HQ5 resume instructions remain archived in
+`docs/operations/phase3_hq5_interruption_status.md`; they are not part of the
+current Phase 7 autonomous action.

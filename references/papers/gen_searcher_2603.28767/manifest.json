@@ -1,0 +1,32 @@
+{
+  "manifest_version": 1,
+  "source_type": "paper",
+  "evidence_type": "paper-grounded",
+  "title": "Gen-Searcher: Reinforcing Agentic Search for Image Generation",
+  "authors": [
+    "Kaituo Feng",
+    "Manyuan Zhang",
+    "Shuang Chen",
+    "Yunlong Lin",
+    "Kaixuan Fan",
+    "Yilei Jiang",
+    "Hongyu Li",
+    "Dian Zheng",
+    "Chenyang Wang",
+    "Xiangyu Yue"
+  ],
+  "arxiv_id": "2603.28767",
+  "arxiv_version": "v3",
+  "canonical_url": "https://arxiv.org/abs/2603.28767v3",
+  "doi": "10.48550/arXiv.2603.28767",
+  "license_uri_from_pdf_metadata": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+  "local_pdf_storage": "external_parent_read_only",
+  "local_source_filename": "Feng 等 - 2026 - Gen-Searcher Reinforcing Agentic Search for Image Generation.pdf",
+  "pdf_sha256": "7d242893082ac9ee3fefd5ec2285759c4f9b78bb11b9711ebd97743405cb582a",
+  "pdf_bytes": 7798149,
+  "accessed_date": "2026-08-02",
+  "grounding_documents": [
+    "docs/SOURCE_LEDGER.md",
+    "docs/research/related_work_evidence_map.md"
+  ]
+}

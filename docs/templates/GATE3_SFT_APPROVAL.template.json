@@ -1,0 +1,17 @@
+{
+  "schema_version": "gen_retry_gate3_sft_approval_v1",
+  "gate": "Gate 3 SFT Supervision Freeze",
+  "verdict": "PENDING_REVIEW",
+  "policy_id": "REPLACE_WITH_APPROVED_POLICY_ID",
+  "source_artifact_sha256": {
+    "records_sha256": "REPLACE_WITH_64_HEX",
+    "decisions_sha256": "REPLACE_WITH_64_HEX",
+    "split_manifest_sha256": "REPLACE_WITH_64_HEX",
+    "source_audit_sha256": "REPLACE_WITH_64_HEX",
+    "supervision_policy_sha256": "REPLACE_WITH_64_HEX"
+  },
+  "review_artifact": {
+    "path": "REPLACE_WITH_VERSIONED_GATE3_REVIEW_PATH",
+    "sha256": "REPLACE_WITH_64_HEX"
+  }
+}

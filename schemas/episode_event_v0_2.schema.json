@@ -498,7 +498,8 @@
         "planner_context_schema_version": {
           "enum": [
             "0.5",
-            "0.6"
+            "0.6",
+            "0.7"
           ]
         },
         "planner_view_ref": {

@@ -1,13 +1,12 @@
 # Planner Execution v0.7 Candidate: Qwen Dual-Backend Profile
 
-Status: accepted execution design; no live comparison result yet
+Status: accepted and implemented by ADR-0006. Live diagnostics are recorded in
+`docs/status.md`; this document preserves the original design rationale.
 
 ## Version boundary
 
-The repository's latest implemented Planner Action and PlannerContext protocol
-is v0.5. The previously discussed v0.6 is a candidate PlannerContext and score
-semantics amendment; it has not been materialized as a schema or runtime
-version.
+The Action protocol remains v0.5. New rollouts now use PlannerContext v0.7;
+v0.6 and earlier PlannerContext versions remain immutable replay/resume modes.
 
 This v0.7 proposal is deliberately limited to image-action execution semantics.
 It does not depend on a v0.6 schema and does not add fields to the canonical
@@ -20,8 +19,9 @@ execution_profile_id: "qwen_dual_backend"
 execution_profile_version: "1"
 ```
 
-The informal label "v0.7" names the combined experiment design only. It must
-not be serialized as the Action or PlannerContext schema version.
+The example above records the proposal's original version tuple. Current
+episodes persist their actual PlannerContext version and the same independent
+execution-profile ID/version; no backend field is added to the Action.
 
 ## Human workflow being modeled
 

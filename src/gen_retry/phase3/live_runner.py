@@ -17,6 +17,7 @@ from gen_retry.domain.artifacts import artifact_manifest_entry, sha256_file, sha
 from gen_retry.domain.score_policy import (
     legacy_score_policy,
     planner_context_version,
+    planner_context_version_is_compatible,
     score_policy_from_task_payload,
 )
 from gen_retry.phase3.model_config import ModelConfig, load_model_config
@@ -29,6 +30,7 @@ from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.runtime.planner_context import (
     build_planner_context_from_events,
     build_round_records_from_events,
+    load_skill_observations,
     visible_images_from_state,
 )
 from gen_retry.runtime.planner_view import DEFAULT_SKILL_MANIFEST
@@ -71,10 +73,11 @@ class Phase3LiveRunner:
         *,
         model_config: ModelConfig | None = None,
         runtime_params: RuntimeParams | None = None,
+        planner: Any | None = None,
     ):
         self.model_config = model_config or load_model_config()
         self.params = runtime_params or RuntimeParams()
-        self.teacher = OpenAICompatibleTeacherClient(self.model_config.teacher)
+        self.planner = planner or OpenAICompatibleTeacherClient(self.model_config.teacher)
         self.skill_store = LocalSkillStore()
 
     def run_all(self, run_root: Path = Path("runs/phase3")) -> list[RolloutResult]:
@@ -136,10 +139,14 @@ class Phase3LiveRunner:
             request_id = f"{episode_id}_{turn_id}"
             extra_observations = self._extra_observations(state, events)
             image_refs = self._teacher_image_refs(run_dir, state)
-            retrieved_skills: list[dict[str, Any]] = []
+            retrieved_skills = self._retrieved_skills(
+                run_dir,
+                events,
+                planner_context_event,
+            )
             self._append_jsonl(
                 run_dir / "planner_requests.jsonl",
-                self.teacher.sanitized_request_record(
+                self.planner.sanitized_request_record(
                     request_id=request_id,
                     task_spec=task_spec,
                     planner_context=planner_context,
@@ -150,7 +157,7 @@ class Phase3LiveRunner:
                     extra_observations=extra_observations,
                 ),
             )
-            response = self._teacher_response(
+            response = self._planner_response(
                 request_id=request_id,
                 planner_context=planner_context,
                 task_spec=task_spec,
@@ -158,8 +165,24 @@ class Phase3LiveRunner:
                 retrieved_skills=retrieved_skills,
                 extra_observations=extra_observations,
             )
-            raw_record = redacted_raw_output_record(response)
-            raw_ref = f"raw_teacher_outputs/{request_id}.json"
+            raw_record_builder = getattr(
+                self.planner,
+                "raw_output_record",
+                redacted_raw_output_record,
+            )
+            raw_record = raw_record_builder(response)
+            planner_producer = getattr(self.planner, "producer_id", "teacher_client")
+            raw_output_directory = getattr(
+                self.planner,
+                "raw_output_directory",
+                "raw_teacher_outputs",
+            )
+            raw_output_log_name = getattr(
+                self.planner,
+                "raw_output_log_name",
+                "raw_teacher_outputs.jsonl",
+            )
+            raw_ref = f"{raw_output_directory}/{request_id}.json"
             raw_sha = self._write_json_artifact(run_dir, raw_ref, raw_record)
             self._upsert_manifest_entry(
                 run_dir,
@@ -169,16 +192,16 @@ class Phase3LiveRunner:
                     uri=raw_ref,
                     sha256=raw_sha,
                     media_type="application/json",
-                    producer="teacher_client",
+                    producer=planner_producer,
                     metadata={"request_id": request_id, "model_id": response.model_id},
                 ),
             )
-            self._append_jsonl(run_dir / "raw_teacher_outputs.jsonl", raw_record)
+            self._append_jsonl(run_dir / raw_output_log_name, raw_record)
             output_event = self._append_event(
                 run_dir,
                 event_type="planner_output_recorded",
                 turn_id=turn_id,
-                producer="teacher_client",
+                producer=planner_producer,
                 input_refs=[planner_context_event["event_id"]],
                 payload={"raw_output_ref": raw_ref, "raw_output_sha256": raw_sha},
             )
@@ -197,7 +220,6 @@ class Phase3LiveRunner:
                     retrieved_skills,
                     events=self._events(run_dir),
                 )
-                self._validate_instruction_quality(action, task_spec, state)
             except (ActionParseError, ActionReferenceError, RuntimeActionError) as exc:
                 repair_count += 1
                 error_event = self._append_event(
@@ -214,7 +236,7 @@ class Phase3LiveRunner:
                     },
                 )
                 if repair_count > self.params.max_format_repairs:
-                    raise RuntimeError(f"{episode_id}: teacher produced repeated invalid actions") from exc
+                    raise RuntimeError(f"{episode_id}: planner produced repeated invalid actions") from exc
                 self._build_next_planner_context(run_dir, input_refs=[error_event["event_id"]])
                 continue
 
@@ -227,15 +249,23 @@ class Phase3LiveRunner:
                 input_refs=[output_event["event_id"]],
                 payload={"action": action},
             )
+            canonical_action_record = {
+                "schema_version": "0.5",
+                "request_id": request_id,
+                "action_event_id": action_event["event_id"],
+                "turn_id": turn_id,
+                "action": action,
+            }
+            instruction_quality = _advisory_instruction_quality(
+                action,
+                task_spec,
+                known_attempt_ids=state.attempt_order,
+            )
+            if instruction_quality is not None:
+                canonical_action_record["instruction_quality"] = instruction_quality
             self._append_jsonl(
                 run_dir / "canonical_actions.jsonl",
-                {
-                    "schema_version": "0.5",
-                    "request_id": request_id,
-                    "action_event_id": action_event["event_id"],
-                    "turn_id": turn_id,
-                    "action": action,
-                },
+                canonical_action_record,
             )
 
             if action["action"] == "query_skill":
@@ -272,7 +302,7 @@ class Phase3LiveRunner:
             events=len(self._events(run_dir)),
         )
 
-    def _teacher_response(
+    def _planner_response(
         self,
         *,
         request_id: str,
@@ -282,7 +312,7 @@ class Phase3LiveRunner:
         retrieved_skills: list[dict[str, Any]],
         extra_observations: list[str],
     ) -> TeacherResponse:
-        return self.teacher.complete(
+        return self.planner.complete(
             request_id=request_id,
             planner_context=planner_context,
             task_spec=task_spec,
@@ -534,9 +564,20 @@ class Phase3LiveRunner:
         if not events or events[0]["event_type"] != "task_created":
             raise RuntimeError("rollout has no initial task_created event")
         actual_policy = score_policy_from_task_payload(events[0]["payload"])
-        actual_context_version = planner_context_version(actual_policy)
+        context_events = [
+            event for event in events if event["event_type"] == "planner_context_built"
+        ]
+        actual_context_version = (
+            str(context_events[0]["payload"]["planner_context_schema_version"])
+            if context_events
+            else expected_context_version
+        )
         if (
             expected_policy != actual_policy
+            or not planner_context_version_is_compatible(
+                actual_policy,
+                actual_context_version,
+            )
             or expected_context_version != actual_context_version
         ):
             raise RuntimeError(
@@ -788,12 +829,28 @@ class Phase3LiveRunner:
     def _build_next_planner_context(self, run_dir: Path, *, input_refs: list[str]) -> dict[str, Any]:
         events = self._events(run_dir)
         next_index = self._next_planner_context_index(events)
-        score_policy = score_policy_from_task_payload(events[0]["payload"])
-        context_version = planner_context_version(score_policy)
+        plan_path = run_dir / "rollout_plan.json"
+        if plan_path.exists():
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            context_version = str(plan["planner_context_schema_version"])
+        else:
+            context_events = [
+                event
+                for event in events
+                if event["event_type"] == "planner_context_built"
+            ]
+            context_version = (
+                str(context_events[-1]["payload"]["planner_context_schema_version"])
+                if context_events
+                else planner_context_version(
+                    score_policy_from_task_payload(events[0]["payload"])
+                )
+            )
         planner_context = build_planner_context_from_events(
             events,
             task_spec_ref="task_spec.json",
             schema_version=context_version,
+            skill_observations=load_skill_observations(run_dir),
         )
         ref = f"planner_contexts/planner_context_{next_index:03d}.json"
         sha = self._write_json_artifact(run_dir, ref, planner_context)
@@ -969,7 +1026,7 @@ class Phase3LiveRunner:
         planner_context_event: dict[str, Any],
     ) -> list[dict[str, Any]]:
         event_by_id = {event["event_id"]: event for event in events}
-        observations_by_event = _skill_observations_by_event_id(run_dir)
+        observations_by_event = load_skill_observations(run_dir)
         skills = []
         for input_ref in planner_context_event.get("input_refs", []):
             event = event_by_id.get(input_ref)
@@ -1018,7 +1075,7 @@ class Phase3LiveRunner:
         if action_type in {"generate_image", "edit_image"} and state.remaining_budget <= 0:
             raise RuntimeActionError("budget_exhausted", "image attempt budget is exhausted")
         if action_type in {"generate_image", "edit_image"}:
-            self._validate_retry_closure_policy(action, state)
+            self._validate_source_selection_policy(action, state)
         if action_type == "query_skill":
             skill_ids = action["arguments"].get("skill_ids", [])
             if len(skill_ids) > 3:
@@ -1076,7 +1133,7 @@ class Phase3LiveRunner:
                     "allowed per image-producing round",
                 )
 
-    def _validate_retry_closure_policy(
+    def _validate_source_selection_policy(
         self,
         action: dict[str, Any],
         state: EpisodeState,
@@ -1109,28 +1166,6 @@ class Phase3LiveRunner:
                         "has no relevant passed constraint that best lacks",
                     )
 
-        transition = getattr(state, "latest_transition", None)
-        latest_attempt_id = getattr(state, "latest_attempt_id", None)
-        if transition is None or latest_attempt_id is None:
-            return
-        regressive = bool(transition["regressed"])
-        no_progress = (
-            not transition["fixed"]
-            and not transition["regressed"]
-            and latest_attempt_id != best_attempt_id
-        )
-        if not regressive and not no_progress:
-            return
-
-        previous_action = state.attempts[latest_attempt_id].action
-        if _retry_strategy_key(action) == _retry_strategy_key(previous_action):
-            raise RuntimeActionError(
-                "repeated_failed_retry_strategy",
-                "after a regressive or no-progress result, do not repeat the same "
-                "action/source/target strategy; change the source, action type, or "
-                "target_constraint_ids",
-            )
-
     def _recover_incomplete_skill_query(
         self,
         run_dir: Path,
@@ -1160,26 +1195,6 @@ class Phase3LiveRunner:
         )
         return True
 
-    def _validate_instruction_quality(
-        self,
-        action: dict[str, Any],
-        task_spec: dict[str, Any],
-        state: EpisodeState,
-    ) -> None:
-        if action["action"] not in {"generate_image", "edit_image"}:
-            return
-        quality = evaluate_instruction_quality(
-            action,
-            task_spec,
-            known_attempt_ids=state.attempt_order,
-        )
-        if quality.verdict != "pass":
-            raise RuntimeActionError(
-                "instruction_quality_rejected",
-                "image instruction quality verdict must be pass before execution: "
-                + canonical_json(quality.to_dict()),
-            )
-
     def _image_path_for_attempt(
         self,
         run_dir: Path,
@@ -1198,7 +1213,7 @@ class Phase3LiveRunner:
 
     def _active_skill_operator_summaries(self, run_dir: Path, events: list[dict[str, Any]]) -> list[dict[str, Any]]:
         summaries: dict[str, dict[str, Any]] = {}
-        observations_by_event = _skill_observations_by_event_id(run_dir)
+        observations_by_event = load_skill_observations(run_dir)
         for event in events:
             if event["event_type"] != "skill_returned":
                 continue
@@ -1464,24 +1479,6 @@ def _join_compact_bullets(header: str, bullets: list[str], *, max_len: int) -> s
     return header[:max_len].rstrip(" ;")
 
 
-def _skill_observations_by_event_id(run_dir: Path) -> dict[str, dict[str, dict[str, Any]]]:
-    path = run_dir / "tool_observations.jsonl"
-    if not path.exists():
-        return {}
-    observations: dict[str, dict[str, dict[str, Any]]] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        record = json.loads(line)
-        if record.get("observation_type") != "skill_returned":
-            continue
-        observations[record["event_id"]] = {
-            skill["skill_id"]: skill
-            for skill in record.get("skills", [])
-        }
-    return observations
-
-
 def _retrieval_time_skill_content(
     run_dir: Path,
     skill: dict[str, Any],
@@ -1513,15 +1510,6 @@ def _resolved_skill_identity(skill: Any) -> tuple[str, str, str]:
     return (skill.skill_id, skill.version, skill.content_sha256)
 
 
-def _retry_strategy_key(action: dict[str, Any]) -> tuple[str, str | None, tuple[str, ...]]:
-    arguments = action["arguments"]
-    return (
-        action["action"],
-        arguments.get("source_attempt_id"),
-        tuple(sorted(arguments.get("target_constraint_ids", []))),
-    )
-
-
 def _execution_instruction(action: dict[str, Any]) -> str:
     arguments = action["arguments"]
     instruction = (
@@ -1535,6 +1523,32 @@ def _execution_instruction(action: dict[str, Any]) -> str:
             "image action does not contain an executable instruction",
         )
     return instruction
+
+
+def _advisory_instruction_quality(
+    action: dict[str, Any],
+    task_spec: dict[str, Any],
+    *,
+    known_attempt_ids: list[str],
+) -> dict[str, Any] | None:
+    if action["action"] not in {"generate_image", "edit_image"}:
+        return None
+    try:
+        report = evaluate_instruction_quality(
+            action,
+            task_spec,
+            known_attempt_ids=known_attempt_ids,
+        ).to_dict()
+    except Exception as exc:
+        report = {
+            "verdict": "unavailable",
+            "checker_error_type": type(exc).__name__,
+        }
+    return {
+        "enforcement": "advisory",
+        "sft_role": "environment_metadata",
+        "report": report,
+    }
 
 
 def _now() -> str:

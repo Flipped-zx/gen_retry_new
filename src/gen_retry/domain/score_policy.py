@@ -13,6 +13,8 @@ PRIMARY_SELECTION_RULE = (
     "higher_pass_count_then_higher_primary_score_then_earlier"
 )
 LEGACY_SELECTION_RULE = "higher_pass_count_then_earlier"
+PREFERRED_PRIMARY_PLANNER_CONTEXT_VERSION = "0.7"
+PRIMARY_PLANNER_CONTEXT_VERSIONS = ("0.6", "0.7")
 GM_PROBABILITY_FLOOR = 1e-300
 
 
@@ -155,7 +157,20 @@ def candidate_is_better(
 
 
 def planner_context_version(score_policy: dict[str, Any]) -> str:
-    return "0.6" if score_policy["policy_id"] == PRIMARY_POLICY_ID else "0.5"
+    return (
+        PREFERRED_PRIMARY_PLANNER_CONTEXT_VERSION
+        if score_policy["policy_id"] == PRIMARY_POLICY_ID
+        else "0.5"
+    )
+
+
+def planner_context_version_is_compatible(
+    score_policy: dict[str, Any],
+    schema_version: str,
+) -> bool:
+    if score_policy["policy_id"] == PRIMARY_POLICY_ID:
+        return schema_version in PRIMARY_PLANNER_CONTEXT_VERSIONS
+    return schema_version == "0.5"
 
 
 def score_policy_tuple(

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from gen_retry.domain.artifacts import sha256_bytes
 from gen_retry.domain.score_policy import (
     PRIMARY_POLICY_ID,
     candidate_is_better,
-    planner_context_version,
     primary_score_value,
     score_policy_from_task_payload,
 )
@@ -20,12 +21,32 @@ PASS = "pass"
 UNCERTAIN = "uncertain"
 
 
+def load_skill_observations(
+    run_dir: Path,
+) -> dict[str, dict[str, dict[str, Any]]]:
+    path = run_dir / "tool_observations.jsonl"
+    if not path.exists():
+        return {}
+    observations: dict[str, dict[str, dict[str, Any]]] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        record = json.loads(line)
+        if record.get("observation_type") != "skill_returned":
+            continue
+        observations[record["event_id"]] = {
+            skill["skill_id"]: skill for skill in record.get("skills", [])
+        }
+    return observations
+
+
 def build_planner_context_from_events(
     events: list[dict[str, Any]],
     *,
     task_spec_ref: str = "embedded:task_spec",
     skill_manifest: list[dict[str, Any]] | None = None,
     schema_version: str = "0.5",
+    skill_observations: dict[str, dict[str, dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     """Build a planner input from an event prefix.
 
@@ -36,10 +57,10 @@ def build_planner_context_from_events(
 
     if not events:
         raise ValueError("cannot build PlannerContext without events")
-    if schema_version not in {"0.4", "0.5", "0.6"}:
+    if schema_version not in {"0.4", "0.5", "0.6", "0.7"}:
         raise ValueError(f"unsupported PlannerContext schema version: {schema_version}")
     state = reduce_events(events)
-    timeline = _round_timeline(events)
+    timeline = _round_timeline(events, skill_observations=skill_observations)
     if schema_version == "0.4":
         context = {
             "task_context": _task_context(state.task_spec),
@@ -65,13 +86,13 @@ def build_planner_context_from_events(
             "runtime_state": _runtime_state(state),
         }
     else:
-        expected_version = planner_context_version(state.score_policy)
-        if expected_version != "0.6":
+        if state.score_policy["policy_id"] != PRIMARY_POLICY_ID:
             raise ValueError(
-                "PlannerContext v0.6 requires the primary Geneval2 score policy"
+                f"PlannerContext v{schema_version} requires the primary "
+                "Geneval2 score policy"
             )
         context = {
-            "planner_context_schema_version": "0.6",
+            "planner_context_schema_version": schema_version,
             "task_context": _task_context(state.task_spec),
             "latest_attempt": _observation(
                 state,
@@ -80,9 +101,10 @@ def build_planner_context_from_events(
                 include_primary_score=True,
             ),
             "skill_context": _skill_context(timeline),
-            "episode_memory": _episode_memory_v06(
-                timeline["completed_rounds"],
-                state,
+            "episode_memory": (
+                _episode_memory_v07(timeline["completed_rounds"], state)
+                if schema_version == "0.7"
+                else _episode_memory_v06(timeline["completed_rounds"], state)
             ),
             "runtime_state": _runtime_state(
                 state,
@@ -103,12 +125,30 @@ def visible_images_from_state(state: EpisodeState) -> list[dict[str, str]]:
         refs.append(_image_ref(state.attempts[state.latest_attempt_id], "latest"))
     if state.best_attempt_id:
         best = _image_ref(state.attempts[state.best_attempt_id], "best")
-        if best not in refs:
+        if state.best_attempt_id != state.latest_attempt_id:
             refs.append(best)
+        best_attempt = state.attempts[state.best_attempt_id]
+        for attempt_id in state.attempt_order:
+            if attempt_id in {state.latest_attempt_id, state.best_attempt_id}:
+                continue
+            attempt = state.attempts[attempt_id]
+            if attempt.pass_count != best_attempt.pass_count:
+                continue
+            has_unique_pass = any(
+                result["status"] == PASS
+                and best_attempt.constraint_results[constraint_id]["status"] != PASS
+                for constraint_id, result in attempt.constraint_results.items()
+            )
+            if has_unique_pass:
+                refs.append(_image_ref(attempt, "historical_candidate"))
     return refs
 
 
-def _round_timeline(events: list[dict[str, Any]]) -> dict[str, Any]:
+def _round_timeline(
+    events: list[dict[str, Any]],
+    *,
+    skill_observations: dict[str, dict[str, dict[str, Any]]] | None = None,
+) -> dict[str, Any]:
     task_spec_event = next((event for event in events if event["event_type"] == "task_created"), None)
     if task_spec_event is None:
         raise ValueError("task_created event is required")
@@ -185,7 +225,12 @@ def _round_timeline(events: list[dict[str, Any]]) -> dict[str, Any]:
                         legacy_spatial_verbs=skill.get("version", "1.0.0").startswith("1."),
                     ),
                     "summary": skill.get("summary", ""),
-                    "full_guidance": _skill_guidance(skill),
+                    "full_guidance": _skill_guidance(
+                        skill,
+                        observed_skill=(skill_observations or {})
+                        .get(event["event_id"], {})
+                        .get(skill_id),
+                    ),
                     "retrieved_round_index": len(completed_rounds),
                 }
 
@@ -369,14 +414,28 @@ def _skill_target_ids(
     return matched or sorted(query_target_ids)
 
 
-def _skill_guidance(skill: dict[str, Any]) -> str:
-    if skill.get("content"):
-        return skill["content"]
+def _skill_guidance(
+    skill: dict[str, Any],
+    *,
+    observed_skill: dict[str, Any] | None = None,
+) -> str:
+    expected_sha = skill.get("content_sha256")
+    for candidate in (skill.get("content"), (observed_skill or {}).get("content")):
+        if candidate and (
+            not expected_sha
+            or sha256_bytes(candidate.encode("utf-8")) == expected_sha
+        ):
+            return candidate
     content_ref = skill.get("content_ref")
     if content_ref:
         path = Path(content_ref)
         if path.exists():
-            return path.read_text(encoding="utf-8")
+            content = path.read_text(encoding="utf-8")
+            if (
+                not expected_sha
+                or sha256_bytes(content.encode("utf-8")) == expected_sha
+            ):
+                return content
     return skill.get("summary", "")
 
 
@@ -610,6 +669,19 @@ def _episode_memory_v06(
     }
 
 
+def _episode_memory_v07(
+    rounds: list[dict[str, Any]],
+    state: EpisodeState,
+) -> dict[str, Any]:
+    last_completed = _last_completed_image_round_v06(rounds[-1]) if rounds else None
+    prior = [_prior_image_round_v07(round_record, state) for round_record in rounds[:-1]]
+    return {
+        "last_completed_image_round": last_completed,
+        "prior_image_rounds": prior,
+        "best_attempt": _best_attempt_memory_v06(state),
+    }
+
+
 def _recent_round(round_record: dict[str, Any]) -> dict[str, Any]:
     return {
         "skill_queries": round_record["skill_queries"],
@@ -720,6 +792,15 @@ def _prior_image_round_v06(
     result["outcome_summary"]["primary_score_delta"] = round_record["value"][
         "primary_score_delta"
     ]
+    return result
+
+
+def _prior_image_round_v07(
+    round_record: dict[str, Any],
+    state: EpisodeState,
+) -> dict[str, Any]:
+    result = _prior_image_round_v06(round_record, state)
+    result["instruction"] = round_record["image_action"]["instruction"]
     return result
 
 

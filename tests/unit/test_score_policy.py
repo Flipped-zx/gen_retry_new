@@ -10,6 +10,8 @@ from gen_retry.domain.score_policy import (
     canonical_primary_score,
     legacy_score_policy,
     primary_score_policy,
+    planner_context_version,
+    planner_context_version_is_compatible,
     score_policy_from_task_payload,
     soft_tifa_geometric_mean,
 )
@@ -56,6 +58,15 @@ def test_primary_score_breaks_only_equal_pass_count_ties() -> None:
         current_primary_score=0.60,
         score_policy=primary_score_policy(),
     )
+
+
+def test_primary_score_policy_prefers_v0_7_and_replays_v0_6() -> None:
+    policy = primary_score_policy()
+
+    assert planner_context_version(policy) == "0.7"
+    assert planner_context_version_is_compatible(policy, "0.6")
+    assert planner_context_version_is_compatible(policy, "0.7")
+    assert not planner_context_version_is_compatible(policy, "0.5")
 
 
 def test_missing_score_policy_replays_with_legacy_ordering() -> None:

@@ -1,0 +1,187 @@
+{
+  "schema_version": "0.1",
+  "experiment_id": "verb_multiround_failed12_v21_live",
+  "execution": {
+    "teacher_model_id": "gpt-5.5",
+    "production_a_teacher_prompt_version": "teacher_system_prompt_v8_retry_closure_policy",
+    "candidate_b_teacher_prompt_version": "teacher_system_prompt_v8_1_verb_evidence_retention",
+    "candidate_b_teacher_prompt_sha256": "291bdf812ec84f6cafbf6708333b114d45b95af54677f843b038bf6d1423eaf0",
+    "production_a_action_pose_relation_version": "2.0.0",
+    "candidate_b_action_pose_relation_version": "2.1.0",
+    "candidate_b_action_pose_relation_sha256": "4b1d64ee0d951efbaea1bb9923261ae72a652e1217b27c65523c8c8f06ba499a",
+    "execution_profile": "qwen_dual_backend@1",
+    "generate_steps": 50,
+    "edit_steps": 40,
+    "image_size": [1024, 1024],
+    "max_image_attempts": 5,
+    "physical_hcu_count": 2
+  },
+  "cohort": {
+    "official_current_nonpass_verb_episode_count": 12,
+    "primary_episode_ids": [
+      "phase3_ep_032",
+      "phase3_ep_042",
+      "phase3_ep_051",
+      "phase3_ep_107",
+      "phase3_ep_116",
+      "phase3_ep_135",
+      "phase3_ep_154",
+      "phase3_ep_163",
+      "phase3_ep_181",
+      "phase3_ep_200"
+    ],
+    "supporting_episode_ids": [
+      "phase3_ep_014",
+      "phase3_ep_098"
+    ]
+  },
+  "aggregate": {
+    "official_current_12": {
+      "passed_atoms": 64,
+      "total_atoms": 84,
+      "verb_passes": 0,
+      "verb_total": 12,
+      "all_pass_episodes": 0,
+      "image_attempts": 60,
+      "mean_primary_score": 0.3106352968373581
+    },
+    "production_a_12": {
+      "passed_atoms": 66,
+      "total_atoms": 84,
+      "verb_passes": 1,
+      "verb_total": 12,
+      "all_pass_episodes": 1,
+      "image_attempts": 59,
+      "mean_primary_score": 0.34646135515692283
+    },
+    "candidate_b_12": {
+      "passed_atoms": 67,
+      "total_atoms": 84,
+      "verb_passes": 4,
+      "verb_total": 12,
+      "all_pass_episodes": 1,
+      "image_attempts": 60,
+      "mean_primary_score": 0.37508041153986693
+    },
+    "production_a_primary_10": {
+      "passed_atoms": 54,
+      "total_atoms": 71,
+      "verb_passes": 0,
+      "verb_total": 10,
+      "all_pass_episodes": 0,
+      "image_attempts": 50,
+      "mean_primary_score": 0.27699199738017766
+    },
+    "candidate_b_primary_10": {
+      "passed_atoms": 56,
+      "total_atoms": 71,
+      "verb_passes": 3,
+      "verb_total": 10,
+      "all_pass_episodes": 0,
+      "image_attempts": 50,
+      "mean_primary_score": 0.31971725804169865
+    },
+    "production_a_supporting_2": {
+      "passed_atoms": 12,
+      "total_atoms": 13,
+      "verb_passes": 1,
+      "verb_total": 2,
+      "all_pass_episodes": 1,
+      "image_attempts": 9,
+      "mean_primary_score": 0.6938081440406487
+    },
+    "candidate_b_supporting_2": {
+      "passed_atoms": 11,
+      "total_atoms": 13,
+      "verb_passes": 1,
+      "verb_total": 2,
+      "all_pass_episodes": 1,
+      "image_attempts": 10,
+      "mean_primary_score": 0.651896179030708
+    }
+  },
+  "episode_results": {
+    "phase3_ep_014": {"a_atoms": 7, "b_atoms": 6, "total": 8, "a_verb": "fail", "b_verb": "fail"},
+    "phase3_ep_032": {"a_atoms": 8, "b_atoms": 8, "total": 10, "a_verb": "fail", "b_verb": "pass", "b_verb_confidence": 0.9769002996870313},
+    "phase3_ep_042": {"a_atoms": 4, "b_atoms": 4, "total": 5, "a_verb": "fail", "b_verb": "fail"},
+    "phase3_ep_051": {"a_atoms": 4, "b_atoms": 4, "total": 5, "a_verb": "fail", "b_verb": "fail"},
+    "phase3_ep_098": {"a_atoms": 5, "b_atoms": 5, "total": 5, "a_verb": "pass", "b_verb": "pass", "b_verb_confidence": 0.8532701667791116},
+    "phase3_ep_107": {"a_atoms": 2, "b_atoms": 3, "total": 5, "a_verb": "fail", "b_verb": "fail"},
+    "phase3_ep_116": {"a_atoms": 7, "b_atoms": 7, "total": 8, "a_verb": "fail", "b_verb": "pass", "b_verb_confidence": 0.8807285140501335},
+    "phase3_ep_135": {"a_atoms": 7, "b_atoms": 8, "total": 10, "a_verb": "fail", "b_verb": "pass", "b_verb_confidence": 0.7760917807383123},
+    "phase3_ep_154": {"a_atoms": 4, "b_atoms": 4, "total": 5, "a_verb": "fail", "b_verb": "fail"},
+    "phase3_ep_163": {"a_atoms": 3, "b_atoms": 4, "total": 5, "a_verb": "fail", "b_verb": "fail"},
+    "phase3_ep_181": {"a_atoms": 7, "b_atoms": 7, "total": 8, "a_verb": "fail", "b_verb": "fail"},
+    "phase3_ep_200": {"a_atoms": 8, "b_atoms": 7, "total": 10, "a_verb": "fail", "b_verb": "fail"}
+  },
+  "mechanism_evidence": {
+    "production_a_action_pose_first_query": {
+      "before_first_image": 12,
+      "after_first_image": 0
+    },
+    "candidate_b_action_pose_first_query": {
+      "before_first_image": 0,
+      "after_first_image": 12
+    },
+    "ep135_historical_verb_pass_recovery": {
+      "verb_pass_source_attempt_id": "a_001",
+      "regressive_reducer_best_attempt_id": "a_002",
+      "recovery_source_attempt_id": "a_001",
+      "recovered_attempt_id": "a_003",
+      "recovered_verb_status": "pass",
+      "recovered_verb_confidence": 0.7760917807383123
+    }
+  },
+  "full_200_counterfactuals": {
+    "official_current": {
+      "passed_atoms": 1301,
+      "total_atoms": 1419,
+      "verb_passes": 10,
+      "verb_total": 22,
+      "all_pass_episodes": 111,
+      "mean_primary_score_x100": 73.50270336242517
+    },
+    "replace_12_with_production_a": {
+      "passed_atoms": 1303,
+      "total_atoms": 1419,
+      "verb_passes": 11,
+      "verb_total": 22,
+      "all_pass_episodes": 112,
+      "mean_primary_score_x100": 73.71765971234255
+    },
+    "replace_12_with_candidate_b": {
+      "passed_atoms": 1304,
+      "total_atoms": 1419,
+      "verb_passes": 14,
+      "verb_total": 22,
+      "all_pass_episodes": 112,
+      "mean_primary_score_x100": 73.88937405064021
+    },
+    "official_plus_candidate_b_frozen_history_choice": {
+      "passed_atoms": 1306,
+      "total_atoms": 1419,
+      "verb_passes": 12,
+      "verb_total": 22,
+      "all_pass_episodes": 112,
+      "mean_primary_score_x100": 74.62047770484531
+    },
+    "official_plus_a_plus_b_frozen_history_choice": {
+      "passed_atoms": 1307,
+      "total_atoms": 1419,
+      "verb_passes": 12,
+      "verb_total": 22,
+      "all_pass_episodes": 112,
+      "mean_primary_score_x100": 74.7126407379282
+    }
+  },
+  "promotion_rule": {
+    "required_primary_verb_pass_delta_at_least": 2,
+    "required_primary_atom_delta_at_least": 0,
+    "required_primary_all_pass_delta_at_least": 0,
+    "observed_primary_verb_pass_delta": 3,
+    "observed_primary_atom_delta": 2,
+    "observed_primary_all_pass_delta": 0,
+    "decision": "promote"
+  },
+  "claim_scope": "Targeted multi-round rerun of the complete 12-episode official-current verb-nonpass cohort; not a fresh 200-episode rerun and not a component-isolated causal ablation."
+}

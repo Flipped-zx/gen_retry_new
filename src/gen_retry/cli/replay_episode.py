@@ -9,7 +9,10 @@ from gen_retry.domain.score_policy import (
 )
 from gen_retry.runtime.event_io import load_events_jsonl
 from gen_retry.runtime.json_canonical import canonical_json
-from gen_retry.runtime.planner_context import build_planner_context_from_events
+from gen_retry.runtime.planner_context import (
+    build_planner_context_from_events,
+    load_skill_observations,
+)
 from gen_retry.runtime.planner_view import build_planner_view
 from gen_retry.runtime.reducer import reduce_events
 
@@ -18,12 +21,20 @@ def replay(path: Path) -> dict:
     events = load_events_jsonl(path)
     state = reduce_events(events)
     planner_view = build_planner_view(state)
-    context_version = planner_context_version(
-        score_policy_from_task_payload(events[0]["payload"])
+    context_events = [
+        event for event in events if event["event_type"] == "planner_context_built"
+    ]
+    context_version = (
+        str(context_events[-1]["payload"]["planner_context_schema_version"])
+        if context_events
+        else planner_context_version(
+            score_policy_from_task_payload(events[0]["payload"])
+        )
     )
     planner_context = build_planner_context_from_events(
         events,
         schema_version=context_version,
+        skill_observations=load_skill_observations(path.parent),
     )
     return {
         "state": state.to_dict(),

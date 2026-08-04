@@ -32,6 +32,28 @@ def exclusive_device_execution() -> Iterator[None]:
 
 
 @contextmanager
+def exclusive_any_device_execution(device_ids: list[int]) -> Iterator[int]:
+    """Acquire one currently free physical device for a short shared service call."""
+
+    if not device_ids:
+        raise ValueError("device_ids must not be empty")
+    normalized = list(dict.fromkeys(device_ids))
+    if any(device_id < 0 for device_id in normalized):
+        raise ValueError("device IDs must be non-negative")
+    while True:
+        for device_id in normalized:
+            lock = _try_lock(_lock_root() / f"device_{device_id}.lock")
+            if lock is None:
+                continue
+            try:
+                yield device_id
+            finally:
+                _unlock(lock)
+            return
+        time.sleep(0.05)
+
+
+@contextmanager
 def exclusive_episode_execution(run_dir: Path) -> Iterator[None]:
     """Reject concurrent executors for one append-only episode."""
 

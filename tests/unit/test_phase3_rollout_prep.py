@@ -125,13 +125,13 @@ def test_prepare_rollout_runs_materializes_fresh_replayable_episode(tmp_path: Pa
         (run_dir / "planner_contexts" / "planner_context_000.json").read_text(encoding="utf-8")
     )
     assert planner_context["latest_attempt"] is None
-    assert planner_context["planner_context_schema_version"] == "0.6"
+    assert planner_context["planner_context_schema_version"] == "0.7"
     assert planner_context["episode_memory"]["best_attempt"] is None
     assert planner_context["runtime_state"]["remaining_image_budget"] == 5
     assert planner_context["runtime_state"]["available_actions"] == ["query_skill", "generate_image"]
     assert planner_context["runtime_state"]["score_policy"] == primary_score_policy()
     assert events[0]["payload"]["score_policy"] == primary_score_policy()
-    assert events[1]["payload"]["planner_context_schema_version"] == "0.6"
+    assert events[1]["payload"]["planner_context_schema_version"] == "0.7"
 
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     validate_artifact_manifest_closure(manifest, run_dir)

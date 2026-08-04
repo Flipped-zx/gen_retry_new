@@ -24,8 +24,10 @@ edit_image     → Qwen-Image-Edit-2511（必须有 source，创建 child Attemp
 ```
 
 Planner 不输出 backend、model 或 mode；这些均为环境 provenance。动作协议和
-Action Protocol 仍为 v0.5；PlannerContext v0.6 额外暴露环境计算的
-Geneval2 prompt-level GM，并只在 atom pass-count 相同时用于 best
+Action Protocol 仍为 v0.5；新 rollout 使用 PlannerContext v0.7。它保留
+v0.6 暴露的 Geneval2 prompt-level GM，并额外保留更早 image Round 的
+可执行 instruction，供 Planner 识别无实质变化的重复干预。历史 v0.6
+episode 按原版本继续回放。GM 只在 atom pass-count 相同时用于 best
 tie-break。执行配置独立版本化为 `qwen_dual_backend@1`。
 
 ## 你现在要做的事情

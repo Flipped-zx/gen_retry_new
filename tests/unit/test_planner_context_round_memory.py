@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from gen_retry.domain.artifacts import sha256_bytes
 from gen_retry.domain.score_policy import (
     canonical_primary_score,
     primary_score_policy,
@@ -12,10 +13,12 @@ from gen_retry.domain.score_policy import (
 from gen_retry.runtime.event_io import load_events_jsonl
 from gen_retry.runtime.json_canonical import canonical_json
 from gen_retry.runtime.planner_context import (
+    _skill_guidance,
     build_planner_context_from_events,
     build_round_records_from_events,
+    visible_images_from_state,
 )
-from gen_retry.runtime.reducer import reduce_events
+from gen_retry.runtime.reducer import AttemptRecord, EpisodeState, reduce_events
 from gen_retry.phase3.live_runner import Phase3LiveRunner
 
 
@@ -187,6 +190,104 @@ def test_v0_6_equal_pass_count_uses_gm_and_records_source_delta() -> None:
         state.attempts["a_001"].primary_score
         - state.attempts["a_000"].primary_score
     )
+
+
+def test_v0_7_retains_prior_image_instructions() -> None:
+    events = _score_enabled_two_attempt_events()
+    context = build_planner_context_from_events(events, schema_version="0.7")
+
+    assert context["planner_context_schema_version"] == "0.7"
+    prior = context["episode_memory"]["prior_image_rounds"]
+    assert len(prior) == 1
+    assert prior[0]["result_attempt_id"] == "a_000"
+    first_action = next(
+        event["payload"]["action"]
+        for event in events
+        if event["event_type"] == "action_validated"
+    )
+    assert prior[0]["instruction"] == first_action["arguments"][
+        "generation_instruction"
+    ]
+
+
+def test_skill_guidance_uses_hash_matched_retrieval_observation(
+    tmp_path: Path,
+) -> None:
+    current_path = tmp_path / "SKILL.md"
+    current_path.write_text("new content", encoding="utf-8")
+    old_content = "old immutable content"
+
+    skill = {
+        "content_ref": str(current_path),
+        "content_sha256": sha256_bytes(old_content.encode("utf-8")),
+        "summary": "old summary",
+    }
+
+    assert _skill_guidance(
+        skill,
+        observed_skill={"content": old_content},
+    ) == old_content
+    assert _skill_guidance(skill) == "old summary"
+
+
+def test_visible_images_include_same_count_historical_evidence_candidate() -> None:
+    def attempt(
+        attempt_id: str,
+        statuses: dict[str, str],
+        artifact_id: str,
+    ) -> AttemptRecord:
+        return AttemptRecord(
+            attempt_id=attempt_id,
+            parent_attempt_id=None,
+            action_event_id=f"evt_{attempt_id[2:]}",
+            action={
+                "schema_version": "0.5",
+                "action": "generate_image",
+                "arguments": {
+                    "target_constraint_ids": sorted(statuses),
+                    "preserve_constraint_ids": [],
+                    "instruction": "test",
+                },
+            },
+            operation="generate",
+            image_artifact_id=artifact_id,
+            constraint_results={
+                constraint_id: {"status": status}
+                for constraint_id, status in statuses.items()
+            },
+            primary_score=0.5,
+        )
+
+    historical = attempt(
+        "a_000",
+        {"c_001": "pass", "c_002": "fail", "c_003": "pass"},
+        "img_000",
+    )
+    best = attempt(
+        "a_001",
+        {"c_001": "pass", "c_002": "pass", "c_003": "fail"},
+        "img_001",
+    )
+    state = EpisodeState(
+        schema_version="0.2",
+        episode_id="ep_visibility",
+        task_spec={"max_image_attempts": 5},
+        score_policy=primary_score_policy(),
+        attempts={"a_000": historical, "a_001": best},
+        attempt_order=["a_000", "a_001"],
+        latest_attempt_id="a_001",
+        best_attempt_id="a_001",
+        remaining_budget=3,
+    )
+
+    assert visible_images_from_state(state) == [
+        {"artifact_id": "img_001", "role": "latest", "attempt_id": "a_001"},
+        {
+            "artifact_id": "img_000",
+            "role": "historical_candidate",
+            "attempt_id": "a_000",
+        },
+    ]
 
 
 def test_golden_replay_round_memory_tracks_query_and_image_rounds() -> None:

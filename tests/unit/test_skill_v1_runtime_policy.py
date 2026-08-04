@@ -6,7 +6,12 @@ from pathlib import Path
 import pytest
 
 from gen_retry.domain.artifacts import sha256_bytes
-from gen_retry.phase3.live_runner import Phase3LiveRunner, RuntimeActionError, _pending_image_start
+from gen_retry.phase3.live_runner import (
+    Phase3LiveRunner,
+    RuntimeActionError,
+    _compact_operator_summary,
+    _pending_image_start,
+)
 from gen_retry.runtime.planner_view import DEFAULT_SKILL_MANIFEST
 from gen_retry.tools.skill_store import LocalSkillStore, SKILL_VERSIONS
 
@@ -35,6 +40,55 @@ def test_default_skill_manifest_versions_and_content_hashes_match_store() -> Non
         assert record.version == entry["version"]
         assert record.content_sha256 == sha256_bytes(record.content.encode("utf-8"))
         assert "TODO" not in record.content
+
+
+def test_action_pose_relation_v2_1_encodes_typed_retry_topology() -> None:
+    record = LocalSkillStore(ROOT / "skills").get("action_pose_relation")
+
+    assert record.version == "2.1.0"
+    assert "### Chasing operator" in record.content
+    assert "lateral or three-quarter lateral action lane" in record.content
+    assert "### Playing-with operator" in record.content
+    assert "### Jumping-over operator" in record.content
+    assert "### Verb-pass preservation" in record.content
+    assert "Each appears exactly once" in record.content
+    assert "storyboard" in record.content
+
+
+def test_action_pose_relation_manifest_defers_retrieval_until_retry() -> None:
+    entry = next(
+        item
+        for item in DEFAULT_SKILL_MANIFEST
+        if item["skill_id"] == "action_pose_relation"
+    )
+
+    assert entry["version"] == "2.1.0"
+    assert "after an evaluated verb failure or uncertainty" in entry["description"]
+    assert "not an initial-generation prefix" in entry["description"]
+
+
+def test_action_pose_relation_v2_1_survives_compact_round_memory() -> None:
+    record = LocalSkillStore(ROOT / "skills").get("action_pose_relation")
+    compact = _compact_operator_summary(
+        skill_id=record.skill_id,
+        version=record.version,
+        content_sha256=record.content_sha256,
+        content=record.content,
+    )
+
+    assert len(record.summary) <= 400
+    assert "Chasing uses one lateral pursuer/target pair" in record.summary
+    assert len(compact) <= 400
+    assert all(
+        operator in compact
+        for operator in (
+            "Chasing",
+            "Playing with",
+            "Jumping over",
+            "Preservation",
+            "Layout",
+        )
+    )
 
 
 def _runner() -> Phase3LiveRunner:

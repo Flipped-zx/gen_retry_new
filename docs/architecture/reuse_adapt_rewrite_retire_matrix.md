@@ -1,5 +1,9 @@
 # Reuse / Adapt / Rewrite / Retire Matrix
 
+> Historical Phase 0 decision map. Current backend/version semantics are
+> governed by accepted ADRs; ADR-0006 supersedes the single-edit-backend plan
+> assumed by the original Qianwen row below.
+
 | Area | Evidence | Decision | Reason |
 |---|---|---|---|
 | Geneval2 atom-row loading | legacy `geneval2_result_normalizer.py`, Geneval2 `geneval2_data.jsonl` | Adapt | Field meanings are useful, but v3 needs schema-owned constraints and event payloads. |

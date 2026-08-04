@@ -1,0 +1,30 @@
+{
+  "manifest_version": 1,
+  "source_type": "paper",
+  "evidence_type": "paper-grounded",
+  "title": "Generation Navigator: A State-Aware Agentic Framework for Image Generation",
+  "authors": [
+    "Jinming Liu",
+    "Ruoyu Feng",
+    "Yuqi Wang",
+    "Wenjun Zeng",
+    "Xin Jin"
+  ],
+  "arxiv_id": "2605.17969",
+  "arxiv_version": "v1",
+  "submitted_date": "2026-05-18",
+  "canonical_url": "https://arxiv.org/abs/2605.17969v1",
+  "doi": "10.48550/arXiv.2605.17969",
+  "license_uri_from_pdf_metadata": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+  "local_pdf": "Generation_Navigator_arXiv_2605.17969v1.pdf",
+  "local_pdf_git_policy": "ignored_local_cache",
+  "pdf_sha256": "76dfda0c86c2aba2e757275338c750e0dfb42eee8ef36cd30878a4b60c47e0f4",
+  "pdf_bytes": 6472121,
+  "pdf_pages": 30,
+  "accessed_date": "2026-08-02",
+  "public_code_repository": null,
+  "grounding_documents": [
+    "docs/SOURCE_LEDGER.md",
+    "docs/research/related_work_evidence_map.md"
+  ]
+}

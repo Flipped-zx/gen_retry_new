@@ -53,6 +53,40 @@ the expected result of the frozen comparator:
 
 `higher pass count -> higher GM -> earlier attempt`
 
+## Qwen-Image Best-of-5 Baseline
+
+The user-supplied `evaluation_detail.json` contains five original-prompt
+Qwen-Image candidates for each of the same 200 prompts and selects the
+highest-GM image. Exact prompt text and ordered VQA lists match 200/200
+selection rows.
+
+| Metric | Qwen Best-of-5 | Agent submitted | Change |
+| --- | ---: | ---: | ---: |
+| Passed atoms | 1042/1419 | 1301/1419 | +259 |
+| Atom pass rate | 73.43% | 91.68% | +18.25 points |
+| Soft-TIFA AM | 74.32 | 90.90 | +16.58 |
+| Soft-TIFA GM | 31.53 | 73.50 | +41.97 |
+| All-pass trajectories | 42/200 | 111/200 | +69 |
+| Image calls | 1000 | 684 | -316 |
+
+Agent pass count was higher on 136 paired prompts, equal on 53, and lower on
+11. Agent GM was higher on 169 and lower on 31. The all-pass transition was
+positive on 74 prompts and negative on five.
+
+The baseline file selects by GM alone, while the frozen Agent comparator
+selects by pass count first. Re-selecting the same baseline candidates with
+the Agent comparator changes 24/200 images and improves the baseline to
+1072/1419 atoms, while GM becomes 31.14. Agent still leads by 229 atoms and
+42.36 GM points, so selector mismatch does not explain the aggregate result.
+
+This is an integrated paired comparison, not a causal Agent-policy ablation.
+The baseline file does not persist renderer configuration, model revision,
+seeds, or evaluator version, and generation/edit costs are not normalized.
+See `docs/phase7/qwen_best_of_5_baseline_comparison.md` and
+`artifacts/phase7/qwen_best_of_5_baseline_comparison.json` for alignment
+checks, paired bootstrap intervals, difficulty/atom-type results,
+Best-of-K curves, and all per-prompt comparisons.
+
 ## Difficulty Results
 
 | Tier | Episodes | Attempts | Initial atoms | Submitted atoms | Initial GM | Submitted GM | All pass |
@@ -171,6 +205,8 @@ Supported:
 
 - all 200 fixed fresh trajectories are complete and resumable;
 - retries improve atom pass, AM, and GM within this batch;
+- the integrated Agent result exceeds the paired original-prompt Qwen-Image
+  Best-of-5 baseline on atoms, AM, GM, and all-pass trajectories;
 - latest/best separation prevents many harmful final submissions;
 - v8 removes observed equivalent failed-route repeats;
 - the normalized records satisfy the frozen SFT ownership contract.
@@ -178,6 +214,7 @@ Supported:
 Not supported:
 
 - official Geneval2 leaderboard performance;
-- causal superiority over equal-compute Best-of-K or a fixed retry heuristic;
+- causal superiority over a fully provenance-matched, compute-normalized
+  Best-of-K or a fixed retry heuristic;
 - causal v8 performance improvement;
 - generalization to arbitrary complex prompts outside this distribution.

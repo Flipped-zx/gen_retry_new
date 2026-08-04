@@ -15,7 +15,7 @@ from gen_retry.tools.resource_locks import teacher_api_slot
 
 
 TEACHER_SYSTEM_PROMPT_VERSION = (
-    "teacher_system_prompt_v8_retry_closure_policy"
+    "teacher_system_prompt_v9_meaningful_retry_verb_retention"
 )
 AVAILABLE_SKILL_IDS = tuple(entry["skill_id"] for entry in DEFAULT_SKILL_MANIFEST)
 
@@ -36,12 +36,28 @@ TEACHER_SYSTEM_PROMPT_TEXT = (
     "edit_image always modifies one declared historical source attempt. Never "
     "output a backend or mode field. Use fixed, regressed, persistent, and "
     "stable-pass history. Do "
-    "not repeat a materially equivalent ineffective instruction unless the new "
-    "instruction contains a concrete change. After a regressive or no-progress "
-    "image result, do not repeat the same action, source attempt, and target "
-    "constraint set. For edit_image, default source_attempt_id to the reducer-best "
+    "not perform a blind retry. After a regressive or no-progress image result, "
+    "compare the proposed instruction with all prior image instructions in episode "
+    "memory. Reusing the same action, source attempt, or target constraint set is "
+    "allowed only when the instruction changes a concrete visual intervention: the "
+    "instance operation, spatial anchor, separation or layout, pose/contact/motion "
+    "evidence, identity disambiguation, or preservation response. Source-free "
+    "regeneration is appropriate when the visual route is globally unsuitable, not "
+    "merely to make an action tuple different. For edit_image, default "
+    "source_attempt_id to the reducer-best "
     "attempt. Use a different historical source only when its constraint results "
     "contain explicit relevant pass evidence that the reducer-best attempt lacks. "
+    "Do not query action_pose_relation before any evaluated image exists. Query "
+    "it only after a verb atom fails or is uncertain, or when an explicit "
+    "historical verb pass must be preserved during non-verb repair. When a "
+    "historical attempt explicitly passes a verb that the reducer-best attempt "
+    "fails, matches the reducer-best passed-atom count, and has only non-verb "
+    "failures remaining, prefer that historical attempt as the edit source for a "
+    "local non-verb repair. Historical candidate images are labeled when the "
+    "environment exposes them; use their pixels together with recorded atom evidence. "
+    "Include the passed verb in preserve_constraint_ids; "
+    "do not discard that source solely because reducer-best has a higher "
+    "primary_score. "
     "When using query_skill, select skill_ids "
     "only from this exact catalog: "
     + ", ".join(AVAILABLE_SKILL_IDS)
@@ -285,17 +301,19 @@ class OpenAICompatibleTeacherClient:
                 "and creates a child attempt.",
                 "Use edit_image only with a source_attempt_id already present in "
                 "PlannerContext latest_attempt or episode_memory. "
-                "Use visible LATEST_IMAGE and BEST_IMAGE inputs; never decide from a path "
-                "string alone. Compare latest and best when they differ before choosing "
+                "Use visible LATEST_IMAGE, BEST_IMAGE, and any "
+                "HISTORICAL_CANDIDATE_IMAGE inputs; never decide from a path string "
+                "alone. Compare visible candidates before choosing "
                 "source_attempt_id. Do not blindly continue from the latest attempt. "
                 "For source-conditioned retries, default to the reducer-best attempt. "
                 "A different historical source is allowed only when its recorded "
                 "constraint results provide relevant pass evidence absent from best.",
-                "Retry closure policy: when the preceding image result regressed any "
-                "constraint, or made no fixed-atom/best-so-far progress, do not repeat "
-                "the same action type, source_attempt_id, and target_constraint_ids. "
-                "Change the source, action type, or target set instead of replaying an "
-                "equivalent failed route.",
+                "Meaningful retry policy: after regression or no best-so-far progress, "
+                "compare the candidate with all prior image instructions in "
+                "episode_memory. Do not replay an instruction without a concrete new "
+                "visual intervention. The same action/source/targets may be reused when "
+                "the executable intervention materially changes. Regenerate only when "
+                "abandoning the current visual route is justified.",
                 "If remaining_image_budget is 0, submit the best available attempt with "
                 "reason_code exactly best_available_under_budget.",
                 "Allowed submit reason_code values are exactly: all_constraints_passed, "

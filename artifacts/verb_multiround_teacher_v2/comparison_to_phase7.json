@@ -1,0 +1,96 @@
+{
+  "schema_version": "0.1",
+  "experiment_id": "verb_multiround_teacher_v2",
+  "episode_ids": [
+    "phase3_ep_014",
+    "phase3_ep_098"
+  ],
+  "execution": {
+    "teacher_model_id": "gpt-5.5",
+    "teacher_system_prompt_version": "teacher_system_prompt_v8_retry_closure_policy",
+    "action_pose_relation_version": "2.0.0",
+    "execution_profile": "qwen_dual_backend@1",
+    "generate_steps": 50,
+    "edit_steps": 40,
+    "image_size": [
+      1024,
+      1024
+    ],
+    "max_image_attempts": 5,
+    "physical_hcu_count": 2
+  },
+  "episodes": {
+    "phase3_ep_014": {
+      "current_submitted": {
+        "attempt_id": "a_004",
+        "attempt_count": 5,
+        "passed_atoms": 7,
+        "total_atoms": 8,
+        "verb_status": "fail",
+        "verb_confidence": 0.003414,
+        "primary_score": 0.490216
+      },
+      "pilot_submitted": {
+        "attempt_id": "a_003",
+        "attempt_count": 5,
+        "passed_atoms": 7,
+        "total_atoms": 8,
+        "verb_status": "fail",
+        "verb_confidence": 0.000518,
+        "primary_score": 0.387995
+      },
+      "historical_best_choice": "current_submitted"
+    },
+    "phase3_ep_098": {
+      "current_submitted": {
+        "attempt_id": "a_000",
+        "attempt_count": 5,
+        "passed_atoms": 4,
+        "total_atoms": 5,
+        "verb_status": "fail",
+        "verb_confidence": 0.002505,
+        "primary_score": 0.301479
+      },
+      "pilot_submitted": {
+        "attempt_id": "a_003",
+        "attempt_count": 4,
+        "passed_atoms": 5,
+        "total_atoms": 5,
+        "verb_status": "pass",
+        "verb_confidence": 0.999018,
+        "primary_score": 0.999621
+      },
+      "historical_best_choice": "pilot_submitted"
+    }
+  },
+  "aggregate": {
+    "current": {
+      "passed_atoms": 11,
+      "total_atoms": 13,
+      "verb_passes": 0,
+      "verb_total": 2,
+      "all_pass_episodes": 0,
+      "episode_total": 2,
+      "image_attempts": 10
+    },
+    "pilot": {
+      "passed_atoms": 12,
+      "total_atoms": 13,
+      "verb_passes": 1,
+      "verb_total": 2,
+      "all_pass_episodes": 1,
+      "episode_total": 2,
+      "image_attempts": 9
+    },
+    "current_plus_pilot_historical_best": {
+      "passed_atoms": 12,
+      "total_atoms": 13,
+      "verb_passes": 1,
+      "verb_total": 2,
+      "all_pass_episodes": 1,
+      "episode_total": 2
+    }
+  },
+  "result": "one_improved_one_tied_by_atom_and_verb_status",
+  "claim_scope": "two-episode prospective multiround pilot; not a 200-episode rerun"
+}

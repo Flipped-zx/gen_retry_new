@@ -1,0 +1,29 @@
+{
+  "manifest_version": 1,
+  "source_type": "paper",
+  "evidence_type": "paper-grounded",
+  "title": "GEMS: Agent-Native Multimodal Generation with Memory and Skills",
+  "authors": [
+    "Zefeng He",
+    "Siyuan Huang",
+    "Xiaoye Qu",
+    "Yafu Li",
+    "Tong Zhu",
+    "Yu Cheng",
+    "Yang Yang"
+  ],
+  "arxiv_id": "2603.28088",
+  "arxiv_version": "v1",
+  "canonical_url": "https://arxiv.org/abs/2603.28088v1",
+  "doi": "10.48550/arXiv.2603.28088",
+  "license_uri_from_pdf_metadata": "http://creativecommons.org/licenses/by/4.0/",
+  "local_pdf_storage": "external_parent_read_only",
+  "local_source_filename": "He 等 - 2026 - GEMS Agent-Native Multimodal Generation with Memory and Skills.pdf",
+  "pdf_sha256": "e34c537c488e9b0f59bec630e7c6fada034311221a8ef8da59f9e083b1c7be3f",
+  "pdf_bytes": 16033943,
+  "accessed_date": "2026-08-02",
+  "grounding_documents": [
+    "docs/SOURCE_LEDGER.md",
+    "docs/research/related_work_evidence_map.md"
+  ]
+}

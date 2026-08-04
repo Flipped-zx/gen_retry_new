@@ -7,7 +7,7 @@ from typing import Any, Iterable
 from gen_retry.domain.score_policy import (
     PRIMARY_POLICY_ID,
     legacy_score_policy,
-    planner_context_version,
+    planner_context_version_is_compatible,
     score_policy_from_task_payload,
     validate_primary_score,
 )
@@ -101,6 +101,7 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
     starts_by_request_id: dict[str, dict[str, Any]] = {}
     action_execution_started: set[str] = set()
     execution_profiles: set[tuple[str, str]] = set()
+    planner_context_versions: set[str] = set()
     score_policy = legacy_score_policy()
 
     if not events:
@@ -240,14 +241,17 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
             actual_context_version = str(
                 payload.get("planner_context_schema_version", "0.5")
             )
-            expected_context_version = planner_context_version(score_policy)
-            if actual_context_version != expected_context_version:
+            planner_context_versions.add(actual_context_version)
+            if not planner_context_version_is_compatible(
+                score_policy,
+                actual_context_version,
+            ):
                 _problem(
                     problems,
                     "planner_context_score_policy_mismatch",
                     "planner context version "
                     f"{actual_context_version} is incompatible with score policy "
-                    f"{score_policy['policy_id']}; expected {expected_context_version}",
+                    f"{score_policy['policy_id']}",
                 )
 
         if event_type == "image_execution_started":
@@ -539,6 +543,13 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
             problems,
             "mixed_execution_profiles",
             "one episode cannot mix execution profiles: " + ", ".join(labels),
+        )
+    if len(planner_context_versions) > 1:
+        _problem(
+            problems,
+            "mixed_planner_context_versions",
+            "one episode cannot mix PlannerContext versions: "
+            + ", ".join(sorted(planner_context_versions)),
         )
 
     if problems:

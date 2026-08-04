@@ -12,7 +12,7 @@ SKILL_VERSIONS = {
     "spatial_relation_layout": "2.0.0",
     "attribute_entity_binding": "1.0.0",
     "local_edit_preservation": "2.0.0",
-    "action_pose_relation": "1.0.0",
+    "action_pose_relation": "2.1.0",
     "object_identity_presence": "1.0.0",
 }
 

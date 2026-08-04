@@ -1,0 +1,55 @@
+{
+  "catalog_version": 1,
+  "updated_date": "2026-08-02",
+  "entries": [
+    {
+      "source_id": "paper_generation_navigator_arxiv_2605_17969_v1",
+      "kind": "paper",
+      "manifest": "papers/generation_navigator_2605.17969/manifest.json",
+      "evidence_depth": "section-grounded",
+      "ledger": "docs/SOURCE_LEDGER.md#generation-navigator-state-conditioned-image-retry"
+    },
+    {
+      "source_id": "repository_gen_searcher_e5078d3",
+      "kind": "external_repository",
+      "configured_root": "gen_searcher_root",
+      "evidence_depth": "path-and-symbol-grounded",
+      "ledger": "docs/SOURCE_LEDGER.md#gen-searcher"
+    },
+    {
+      "source_id": "paper_gen_searcher_arxiv_2603_28767_v3",
+      "kind": "paper",
+      "manifest": "papers/gen_searcher_2603.28767/manifest.json",
+      "evidence_depth": "section-grounded",
+      "ledger": "docs/SOURCE_LEDGER.md#gen-searcher-agentic-search-paper"
+    },
+    {
+      "source_id": "repository_gen_evolve_23c847c",
+      "kind": "external_repository",
+      "configured_root": "gen_evolve_root",
+      "evidence_depth": "path-symbol-and-paper-grounded",
+      "ledger": "docs/SOURCE_LEDGER.md#genevolve"
+    },
+    {
+      "source_id": "paper_genevolve_arxiv_2605_21605_v2",
+      "kind": "paper",
+      "manifest": "papers/genevolve_2605.21605/manifest.json",
+      "evidence_depth": "section-grounded",
+      "ledger": "docs/SOURCE_LEDGER.md#genevolve-paper-appendix-prompt-details"
+    },
+    {
+      "source_id": "paper_gems_arxiv_2603_28088_v1",
+      "kind": "paper",
+      "manifest": "papers/gems_2603.28088/manifest.json",
+      "evidence_depth": "section-grounded",
+      "ledger": "docs/SOURCE_LEDGER.md#gems-verifier-memory-and-skill-design"
+    },
+    {
+      "source_id": "meta_muse_image_blog_2026_07_07",
+      "kind": "web_primary_source",
+      "manifest": "web/muse_image_meta_2026-07-07/manifest.json",
+      "evidence_depth": "selectively-grounded",
+      "ledger": "docs/SOURCE_LEDGER.md#meta-muse-image-agentic-generation-blog"
+    }
+  ]
+}

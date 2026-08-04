@@ -27,6 +27,7 @@ def test_all_versioned_schemas_are_valid() -> None:
         "planner_context_v0_4.schema.json",
         "planner_context_v0_5.schema.json",
         "planner_context_v0_6.schema.json",
+        "planner_context_v0_7.schema.json",
         "planner_view_v0_2.schema.json",
         "task_spec_v0_2.schema.json",
     }

@@ -1,0 +1,17 @@
+{
+  "schema_version": "gen_retry_gate3_sft_approval_v1",
+  "gate": "Gate 3 SFT Supervision Freeze",
+  "verdict": "APPROVED",
+  "policy_id": "flow_dppo1000_v9_selective_skill_v1",
+  "source_artifact_sha256": {
+    "records_sha256": "678126147908d3c06e2f2555b8c07ab0d098b0c4dfdd356bd7caeacb8d3702a6",
+    "decisions_sha256": "408341a50f8fef038e37130a4f45a7eeed713926d3ac03d4d49181ace04393cd",
+    "split_manifest_sha256": "615c4be0727af74c38fcf69adee7e718f1a2c8133e2ba42e7ab2f111df137795",
+    "source_audit_sha256": "b8708b01587161d16cf056231e26647dfa6afe2128d1fa1eacafd6651f02c21e",
+    "supervision_policy_sha256": "da31100649284df3daca0813c90d817abed2f50e1a095b862af768388e1c9c9c"
+  },
+  "review_artifact": {
+    "path": "flow_dppo1000_v9_selective_skill_sft_sol_review.md",
+    "sha256": "45f91a710331248498d11946a17dcea2ebb9cd0d4f2fa0194c597889d211c48b"
+  }
+}

@@ -12,7 +12,7 @@ from PIL import Image
 from gen_retry.agent.instruction_quality import evaluate_instruction_quality
 from gen_retry.domain.artifacts import validate_artifact_manifest_closure
 from gen_retry.domain.score_policy import (
-    planner_context_version,
+    planner_context_version_is_compatible,
     score_policy_from_task_payload,
     soft_tifa_geometric_mean,
 )
@@ -147,7 +147,7 @@ def audit_rollout_batch(
             for key in (
                 "passes_current_contract",
                 "protocol_or_reference_invalid",
-                "quality_still_rejected",
+                "quality_advisory_flagged",
             )
         }
     )
@@ -558,8 +558,12 @@ def _audit_episode(run_dir: Path, selected: dict[str, Any]) -> dict[str, Any]:
         "teacher_system_prompt_versions": sorted(
             {record["system_prompt_version"] for record in requests}
         ),
-        "planner_context_schema_version": planner_context_version(
-            state.score_policy
+        "planner_context_schema_version": str(
+            next(
+                event["payload"]["planner_context_schema_version"]
+                for event in events
+                if event["event_type"] == "planner_context_built"
+            )
         ),
         "score_policy": state.score_policy,
         "execution_profile": execution_profile,
@@ -575,7 +579,6 @@ def _audit_planner_context_snapshots(
     events: list[dict[str, Any]],
 ) -> None:
     score_policy = score_policy_from_task_payload(events[0]["payload"])
-    expected_context_version = planner_context_version(score_policy)
     for index, event in enumerate(events):
         if event["event_type"] != "planner_context_built":
             continue
@@ -586,7 +589,10 @@ def _audit_planner_context_snapshots(
                 context.get("planner_context_schema_version", "0.5"),
             )
         )
-        if context_version != expected_context_version:
+        if not planner_context_version_is_compatible(
+            score_policy,
+            context_version,
+        ):
             raise ValueError(
                 f"{run_dir.name}: PlannerContext {context_version} disagrees "
                 f"with score policy {score_policy['policy_id']}"
@@ -646,21 +652,20 @@ def _classify_format_errors(
         if action["action"] not in {"generate_image", "edit_image"}:
             classification["passes_current_contract"] += 1
             continue
+        classification["passes_current_contract"] += 1
         quality = evaluate_instruction_quality(
             action,
             task_spec,
             known_attempt_ids=state.attempt_order,
         )
-        if quality.verdict == "pass":
-            classification["passes_current_contract"] += 1
-        else:
-            classification["quality_still_rejected"] += 1
+        if quality.verdict != "pass":
+            classification["quality_advisory_flagged"] += 1
     return {
         key: classification[key]
         for key in (
             "passes_current_contract",
             "protocol_or_reference_invalid",
-            "quality_still_rejected",
+            "quality_advisory_flagged",
         )
     }
 
@@ -814,11 +819,11 @@ def _render_report(summary: dict[str, Any]) -> str:
             "- Rejected raw Teacher turns: "
             f"{summary['format_error_count']} total "
             f"({summary['format_error_classification']['passes_current_contract']} pass "
-            "the corrected current validator; "
+            "the current runtime contract; "
             f"{summary['format_error_classification']['protocol_or_reference_invalid']} "
             "remain protocol/reference-invalid; "
-            f"{summary['format_error_classification']['quality_still_rejected']} "
-            "remain instruction-quality-invalid)."
+            f"{summary['format_error_classification']['quality_advisory_flagged']} "
+            "contract-passing image actions carry advisory linter flags)."
         ),
         (
             "- Credential-like text in audited outputs: "

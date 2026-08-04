@@ -39,7 +39,7 @@ repository_url: local checkout, no single top-level license found
 absolute_path: `/root/private_data/agentic_image/Gen-Searcher`
 commit_hash: `e5078d31859bafee6b6b610f0cd40095cc72e2a4`
 branch: `main`
-dirty_status: dirty
+dirty_status: mode-only dirty; tracked source content matches HEAD
 license: mixed; `Gen-DeepResearch-RL/LICENSE` MIT, `Gen-DeepResearch-SFT/LICENSE` Apache-2.0
 evidence_type: repository-grounded via `source_researcher`
 exact_paths:
@@ -65,8 +65,8 @@ repository_url: local checkout
 absolute_path: `/root/private_data/agentic_image/GenEvolve`
 commit_hash: `23c847c559ccc0f95bbf4b3d8925898463822f4c`
 branch: `main`
-dirty_status: dirty, including `LICENSE`
-license: working-tree `LICENSE` is Apache-2.0; verify before copying
+dirty_status: mode-only dirty; tracked source and `LICENSE` content match HEAD
+license: root `LICENSE` is Apache-2.0
 evidence_type: repository-grounded via `source_researcher`
 exact_paths:
 - path: `genevolve/agent.py`
@@ -192,7 +192,7 @@ source_name: Gen-Searcher Qwen image service
 repository_url: local checkout
 absolute_path: `/root/private_data/agentic_image/Gen-Searcher`
 commit_hash: `e5078d31859bafee6b6b610f0cd40095cc72e2a4`
-dirty_status: dirty
+dirty_status: mode-only dirty; tracked source content matches HEAD
 evidence_type: repository-grounded via `source_researcher`
 exact_paths:
 - path: `README.md`
@@ -221,7 +221,7 @@ source_name: GenEvolve Qwen image renderer
 repository_url: local checkout
 absolute_path: `/root/private_data/agentic_image/GenEvolve`
 commit_hash: `23c847c559ccc0f95bbf4b3d8925898463822f4c`
-dirty_status: dirty
+dirty_status: mode-only dirty; tracked source content matches HEAD
 license: Apache-2.0
 evidence_type: repository-grounded via `source_researcher`
 exact_paths:
@@ -404,6 +404,154 @@ borrowed_idea: Use strict per-turn action formatting, real skill-query tool inte
 local_adaptation: Gen-Retry v3 outputs verifier-grounded retry actions (`query_skill`, `generate_image`, `edit_image`, `submit_attempt`) rather than GenEvolve's final prompt-reference program. Skill queries remain planner actions, while image rounds count only Qwen/Geneval attempts.
 copy_code: no
 notes: Do not copy GenEvolve's search/reference final schema directly; v3 uses Geneval2 atom feedback, best-so-far state, rollback source selection, and executable retry actions.
+
+### GenEvolve Evaluation Protocol And KScore Semantics
+
+source_name: GenEvolve formal evaluator, benchmark, and paper
+repository_url: local checkout
+absolute_path: `/root/private_data/agentic_image/GenEvolve`
+repository_commit: `23c847c559ccc0f95bbf4b3d8925898463822f4c`
+license: Apache-2.0
+paper: `GenEvolve: Self-Evolving Image Generation Agents via Tool-Orchestrated Visual Experience Distillation`
+arxiv_url: `https://arxiv.org/abs/2605.21605`
+version: v2, revised 2026-05-22
+accessed_date: `2026-08-02`
+evidence_type: repository-grounded and paper-grounded via `source_researcher`
+exact_repository_paths:
+- path: `genevolve/agent.py:276-351,356-390`
+  evidence: the multi-turn agent performs search, image search, and Skill
+    queries, then emits one final prompt-reference program with one or two
+    selected references; it does not generate an image on each agent turn.
+- path: `scripts/generate_images.py:79-102`
+  evidence: each prompt-reference program makes one backend `generate` call
+    and persists one generated image path/status in the result record.
+- path: `genevolve/generator.py:89-176,188-279`
+  evidence: the Qwen path uses Qwen-Image-Edit-2511, 40 steps, true CFG 4.0,
+    guidance 1.0, blank negative prompt, long-side-1024 reference scaling,
+    default seed 0, and one returned image; HTTP retries are infrastructure
+    retries, not image-quality retries.
+- path: `scripts/evaluate_images.py:190-295`
+  evidence: the judge rubric separately defines faithfulness, ground-truth-
+    relative visual correctness, text accuracy, and ground-truth-relative
+    aesthetics, nominally on the set `{0, 0.5, 1}`.
+- path: `scripts/evaluate_images.py:40-47,137-178,360-412,678-695`
+  evidence: generated image is Image 1, ground truth is Image 2; the default
+    judge is `gemini-3.1-pro-preview` through an OpenAI-compatible multimodal
+    request with temperature 0; the parser repairs several non-strict output
+    forms and retains clipped intermediate numeric values.
+- path: `scripts/evaluate_images.py:501-540`
+  evidence: released code computes
+    `0.1*F + 0.4*V + 0.4*T + 0.1*A`; for no-text rows it sets `T=0.5` and does
+    not renormalize, contrary to the paper's stated remaining-dimension
+    renormalization.
+- path: `scripts/evaluate_images.py:520-593,634-675,715-788`
+  evidence: component means are success-only; only overall has a
+    missing-as-zero-adjusted form; persisted failed evaluation rows are skipped
+    on resume; results and summaries are artifact-backed and atomically
+    rewritten.
+- path: `README.md:64-66,228-232`
+  evidence: GenEvolve-Bench contains 594 prompt/ground-truth pairs, split into
+    335 Knowledge-Anchored and 259 Quality-Anchored cases; README claims the
+    evaluator follows the paper formula despite the no-text code discrepancy.
+exact_paper_sections:
+- section: `Method / Prompt-Reference Program and Generation Feedback`
+  evidence: self-evolution samples six independent agent trajectories per
+    prompt; each final program is rendered once, so the candidates are sibling
+    programs rather than successive edits of one generated image.
+- section: `Training Details`
+  evidence: training reward is `0.5 image KScore + 0.5 program-text
+    sufficiency reward`; the latter uses five levels from 0 to 1. The final
+    benchmark table reports image KScore components, not this training scalar.
+- section: `Evaluation Details / Reward Rubric`
+  evidence: formal KScore weights are faithfulness 0.1, visual correctness
+    0.4, text accuracy 0.4, and aesthetics 0.1; the paper says no-text rows are
+    renormalized over the other three dimensions.
+- section: `Main Results / Main Ablation`
+  evidence: GenEvolve with Qwen-Image-Edit reports F=0.5303, V=0.1338,
+    T=0.4907, A=0.6347, and KScore=0.3663. Raw Qwen-Image aesthetics is 0.6751,
+    so aggregate improvement does not establish aesthetics preservation.
+borrowed_idea: Preserve independent correctness and quality dimensions,
+  artifact/version provenance, explicit failed/missing denominators, and
+  stable visual references; compare shallow sibling candidates rather than
+  assuming deep edit chains preserve quality.
+local_adaptation: Gen-Retry keeps Geneval2 atom/GM semantics unchanged while
+  researching a separate quality-anchor and transition-quality audit. It must
+  not import KScore as a hidden reducer scalar or treat ground-truth-relative
+  aesthetics as directly available when no gold rendering exists.
+copy_code: no
+notes: GenEvolve does not contain edit-on-edit retry, mask execution, image
+  rollback, or an inference-time quality selector. Its README quickstart uses
+  Nano Banana Pro by default, so gallery quality is not evidence for the open
+  Qwen path. The no-text paper/code discrepancy is unresolved and any
+  reproduction must lock one explicit formula version. Detailed local
+  analysis: `docs/research/genevolve_evaluation_reference.md`.
+
+### Multi-Turn Image Editing Quality Degradation
+
+source_name: MagicBrush and FreqEdit multi-turn editing evidence
+magicbrush_paper: `MagicBrush: A Manually Annotated Dataset for Instruction-Guided Image Editing`
+magicbrush_arxiv_url: `https://arxiv.org/abs/2306.10012`
+magicbrush_version: v3
+freqedit_paper: `FreqEdit`
+freqedit_arxiv_url: `https://arxiv.org/abs/2512.01755`
+freqedit_version: v2
+freqedit_repository_url: `https://github.com/FreqEdit/FreqEdit`
+freqedit_repository_commit: `cf7f9857878004fd8d219b9489baccd96e1e31ac`
+freqedit_license: MIT
+accessed_date: `2026-08-02`
+evidence_type: paper-grounded and repository-grounded via `source_researcher`
+exact_paper_sections:
+- paper: MagicBrush
+  section: `Quantitative Evaluation / Mask-free Editing`
+  table: `tab:mask-free-quantitative`
+  evidence: all evaluated methods degrade in multi-turn editing because
+    iterative errors accumulate; the paper's source statement is in
+    `sections/5_Experiments.tex:27-39` and the table source is
+    `tables/mask-free-editing-v3.tex`.
+- paper: MagicBrush
+  section: `Human Evaluation / One-on-one Comparison`
+  table: `tab:he_comparative`
+  evidence: human consistency and image-quality gaps relative to the target
+    increase with editing turn; the source statement is in
+    `sections/5_Experiments.tex:92-101` and the table source is
+    `tables/human_eval_comparative.tex`.
+- paper: FreqEdit
+  section: `Method / Overview; Wavelet-based Feature Injection; Adaptive
+    Injection Strategy; Path Compensation; Quality Guidance for Noise
+    Suppression`
+  evidence: the method attributes multi-turn deformation, edge
+    over-sharpening, and texture collapse to accumulated high-frequency loss;
+    it injects reference high-frequency velocity with spatial adaptation and
+    path compensation and can use original-image velocity for late quality
+    guidance.
+- paper: FreqEdit
+  section: `Experiments / Implementation and Evaluation Setup; Results`
+  evidence: ten-turn Qwen and FLUX experiments report better preservation and
+    human preference, with an instruction-following trade-off that prevents
+    treating preservation as a free improvement.
+exact_repository_paths:
+- path: `src/pipelines/FreqEditQwen_pipeline.py:15-30,84-92,290-332`
+  evidence: the implementation subclasses the legacy
+    `QwenImageEditPipeline` and implements frequency injection and path
+    compensation controls.
+- path: `src/run_FreqEditQwen.py:13-16,25-32,43-67`
+  evidence: the released Qwen experiment loads `Qwen/Qwen-Image-Edit`, records
+    Qwen parameters, and executes a ten-turn edit loop.
+- path: `docs/parameters.md:3-19`
+  evidence: documents recommended FreqEdit parameter settings.
+borrowed_idea: Treat every source-output edit as a quality transition; retain
+  an original or source-free quality anchor; use frequency/detail proxies only
+  as monitoring signals; test shallow branching and backend-side preservation
+  under paired human-calibrated evaluation.
+local_adaptation: Gen-Retry should first implement an offline quality audit and
+  equal-budget shallow-branching experiment. FreqEdit is a separate adapter
+  research candidate, not a production dependency, because its released Qwen
+  implementation targets the older pipeline rather than 2511's
+  `QwenImageEditPlusPipeline`.
+copy_code: no
+notes: MagicBrush establishes the general multi-turn accumulation problem.
+  FreqEdit provides a mechanism hypothesis and mitigation direction, but does
+  not validate direct compatibility with the current Gen-Retry adapter.
 
 ### Meta Muse Image Agentic Generation Blog
 
@@ -594,12 +742,248 @@ notes: `atom_count != len(vqa_list)` for 554 of 800 official rows, so every
   selected record retains both fields. The 200 synthetic rows are training
   data and cannot be reported as an official Geneval2 benchmark result.
 
+### Gen-Searcher Agentic Search Paper
+
+source_id: `paper_gen_searcher_arxiv_2603_28767_v3`
+source_name: Gen-Searcher paper and local repository
+paper: `Gen-Searcher: Reinforcing Agentic Search for Image Generation`
+arxiv_url: `https://arxiv.org/abs/2603.28767v3`
+version: v3
+local_manifest: `references/papers/gen_searcher_2603.28767/manifest.json`
+local_pdf_sha256: `7d242893082ac9ee3fefd5ec2285759c4f9b78bb11b9711ebd97743405cb582a`
+repository_commit: `e5078d31859bafee6b6b610f0cd40095cc72e2a4`
+repository_license: no top-level license; inspected RL subtree is MIT and SFT
+  subtree is Apache-2.0, so copying still requires file/subtree verification
+accessed_date: `2026-08-02`
+evidence_type: paper-grounded and repository-grounded via `source_researcher`
+exact_sections:
+- section: `3.1 Agentic Search Trajectory`
+  evidence: the policy runs a real multi-turn trajectory of search/image tools
+    and receives tool observations before the next assistant decision.
+- section: `3.3 Training / Reward Design`
+  evidence: policy optimization leaves the image generator fixed and combines
+    image- and text-side reward rather than training the generator itself.
+- section: `4.1 Training Details`
+  evidence: overlong or repetitive rollout behavior is explicitly masked or
+    filtered during training.
+- section: `4.4 Ablations`
+  evidence: workflow, SFT, RL, and dual-reward contributions are separated.
+- section: `Appendix C Agent Prompt`
+  evidence: each round must contain one tool call or one final answer.
+exact_repository_paths:
+- path: `Gen-DeepResearch-RL/rllm/rllm/engine/agent_execution_engine.py`
+  evidence: environment steps and assistant responses are separated, but a
+    rollout retry gets a new application UUID rather than resuming canonical
+    state.
+- path: `Gen-DeepResearch-RL/rllm/rllm/trainer/agent_sft_trainer.py`
+  evidence: reward-threshold export can retain assistant reasoning/final text;
+    it is not equivalent to v3's executable-action-only positive targets.
+- path: `Gen-DeepResearch-RL/vision_deepresearch_async_workflow/gen_image_deepresearch_reward.py`
+  evidence: image generation and scoring are environment/reward-owned and
+    artifact-backed, but saved results lack content digests, model revisions,
+    semantic request IDs, and deterministic replay provenance.
+borrowed_idea: Preserve real tool interactions, separate observations from
+  action targets, keep the generator frozen/environment-owned, and persist
+  artifact references rather than image bytes in planner memory.
+local_adaptation: v3 replaces new-application retry and result-JSON recovery
+  with immutable events, semantic request IDs, profile locks, digests, and
+  deterministic replay. Search itself remains outside the image-retry scope.
+copy_code: no
+notes: The paper/repository supports agent/tool trajectory design, not v3's
+  historical Attempt branching, atom-level retry memory, or canonical resume.
+
+### GEMS Verifier, Memory, And Skill Design
+
+source_id: `paper_gems_arxiv_2603_28088_v1`
+source_name: GEMS paper
+paper: `GEMS: Agent-Native Multimodal Generation with Memory and Skills`
+arxiv_url: `https://arxiv.org/abs/2603.28088v1`
+version: v1
+local_manifest: `references/papers/gems_2603.28088/manifest.json`
+local_pdf_sha256: `e34c537c488e9b0f59bec630e7c6fada034311221a8ef8da59f9e083b1c7be3f`
+license: CC BY 4.0 in PDF metadata
+accessed_date: `2026-08-02`
+evidence_type: paper-grounded via `source_researcher`
+exact_sections:
+- section: `3.1 Verifier-Guided Iterative Generation`
+  evidence: task requirements are represented as atomic binary criteria; a
+    verifier vector evaluates candidates and historical best is retained.
+- section: `3.2 Experience Memory`
+  evidence: the agent conditions on prompt, image, verifier feedback, and
+    compressed experience derived from prior interactions.
+- section: `3.3 Skill Library`
+  evidence: the compact Skill manifest is always available while detailed
+    instructions are loaded only when selected.
+- section: `4.3 Memory Ablation`
+  evidence: images, verifier feedback, and compressed experiences are ablated
+    as distinct memory components.
+- section: `Appendix A.1 Agent Components`
+  evidence: Skill routing and refinement guidance explicitly include
+    preservation of already satisfied requirements.
+borrowed_idea: Verifier vectors, historical best, compact experience, and
+  manifest-plus-on-demand Skill loading are direct precedents that should be
+  acknowledged in Gen-Retry related work and ablations.
+local_adaptation: v3 makes evaluator facts environment-owned, stores immutable
+  events instead of LLM-compressed truth, uses deterministic compact views,
+  requires explicit edit lineage, and keeps tool observations/context separate
+  from action-only supervision.
+copy_code: no
+notes: GEMS memory may contain raw reasoning and depends on an LLM compressor.
+  It does not establish event-sourced replay, arbitrary historical-source
+  recovery, or Gen-Retry's harmful-history/recovery target policy.
+
+### Generation Navigator State-Conditioned Image Retry
+
+source_id: `paper_generation_navigator_arxiv_2605_17969_v1`
+source_name: Generation Navigator paper
+paper: `Generation Navigator: A State-Aware Agentic Framework for Image Generation`
+authors: Jinming Liu, Ruoyu Feng, Yuqi Wang, Wenjun Zeng, Xin Jin
+arxiv_url: `https://arxiv.org/abs/2605.17969v1`
+doi: `10.48550/arXiv.2605.17969`
+version: v1, submitted 2026-05-18
+local_manifest: `references/papers/generation_navigator_2605.17969/manifest.json`
+local_pdf_sha256: `76dfda0c86c2aba2e757275338c750e0dfb42eee8ef36cd30878a4b60c47e0f4`
+license: PDF metadata points to the arXiv non-exclusive distribution license;
+  the PDF is an ignored local cache and is not vendored in Git
+accessed_date: `2026-08-02`
+evidence_type: paper-grounded via `source_researcher` and local PDF inspection
+exact_sections:
+- section: `3.1 State-Conditioned Action Policy / Equations 1--3`
+  evidence: the navigator observes the original prompt plus the selected-path
+    action/image/reviewer history, emits `STOP`, `REFINE`, or `REGENERATE`, and
+    delivers the highest reviewer-scored candidate across the trajectory.
+- section: `3.2.1 Action Trajectory Construction`
+  evidence: branch-and-select exploration records state, structured action,
+    revised prompt, image, reviewer feedback, and subsequent scores rather
+    than training from prompt/image pairs alone.
+- section: `3.2.3 PRE-GRPO / Equations 5--8`
+  evidence: trajectory reward separates peak discovery, terminal retention,
+    normalized turn efficiency, and format correctness; it is a policy-level
+    credit-assignment objective, not an image-generator reward.
+- section: `Appendix B Pilot Study Details`
+  evidence: per-state execution of both candidate actions reports regenerate
+    wins in 47.01%, refine in 39.38%, and ties in 13.61%; neither fixed action
+    dominates on that paper's three-turn T2I-ReasonBench setup.
+- section: `Appendix C.3--C.4 Branch-and-select / Trajectory Filtering`
+  evidence: the explorer keeps a full candidate tree but conditions the
+    navigator only on the active selected path; SFT retains only trajectories
+    with best reviewer score above 4.5 and strictly monotonic score gains,
+    discarding plateauing and regressive branches.
+- section: `Appendix F Controlled Sampling-Budget Comparison`
+  evidence: one-shot, Best-of-3, prompt-enhanced Best-of-3, fixed workflows,
+    state-conditioned agents, and trained policies are compared to separate
+    sampling gains from action-policy gains.
+- section: `Appendix G Best-Score vs. Final-Score Selection`
+  evidence: best-score trajectory selection outperforms final-only selection
+    under both tested reward variants.
+- section: `Appendix L Human Evaluation`
+  evidence: eight annotators provide 320 pairwise annotations; the paper
+    reports about 70.3% reviewer/human agreement on decisive non-tie pairs,
+    supporting reviewer usefulness but not treating it as ground truth.
+- section: `Appendix M Limitations and Future Directions`
+  evidence: the paper identifies iterative inference latency and dependence on
+    an external reviewer as structural costs.
+borrowed_idea: Treat image retry as a state-conditioned action problem; report
+  historical peak retention, post-peak regression, attempts/turns to peak, and
+  equal-image-call baselines rather than only first-to-best improvement.
+local_adaptation: Gen-Retry keeps its atom-level Geneval2 facts, immutable
+  events, deterministic reducer, explicit historical `source_attempt_id`, and
+  explicit `submit_attempt`. Any PRE-style planner RL objective is future work
+  requiring a separate design/ADR and review after the v9 SFT freeze.
+copy_code: no
+notes: The paper is close enough that Gen-Retry must not claim first
+  state-aware edit/regenerate routing, first trajectory-best retention, or
+  first regression/turn-efficiency objective. Its online refine action uses
+  the current image, its SFT data remove non-monotonic branches, its reviewer
+  is scalar rather than atom-grounded, and the supplied v1 PDF exposes no
+  public code/data repository. It therefore does not establish event-sourced
+  canonical memory, arbitrary historical-source recovery, or harmful-context
+  recovery supervision.
+
+### LlamaFactory SFT Execution And Mask Semantics
+
+source_id: `llamafactory_v0_9_5_gen_retry_sft_adapter`
+source_name: LlamaFactory, Gen-Searcher SFT subtree, and GenEvolve SFT evidence
+upstream_repository: `https://github.com/hiyouga/LlamaFactory`
+upstream_tag: `v0.9.5`
+upstream_commit: `7af909522a951e3ad9f022ea6f88b6755257eaa5`
+upstream_license: Apache-2.0
+gen_searcher_commit: `e5078d31859bafee6b6b610f0cd40095cc72e2a4`
+gen_searcher_sft_license: Apache-2.0
+genevolve_commit: `23c847c559ccc0f95bbf4b3d8925898463822f4c`
+genevolve_license: Apache-2.0
+accessed_date: `2026-08-03`
+evidence_type: repository-grounded, paper-grounded, and official-doc-grounded
+  via `source_researcher`
+exact_repository_paths:
+- path: `/root/private_data/agentic_image/Gen-Searcher/Gen-DeepResearch-SFT/LLaMA-Factory/examples/train_full/gen_qwen3_sft.yaml:1-55`
+  evidence: executable Qwen3-VL-8B full-SFT baseline freezes the vision tower
+    and projector, uses ZeRO-3/bf16/FA2, cutoff 32768, two epochs, LR `1e-5`,
+    weight decay `1e-6`, cosine schedule, and warmup ratio `0.02`.
+- path: `/root/private_data/agentic_image/Gen-Searcher/Gen-DeepResearch-SFT/LLaMA-Factory/data/dataset_info.json:2-16`
+  evidence: the public training data are registered as ShareGPT/OpenAI
+    `messages + images` with system/user/assistant role/content tags.
+- path: `/root/private_data/agentic_image/Gen-Searcher/Gen-DeepResearch-SFT/LLaMA-Factory/src/llamafactory/data/processor/supervised.py:43-122`
+  evidence: prompt tokens are ignored when `train_on_prompt=false`, while
+    `mask_history=false` trains every assistant turn; Gen-Searcher's YAML does
+    not override the latter default.
+- path: `/root/private_data/agentic_image/Gen-Searcher/Gen-DeepResearch-SFT/LLaMA-Factory/src/llamafactory/data/mm_plugin.py:188-215`
+  evidence: image count must exactly match `<image>` placeholder count.
+- path: `/root/private_data/agentic_image/Gen-Searcher/Gen-DeepResearch-SFT/LLaMA-Factory/src/llamafactory/data/loader.py:362-370`
+  evidence: an existing `tokenized_path` is loaded while other data arguments
+    are ignored, so cache paths must be content/config addressed.
+- path: `/root/private_data/agentic_image/GenEvolve/README.md:334-410`
+  evidence: GenEvolve releases 9,000 `messages + images` SFT trajectories but
+    explicitly does not release its complete training script.
+official_upstream_paths:
+- url: `https://github.com/hiyouga/LlamaFactory/blob/v0.9.5/data/README.md`
+  evidence: official ShareGPT/OpenAI multimodal format requires the number of
+    images to equal the number of `<image>` tokens.
+- url: `https://github.com/hiyouga/LlamaFactory/blob/v0.9.5/examples/train_lora/qwen3vl_lora_sft.yaml`
+  evidence: official Qwen3-VL LoRA example uses `qwen3_vl_nothink`, batch size
+    one, and a multimodal dataset.
+exact_paper_sections:
+- paper: `GenEvolve`, Appendix C.1 Table 9
+  evidence: assistant reasoning/tool/final tokens are trained while user and
+    tool-response tokens are context; full-SFT hyperparameters match the
+    repository-grounded Gen-Searcher baseline on the main optimization tuple.
+- paper: `Generation Navigator`, Section 3.2 and Appendix C.4
+  evidence: 103K one-epoch state/action trajectories are reported, but the
+    training framework and optimizer details are absent and regressive or
+    plateau trajectories are filtered out.
+borrowed_idea: Use an isolated LlamaFactory environment, ShareGPT/OpenAI
+  `messages + images`, 32K Qwen3-VL context, frozen vision/projector for the
+  canonical full-SFT baseline, and exact image-placeholder validation.
+local_adaptation: Export one exact event-prefix PlannerContext and one
+  canonical action per record, set `train_on_prompt=false` and
+  `mask_history=true`, use `qwen3_vl_nothink`, validate real non-IGNORE labels,
+  keep provenance outside the training columns, bind targets to the source
+  policy/decisions/audit, copy images into a content-addressed dataset, and
+  prohibit formal execution of provisional data. A frozen launch additionally
+  requires a structured Gate 3 receipt and a complete tokenizer audit bound to
+  the exact dataset and runtime config.
+copy_code: no
+notes: Gen-Searcher and GenEvolve train assistant reasoning and tool-call text,
+  which is incompatible with Gen-Retry's canonical action-only target. Their
+  SFT data also contain observed multi-tool assistant turns despite textual
+  one-action rules, so current export performs schema validation rather than
+  trusting role alternation. The local LLaMA-Factory 0.9.5 image-only patches
+  are pre/post-SHA locked: `mm_plugin.py` changes
+  `9a7db6d36ac355b0cf4f8dca79408fa7c06c4b10f273405815b28079b53837dc`
+  to `0fbdc39f62277ae4caf321c2598496bcbe7163a4f128c2abd896a7f01156dff5`;
+  METADATA changes
+  `5625dc42b1fd381a11e2350439891caca3e5eb2a2096d58845579b27ed5bf886`
+  to `b2f04024c1fc87ec57e7d48019f80ffd49401a86a30e0046b50490fb8db8efd4`
+  by moving torchaudio to an audio extra. Audio still fails explicitly when
+  unavailable. No Action, memory, score, target selection, harmful/recovery,
+  or query-skill supervision rule changed.
+
 ## Prior Broad Notes
 
 | Source | Evidence | Borrowed idea | Not reused directly | Status |
 |---|---|---|---|---|
 | GenAgent paper | paper-grounded | Image observation and assistant action interleaving; environment image tokens are not agent targets | Free-form self-judge and prompt rewrite; no atom verifier | Keep as background only |
-| GEMS paper | paper-grounded | Compressed memory beats raw thought; skill/memory engineering | History-conditioned rewrite with high free-text ratio | Keep as background only |
+| GEMS paper | paper-grounded | Verifier vector, historical best, compressed experience, on-demand Skills | Raw reasoning/LLM compression as canonical truth | Promoted to formal entry above |
 | RS-Gen paper | paper-grounded | Generate-review-correct; generate/edit logical actions | Training-free prompted workflow; no public trainable message schema | Keep as background only |
 | Codex AGENTS.md official docs | official-doc-grounded | Root `AGENTS.md` project instruction hierarchy | Do not stuff all docs into AGENTS.md | verified 2026-07-14 |
 | Codex Subagents official docs | official-doc-grounded | Project subagents can be configured | Exact model IDs remain local config | verified 2026-07-14 |

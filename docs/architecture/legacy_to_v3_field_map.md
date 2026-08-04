@@ -1,5 +1,9 @@
 # Legacy To v3 Field Map
 
+> Historical Phase 0 migration map. Later accepted ADRs supersede backend and
+> version details in this file; current execution uses
+> `qwen_dual_backend@1` under ADR-0006.
+
 This map is evidence for Phase 1 protocol work. It is not a runtime compatibility
 layer and does not authorize imports from the legacy repository.
 
@@ -54,4 +58,4 @@ layer and does not authorize imports from the legacy repository.
 | Separate `rewrite_prompt` / `retry_replan` action surface | Conflicts with v3 fixed action set. |
 | Mutable episode JSON as source of truth | Conflicts with event-sourced memory invariant. |
 | Raw assistant messages in saved trajectories | Conflicts with v3 memory and SFT target policy. |
-| Legacy Qwen generator/regenerator split | v3 backend is only `QianwenImageEditAdapter` with logical `generate` and `edit`. |
+| Legacy Qwen generator/regenerator split | Retire the legacy action/backend coupling. Current ADR-0006 routing is `generate_image -> Qwen-Image-2512` and `edit_image -> Qwen-Image-Edit-2511`, while backend fields remain outside the Action. |

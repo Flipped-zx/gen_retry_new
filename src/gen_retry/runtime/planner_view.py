@@ -31,7 +31,10 @@ DEFAULT_SKILL_MANIFEST = [
     {
         "skill_id": "action_pose_relation",
         "version": SKILL_VERSIONS["action_pose_relation"],
-        "description": "Pose, orientation, contact, and motion evidence for verb relations.",
+        "description": (
+            "Targeted verb topology and verb-pass preservation after an evaluated "
+            "verb failure or uncertainty; not an initial-generation prefix."
+        ),
     },
     {
         "skill_id": "object_identity_presence",

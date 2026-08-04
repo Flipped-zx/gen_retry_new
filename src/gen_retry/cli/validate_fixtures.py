@@ -17,6 +17,7 @@ FIXTURE_SCHEMA_MAP = {
     "tests/fixtures/actions": "action_protocol_v0_5.schema.json",
     "tests/fixtures/events": "episode_event_v0_2.schema.json",
     "tests/fixtures/planner_views": "planner_view_v0_2.schema.json",
+    "tests/fixtures/planner_contexts": "planner_context_v0_7.schema.json",
     "tests/fixtures/artifacts": "artifact_manifest_v0_2.schema.json",
 }
 

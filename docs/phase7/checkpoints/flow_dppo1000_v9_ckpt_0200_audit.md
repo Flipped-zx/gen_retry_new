@@ -1,0 +1,301 @@
+# Flow-DPPO Rollout Validation
+
+- Status: **PASS**
+- Validated episodes: 200/200
+- PlannerContext versions: {'0.7': 200}
+- Score policies: {'geneval2_pass_count_then_gm@1': 200}
+- Execution profiles: {'qwen_dual_backend@1': 200}
+- Image backends: {'qianwen_image_edit': 434, 'qwen_image': 231}
+- Difficulty mix: {'easy': 75, 'hard': 50, 'medium': 75}
+- Evaluated image attempts: 665
+- Aggregate first Agent attempt atom pass rate: 1124/1397 (80.5%)
+- Aggregate submitted reducer-best atom pass rate: 1279/1397 (91.6%)
+- Net submitted-over-first atom gain: +155
+- Geneval2 Soft-TIFA AM, first Agent attempts: 80.90
+- Geneval2 Soft-TIFA AM, submitted reducer-best attempts: 91.02 (+10.12)
+- Geneval2 Soft-TIFA GM, first Agent attempts: 38.86
+- Geneval2 Soft-TIFA GM, submitted reducer-best attempts: 72.40 (+33.54)
+- Geneval2 Soft-TIFA GM, per-trajectory peak attempts: 73.87 (+35.01)
+- Submitted-to-peak GM gap: 1.47
+- Episodes with all atoms passed: 120/200
+- Historical-best submissions: 55/200
+- Regression exposure: 66/200 episodes, 128 image actions
+- Ineffective image actions: 107
+- Historical edit branches: 123
+- Canonical action counts: {'edit_image': 434, 'generate_image': 231, 'query_skill': 214, 'submit_attempt': 200}
+- Action/backend counts: {'edit_image|qianwen_image_edit': 434, 'generate_image|qwen_image': 231}
+- Scheduler profiles: 3 recorded launches
+- Teacher model IDs: ['gpt-5.5']
+- Rejected raw Teacher turns: 13 total (13 pass the current runtime contract; 0 remain protocol/reference-invalid; 13 contract-passing image actions carry advisory linter flags).
+- Credential-like text in audited outputs: 0 files
+
+## Score Semantics
+
+For each image, Geneval2 Soft-TIFA derives AM and GM from the VQA correct-answer probabilities:
+
+```text
+image_AM = mean(atom_probability)
+image_GM = exp(mean(log(max(atom_probability, 1e-300))))
+batch_AM = 100 * mean(image_AM)
+batch_GM = 100 * mean(image_GM)
+```
+
+AM is the atom-level continuous score; GM is the prompt-level score and the primary Flow-DPPO reporting metric. Both differ from thresholded atom pass rate. Gen-Retry selects best by passed-atom count, then higher Soft-TIFA GM, then the earlier Attempt. A trajectory's submitted GM can still be lower than its peak GM when the peak-GM image passes fewer atoms.
+
+PlannerContext v0.6 exposed the environment-owned GM scalar for latest/best plus source-aware GM deltas. The Planner did not see raw confidence vectors or AM; it saw GM together with normalized atom statuses and observed answers.
+
+When the fifth image both exhausts the image budget and reaches all constraints, runtime control requires the terminal reason `best_available_under_budget`. The episode still counts as all-pass; the reason records why submission became mandatory, not the quality of the selected image.
+
+These are actual Soft-TIFA AM/GM scores recomputed from the persisted local Qwen3-VL correct-answer probabilities. They are not official leaderboard scores: this batch uses Flow-DPPO training prompts, profile-routed local image generation at 1024 x 1024, and one trajectory-selected image per prompt rather than the official 800-prompt benchmark generation protocol.
+
+## Difficulty Policy
+
+The tiers are a deterministic local grouping over committed Flow-DPPO training metadata, scaled from the official Geneval2 atom-count distribution. They are not official Geneval2 difficulty labels and do not use post-hoc image outcomes:
+
+- **Hard:** source `atom_count` 9-10.
+- **Medium:** source `atom_count` 6-8.
+- **Easy:** source `atom_count` 3-5.
+- This batch mix: {'easy': 75, 'hard': 50, 'medium': 75}.
+
+Within each tier, ranking rewards more metadata atoms, actual VQAs, distinct skill types, verb/position atoms, high-count atoms, new relation types, and new entities; repeated entity families are penalized. The actual VQA count is used because 6,007/20,000 source rows have `atom_count != len(vqa_list)`.
+
+## Episode Results
+
+| Episode | Tier | Attempts | First atoms | First AM | First GM | Submitted atoms | Submitted AM | Submitted GM | Peak GM | Atom gain |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `phase3_ep_001` | easy | 4 | 3/4 | 75.00 | 7.96 | 4/4 (`a_003`) | 99.87 | 99.87 | 99.87 (`a_003`) | +1 |
+| `phase3_ep_002` | easy | 4 | 3/4 | 75.00 | 0.71 | 4/4 (`a_003`) | 100.00 | 100.00 | 100.00 (`a_003`) | +1 |
+| `phase3_ep_003` | easy | 5 | 6/7 | 84.93 | 11.25 | 6/7 (`a_001`) | 89.76 | 83.53 | 83.53 (`a_001`) | +0 |
+| `phase3_ep_004` | medium | 5 | 7/8 | 87.50 | 41.70 | 7/8 (`a_002`) | 93.11 | 90.47 | 90.47 (`a_002`) | +0 |
+| `phase3_ep_005` | medium | 5 | 8/9 | 88.70 | 22.58 | 8/9 (`a_002`) | 93.57 | 91.04 | 91.04 (`a_002`) | +0 |
+| `phase3_ep_006` | medium | 2 | 9/10 | 88.47 | 47.48 | 10/10 (`a_001`) | 95.76 | 94.95 | 94.95 (`a_001`) | +1 |
+| `phase3_ep_007` | hard | 3 | 5/10 | 50.20 | 1.47 | 10/10 (`a_002`) | 99.82 | 99.82 | 99.82 (`a_002`) | +5 |
+| `phase3_ep_008` | hard | 5 | 8/10 | 79.13 | 10.46 | 8/10 (`a_003`) | 79.13 | 14.47 | 14.47 (`a_003`) | +0 |
+| `phase3_ep_009` | easy | 1 | 4/4 | 99.98 | 99.98 | 4/4 (`a_000`) | 99.98 | 99.98 | 99.98 (`a_000`) | +0 |
+| `phase3_ep_010` | easy | 1 | 4/4 | 100.00 | 100.00 | 4/4 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_011` | easy | 2 | 5/6 | 83.33 | 14.71 | 6/6 (`a_001`) | 99.89 | 99.89 | 99.89 (`a_001`) | +1 |
+| `phase3_ep_012` | medium | 5 | 5/6 | 77.17 | 3.12 | 5/6 (`a_000`) | 77.17 | 3.12 | 3.12 (`a_000`) | +0 |
+| `phase3_ep_013` | medium | 5 | 7/8 | 87.50 | 19.71 | 7/8 (`a_000`) | 87.50 | 19.71 | 19.71 (`a_000`) | +0 |
+| `phase3_ep_014` | medium | 2 | 5/8 | 63.57 | 20.47 | 8/8 (`a_001`) | 93.89 | 93.53 | 93.53 (`a_001`) | +3 |
+| `phase3_ep_015` | hard | 5 | 8/10 | 80.85 | 52.31 | 9/10 (`a_003`) | 87.30 | 15.70 | 52.31 (`a_000`) | +1 |
+| `phase3_ep_016` | hard | 2 | 9/10 | 90.58 | 88.04 | 10/10 (`a_001`) | 96.18 | 95.32 | 95.32 (`a_001`) | +1 |
+| `phase3_ep_017` | easy | 1 | 4/4 | 98.60 | 98.58 | 4/4 (`a_000`) | 98.60 | 98.58 | 98.58 (`a_000`) | +0 |
+| `phase3_ep_018` | easy | 1 | 4/4 | 100.00 | 100.00 | 4/4 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_019` | easy | 2 | 5/6 | 86.93 | 77.44 | 6/6 (`a_001`) | 97.77 | 97.64 | 97.64 (`a_001`) | +1 |
+| `phase3_ep_020` | medium | 5 | 4/6 | 65.13 | 10.33 | 5/6 (`a_004`) | 82.26 | 61.18 | 61.18 (`a_004`) | +1 |
+| `phase3_ep_021` | medium | 5 | 6/8 | 76.92 | 10.42 | 6/8 (`a_004`) | 75.24 | 14.47 | 14.47 (`a_004`) | +0 |
+| `phase3_ep_022` | medium | 5 | 6/8 | 72.73 | 11.37 | 7/8 (`a_001`) | 87.42 | 25.74 | 25.74 (`a_001`) | +1 |
+| `phase3_ep_023` | hard | 5 | 7/10 | 70.00 | 3.16 | 8/10 (`a_004`) | 80.01 | 36.86 | 36.86 (`a_004`) | +1 |
+| `phase3_ep_024` | hard | 5 | 7/10 | 66.68 | 7.72 | 7/10 (`a_004`) | 71.04 | 31.55 | 31.55 (`a_004`) | +0 |
+| `phase3_ep_025` | easy | 1 | 4/4 | 100.00 | 100.00 | 4/4 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_026` | easy | 3 | 3/4 | 74.80 | 23.03 | 4/4 (`a_002`) | 91.22 | 90.13 | 90.13 (`a_002`) | +1 |
+| `phase3_ep_027` | easy | 3 | 5/6 | 83.33 | 18.28 | 6/6 (`a_002`) | 99.99 | 99.99 | 99.99 (`a_002`) | +1 |
+| `phase3_ep_028` | medium | 1 | 6/6 | 99.83 | 99.83 | 6/6 (`a_000`) | 99.83 | 99.83 | 99.83 (`a_000`) | +0 |
+| `phase3_ep_029` | medium | 5 | 6/8 | 75.00 | 1.26 | 7/8 (`a_002`) | 87.49 | 32.14 | 32.14 (`a_002`) | +1 |
+| `phase3_ep_030` | medium | 5 | 7/9 | 77.79 | 14.72 | 7/9 (`a_004`) | 77.99 | 32.62 | 32.62 (`a_004`) | +0 |
+| `phase3_ep_031` | hard | 3 | 7/9 | 77.07 | 4.16 | 9/9 (`a_002`) | 98.15 | 98.07 | 98.07 (`a_002`) | +2 |
+| `phase3_ep_032` | hard | 5 | 6/10 | 58.18 | 0.84 | 9/10 (`a_004`) | 88.83 | 70.71 | 70.71 (`a_004`) | +3 |
+| `phase3_ep_033` | easy | 1 | 4/4 | 90.13 | 88.44 | 4/4 (`a_000`) | 90.13 | 88.44 | 88.44 (`a_000`) | +0 |
+| `phase3_ep_034` | easy | 4 | 2/4 | 59.71 | 13.68 | 4/4 (`a_003`) | 99.55 | 99.54 | 99.54 (`a_003`) | +2 |
+| `phase3_ep_035` | easy | 4 | 4/6 | 66.67 | 1.33 | 6/6 (`a_003`) | 100.00 | 100.00 | 100.00 (`a_003`) | +2 |
+| `phase3_ep_036` | medium | 4 | 5/6 | 88.47 | 82.53 | 6/6 (`a_003`) | 95.37 | 94.75 | 94.75 (`a_003`) | +1 |
+| `phase3_ep_037` | medium | 2 | 7/8 | 87.50 | 19.09 | 8/8 (`a_001`) | 100.00 | 100.00 | 100.00 (`a_001`) | +1 |
+| `phase3_ep_038` | medium | 1 | 9/9 | 99.87 | 99.87 | 9/9 (`a_000`) | 99.87 | 99.87 | 99.87 (`a_000`) | +0 |
+| `phase3_ep_039` | hard | 5 | 6/9 | 67.99 | 1.99 | 7/9 (`a_004`) | 77.27 | 49.06 | 49.06 (`a_004`) | +1 |
+| `phase3_ep_040` | hard | 4 | 7/10 | 70.13 | 7.25 | 10/10 (`a_003`) | 95.99 | 95.71 | 95.71 (`a_003`) | +3 |
+| `phase3_ep_041` | easy | 5 | 3/4 | 70.58 | 7.45 | 3/4 (`a_004`) | 86.07 | 81.60 | 81.60 (`a_004`) | +0 |
+| `phase3_ep_042` | easy | 2 | 4/5 | 73.23 | 8.78 | 5/5 (`a_001`) | 91.22 | 89.09 | 89.09 (`a_001`) | +1 |
+| `phase3_ep_043` | easy | 1 | 6/6 | 95.90 | 95.40 | 6/6 (`a_000`) | 95.90 | 95.40 | 95.40 (`a_000`) | +0 |
+| `phase3_ep_044` | medium | 2 | 5/6 | 83.48 | 45.24 | 6/6 (`a_001`) | 100.00 | 100.00 | 100.00 (`a_001`) | +1 |
+| `phase3_ep_045` | medium | 2 | 6/7 | 85.69 | 7.52 | 7/7 (`a_001`) | 94.51 | 93.37 | 93.37 (`a_001`) | +1 |
+| `phase3_ep_046` | medium | 5 | 6/8 | 74.62 | 0.88 | 7/8 (`a_002`) | 86.95 | 8.59 | 8.59 (`a_002`) | +1 |
+| `phase3_ep_047` | hard | 5 | 7/9 | 78.05 | 7.51 | 8/9 (`a_004`) | 88.87 | 45.93 | 45.93 (`a_004`) | +1 |
+| `phase3_ep_048` | hard | 2 | 9/10 | 89.34 | 51.84 | 10/10 (`a_001`) | 99.30 | 99.28 | 99.28 (`a_001`) | +1 |
+| `phase3_ep_049` | easy | 1 | 4/4 | 100.00 | 100.00 | 4/4 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_050` | easy | 4 | 3/4 | 75.00 | 9.90 | 4/4 (`a_003`) | 94.43 | 93.90 | 93.90 (`a_003`) | +1 |
+| `phase3_ep_051` | easy | 5 | 3/5 | 59.99 | 2.76 | 4/5 (`a_001`) | 71.59 | 28.82 | 28.82 (`a_001`) | +1 |
+| `phase3_ep_052` | medium | 4 | 5/6 | 80.85 | 42.24 | 6/6 (`a_003`) | 89.10 | 87.52 | 87.52 (`a_003`) | +1 |
+| `phase3_ep_053` | medium | 2 | 6/7 | 87.10 | 72.04 | 7/7 (`a_001`) | 99.99 | 99.99 | 99.99 (`a_001`) | +1 |
+| `phase3_ep_054` | medium | 5 | 7/8 | 93.02 | 90.32 | 7/8 (`a_000`) | 93.02 | 90.32 | 90.32 (`a_000`) | +0 |
+| `phase3_ep_055` | hard | 5 | 7/9 | 77.76 | 2.48 | 7/9 (`a_004`) | 77.66 | 8.28 | 8.28 (`a_004`) | +0 |
+| `phase3_ep_056` | hard | 4 | 8/10 | 83.28 | 52.92 | 10/10 (`a_003`) | 99.96 | 99.96 | 99.96 (`a_003`) | +2 |
+| `phase3_ep_057` | easy | 1 | 4/4 | 100.00 | 100.00 | 4/4 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_058` | easy | 3 | 3/4 | 74.66 | 1.15 | 4/4 (`a_002`) | 99.63 | 99.63 | 99.63 (`a_002`) | +1 |
+| `phase3_ep_059` | easy | 5 | 5/6 | 83.79 | 55.54 | 5/6 (`a_001`) | 83.83 | 55.69 | 55.69 (`a_001`) | +0 |
+| `phase3_ep_060` | medium | 5 | 6/8 | 74.93 | 10.20 | 7/8 (`a_004`) | 87.73 | 66.15 | 66.15 (`a_004`) | +1 |
+| `phase3_ep_061` | medium | 5 | 5/7 | 69.10 | 6.66 | 5/7 (`a_000`) | 69.10 | 6.66 | 6.66 (`a_000`) | +0 |
+| `phase3_ep_062` | medium | 3 | 7/8 | 84.13 | 8.94 | 8/8 (`a_002`) | 99.85 | 99.85 | 99.85 (`a_002`) | +1 |
+| `phase3_ep_063` | hard | 5 | 8/10 | 77.50 | 0.87 | 9/10 (`a_003`) | 89.55 | 10.90 | 74.46 (`a_004`) | +1 |
+| `phase3_ep_064` | hard | 5 | 8/10 | 81.45 | 17.99 | 9/10 (`a_003`) | 88.45 | 14.98 | 17.99 (`a_000`) | +1 |
+| `phase3_ep_065` | easy | 1 | 4/4 | 98.18 | 98.12 | 4/4 (`a_000`) | 98.18 | 98.12 | 98.12 (`a_000`) | +0 |
+| `phase3_ep_066` | easy | 1 | 4/4 | 99.77 | 99.77 | 4/4 (`a_000`) | 99.77 | 99.77 | 99.77 (`a_000`) | +0 |
+| `phase3_ep_067` | easy | 1 | 6/6 | 99.99 | 99.99 | 6/6 (`a_000`) | 99.99 | 99.99 | 99.99 (`a_000`) | +0 |
+| `phase3_ep_068` | medium | 5 | 5/6 | 83.56 | 49.18 | 6/6 (`a_004`) | 99.99 | 99.99 | 99.99 (`a_004`) | +1 |
+| `phase3_ep_069` | medium | 2 | 7/8 | 87.50 | 5.82 | 8/8 (`a_001`) | 99.96 | 99.96 | 99.96 (`a_001`) | +1 |
+| `phase3_ep_070` | medium | 5 | 4/8 | 57.93 | 20.00 | 5/8 (`a_004`) | 64.64 | 21.66 | 21.66 (`a_004`) | +1 |
+| `phase3_ep_071` | hard | 5 | 9/10 | 89.96 | 16.53 | 9/10 (`a_004`) | 90.93 | 79.03 | 79.03 (`a_004`) | +0 |
+| `phase3_ep_072` | hard | 5 | 8/10 | 80.02 | 5.89 | 9/10 (`a_002`) | 89.54 | 27.81 | 27.81 (`a_002`) | +1 |
+| `phase3_ep_073` | easy | 2 | 3/4 | 74.90 | 1.11 | 4/4 (`a_001`) | 99.55 | 99.55 | 99.55 (`a_001`) | +1 |
+| `phase3_ep_074` | easy | 4 | 2/4 | 50.29 | 0.53 | 4/4 (`a_003`) | 99.78 | 99.78 | 99.78 (`a_003`) | +2 |
+| `phase3_ep_075` | easy | 5 | 4/6 | 68.16 | 5.77 | 5/6 (`a_003`) | 73.78 | 13.66 | 16.75 (`a_001`) | +1 |
+| `phase3_ep_076` | medium | 3 | 4/6 | 66.81 | 1.43 | 6/6 (`a_002`) | 92.66 | 91.79 | 91.79 (`a_002`) | +2 |
+| `phase3_ep_077` | medium | 3 | 6/8 | 79.69 | 3.77 | 8/8 (`a_002`) | 99.20 | 99.18 | 99.18 (`a_002`) | +2 |
+| `phase3_ep_078` | medium | 5 | 5/8 | 62.50 | 0.16 | 5/8 (`a_003`) | 62.55 | 0.96 | 0.96 (`a_003`) | +0 |
+| `phase3_ep_079` | hard | 5 | 7/10 | 70.14 | 3.01 | 9/10 (`a_003`) | 89.87 | 63.54 | 63.54 (`a_003`) | +2 |
+| `phase3_ep_080` | hard | 5 | 6/10 | 57.54 | 1.09 | 7/10 (`a_004`) | 69.67 | 2.25 | 2.25 (`a_004`) | +1 |
+| `phase3_ep_081` | easy | 1 | 4/4 | 99.99 | 99.99 | 4/4 (`a_000`) | 99.99 | 99.99 | 99.99 (`a_000`) | +0 |
+| `phase3_ep_082` | easy | 1 | 4/4 | 99.94 | 99.94 | 4/4 (`a_000`) | 99.94 | 99.94 | 99.94 (`a_000`) | +0 |
+| `phase3_ep_083` | easy | 1 | 6/6 | 99.99 | 99.99 | 6/6 (`a_000`) | 99.99 | 99.99 | 99.99 (`a_000`) | +0 |
+| `phase3_ep_084` | medium | 1 | 6/6 | 100.00 | 100.00 | 6/6 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_085` | medium | 1 | 8/8 | 99.77 | 99.77 | 8/8 (`a_000`) | 99.77 | 99.77 | 99.77 (`a_000`) | +0 |
+| `phase3_ep_086` | medium | 5 | 7/9 | 78.41 | 27.24 | 7/9 (`a_002`) | 79.06 | 41.78 | 41.78 (`a_002`) | +0 |
+| `phase3_ep_087` | hard | 5 | 7/9 | 77.78 | 0.46 | 7/9 (`a_002`) | 77.75 | 0.78 | 0.78 (`a_002`) | +0 |
+| `phase3_ep_088` | hard | 5 | 7/10 | 63.29 | 17.14 | 7/10 (`a_000`) | 63.29 | 17.14 | 21.94 (`a_002`) | +0 |
+| `phase3_ep_089` | easy | 1 | 4/4 | 94.02 | 93.40 | 4/4 (`a_000`) | 94.02 | 93.40 | 93.40 (`a_000`) | +0 |
+| `phase3_ep_090` | easy | 2 | 3/4 | 75.00 | 0.47 | 4/4 (`a_001`) | 100.00 | 100.00 | 100.00 (`a_001`) | +1 |
+| `phase3_ep_091` | easy | 2 | 5/6 | 83.33 | 2.23 | 6/6 (`a_001`) | 99.42 | 99.41 | 99.41 (`a_001`) | +1 |
+| `phase3_ep_092` | medium | 4 | 4/6 | 66.70 | 2.67 | 6/6 (`a_003`) | 99.33 | 99.32 | 99.32 (`a_003`) | +2 |
+| `phase3_ep_093` | medium | 5 | 5/8 | 71.55 | 34.11 | 7/8 (`a_004`) | 87.60 | 83.66 | 83.66 (`a_004`) | +2 |
+| `phase3_ep_094` | medium | 2 | 7/9 | 78.43 | 39.24 | 9/9 (`a_001`) | 91.23 | 89.56 | 89.56 (`a_001`) | +2 |
+| `phase3_ep_095` | hard | 5 | 8/9 | 88.89 | 9.48 | 8/9 (`a_001`) | 88.89 | 20.84 | 20.84 (`a_001`) | +0 |
+| `phase3_ep_096` | hard | 5 | 6/10 | 64.42 | 7.65 | 7/10 (`a_004`) | 66.84 | 3.35 | 7.65 (`a_000`) | +1 |
+| `phase3_ep_097` | easy | 1 | 4/4 | 97.44 | 97.36 | 4/4 (`a_000`) | 97.44 | 97.36 | 97.36 (`a_000`) | +0 |
+| `phase3_ep_098` | easy | 5 | 4/5 | 80.00 | 18.03 | 5/5 (`a_004`) | 97.03 | 96.84 | 96.84 (`a_004`) | +1 |
+| `phase3_ep_099` | easy | 5 | 5/6 | 83.33 | 11.80 | 5/6 (`a_004`) | 86.91 | 77.77 | 77.77 (`a_004`) | +0 |
+| `phase3_ep_100` | medium | 1 | 6/6 | 100.00 | 100.00 | 6/6 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_101` | medium | 4 | 6/7 | 91.97 | 88.87 | 7/7 (`a_003`) | 97.88 | 97.73 | 97.73 (`a_003`) | +1 |
+| `phase3_ep_102` | medium | 4 | 6/8 | 77.27 | 12.87 | 8/8 (`a_003`) | 96.52 | 96.04 | 96.04 (`a_003`) | +2 |
+| `phase3_ep_103` | hard | 3 | 8/9 | 88.90 | 70.90 | 9/9 (`a_002`) | 96.37 | 95.73 | 95.73 (`a_002`) | +1 |
+| `phase3_ep_104` | hard | 5 | 9/10 | 88.50 | 11.75 | 10/10 (`a_004`) | 97.08 | 96.70 | 96.70 (`a_004`) | +1 |
+| `phase3_ep_105` | easy | 1 | 4/4 | 99.92 | 99.92 | 4/4 (`a_000`) | 99.92 | 99.92 | 99.92 (`a_000`) | +0 |
+| `phase3_ep_106` | easy | 5 | 3/4 | 66.93 | 7.47 | 3/4 (`a_002`) | 65.45 | 43.03 | 43.03 (`a_002`) | +0 |
+| `phase3_ep_107` | easy | 5 | 2/5 | 41.08 | 0.32 | 3/5 (`a_002`) | 61.57 | 50.37 | 50.37 (`a_002`) | +1 |
+| `phase3_ep_108` | medium | 5 | 4/6 | 64.71 | 0.70 | 5/6 (`a_004`) | 80.96 | 42.95 | 42.95 (`a_004`) | +1 |
+| `phase3_ep_109` | medium | 1 | 7/7 | 94.48 | 93.33 | 7/7 (`a_000`) | 94.48 | 93.33 | 93.33 (`a_000`) | +0 |
+| `phase3_ep_110` | medium | 5 | 7/8 | 82.92 | 69.16 | 8/8 (`a_004`) | 95.09 | 94.07 | 94.07 (`a_004`) | +1 |
+| `phase3_ep_111` | hard | 5 | 6/9 | 66.65 | 2.27 | 7/9 (`a_002`) | 67.68 | 24.29 | 24.29 (`a_002`) | +1 |
+| `phase3_ep_112` | hard | 5 | 9/10 | 92.19 | 86.02 | 9/10 (`a_003`) | 93.21 | 89.25 | 89.25 (`a_003`) | +0 |
+| `phase3_ep_113` | easy | 5 | 3/4 | 74.71 | 6.95 | 3/4 (`a_003`) | 73.88 | 67.41 | 67.41 (`a_003`) | +0 |
+| `phase3_ep_114` | easy | 5 | 0/4 | 8.16 | 0.15 | 3/4 (`a_004`) | 72.56 | 0.80 | 0.80 (`a_004`) | +3 |
+| `phase3_ep_115` | easy | 1 | 6/6 | 100.00 | 100.00 | 6/6 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_116` | medium | 5 | 7/8 | 87.50 | 5.07 | 7/8 (`a_004`) | 87.48 | 9.50 | 9.50 (`a_004`) | +0 |
+| `phase3_ep_117` | medium | 3 | 4/7 | 60.91 | 0.30 | 7/7 (`a_002`) | 98.23 | 98.14 | 98.14 (`a_002`) | +3 |
+| `phase3_ep_118` | medium | 5 | 7/8 | 81.30 | 8.95 | 7/8 (`a_002`) | 81.29 | 16.79 | 42.30 (`a_004`) | +0 |
+| `phase3_ep_119` | hard | 1 | 10/10 | 98.17 | 98.00 | 10/10 (`a_000`) | 98.17 | 98.00 | 98.00 (`a_000`) | +0 |
+| `phase3_ep_120` | hard | 5 | 6/10 | 60.11 | 2.09 | 8/10 (`a_002`) | 74.88 | 18.33 | 18.33 (`a_002`) | +2 |
+| `phase3_ep_121` | easy | 1 | 4/4 | 96.99 | 96.84 | 4/4 (`a_000`) | 96.99 | 96.84 | 96.84 (`a_000`) | +0 |
+| `phase3_ep_122` | easy | 2 | 3/4 | 75.00 | 2.68 | 4/4 (`a_001`) | 100.00 | 100.00 | 100.00 (`a_001`) | +1 |
+| `phase3_ep_123` | easy | 2 | 5/6 | 85.84 | 72.94 | 6/6 (`a_001`) | 100.00 | 100.00 | 100.00 (`a_001`) | +1 |
+| `phase3_ep_124` | medium | 2 | 5/6 | 80.29 | 15.14 | 6/6 (`a_001`) | 97.94 | 97.90 | 97.90 (`a_001`) | +1 |
+| `phase3_ep_125` | medium | 5 | 6/8 | 70.77 | 6.44 | 6/8 (`a_001`) | 74.21 | 15.14 | 15.14 (`a_001`) | +0 |
+| `phase3_ep_126` | medium | 1 | 8/8 | 100.00 | 100.00 | 8/8 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_127` | hard | 3 | 9/10 | 89.33 | 47.75 | 10/10 (`a_002`) | 99.89 | 99.89 | 99.89 (`a_002`) | +1 |
+| `phase3_ep_128` | hard | 5 | 8/10 | 79.98 | 3.78 | 8/10 (`a_002`) | 79.99 | 5.20 | 5.20 (`a_002`) | +0 |
+| `phase3_ep_129` | easy | 1 | 4/4 | 99.97 | 99.97 | 4/4 (`a_000`) | 99.97 | 99.97 | 99.97 (`a_000`) | +0 |
+| `phase3_ep_130` | easy | 5 | 1/4 | 31.75 | 0.33 | 2/4 (`a_002`) | 44.56 | 0.79 | 0.79 (`a_002`) | +1 |
+| `phase3_ep_131` | easy | 5 | 4/6 | 66.71 | 3.00 | 6/6 (`a_004`) | 99.95 | 99.95 | 99.95 (`a_004`) | +2 |
+| `phase3_ep_132` | medium | 1 | 6/6 | 98.76 | 98.74 | 6/6 (`a_000`) | 98.76 | 98.74 | 98.74 (`a_000`) | +0 |
+| `phase3_ep_133` | medium | 5 | 7/8 | 87.47 | 10.06 | 7/8 (`a_001`) | 87.49 | 12.52 | 12.52 (`a_001`) | +0 |
+| `phase3_ep_134` | medium | 5 | 3/8 | 31.26 | 0.01 | 6/8 (`a_001`) | 76.27 | 20.68 | 20.68 (`a_001`) | +3 |
+| `phase3_ep_135` | hard | 3 | 7/10 | 74.59 | 26.30 | 10/10 (`a_002`) | 95.32 | 94.10 | 94.10 (`a_002`) | +3 |
+| `phase3_ep_136` | hard | 5 | 8/10 | 77.95 | 10.67 | 9/10 (`a_004`) | 94.72 | 93.03 | 93.03 (`a_004`) | +1 |
+| `phase3_ep_137` | easy | 1 | 4/4 | 100.00 | 100.00 | 4/4 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_138` | easy | 1 | 4/4 | 100.00 | 100.00 | 4/4 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_139` | easy | 3 | 5/6 | 77.09 | 62.71 | 6/6 (`a_002`) | 98.68 | 98.64 | 98.64 (`a_002`) | +1 |
+| `phase3_ep_140` | medium | 5 | 5/6 | 83.33 | 17.82 | 6/6 (`a_004`) | 99.56 | 99.56 | 99.56 (`a_004`) | +1 |
+| `phase3_ep_141` | medium | 2 | 7/8 | 82.82 | 45.48 | 8/8 (`a_001`) | 94.21 | 92.76 | 92.76 (`a_001`) | +1 |
+| `phase3_ep_142` | medium | 5 | 7/8 | 87.38 | 60.03 | 7/8 (`a_004`) | 90.09 | 86.52 | 86.52 (`a_004`) | +0 |
+| `phase3_ep_143` | hard | 2 | 9/10 | 87.92 | 65.41 | 10/10 (`a_001`) | 98.02 | 97.82 | 97.82 (`a_001`) | +1 |
+| `phase3_ep_144` | hard | 5 | 8/10 | 79.80 | 10.25 | 8/10 (`a_003`) | 80.47 | 15.07 | 15.07 (`a_003`) | +0 |
+| `phase3_ep_145` | easy | 1 | 4/4 | 99.70 | 99.70 | 4/4 (`a_000`) | 99.70 | 99.70 | 99.70 (`a_000`) | +0 |
+| `phase3_ep_146` | easy | 1 | 4/4 | 100.00 | 100.00 | 4/4 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_147` | easy | 5 | 5/6 | 82.70 | 48.07 | 5/6 (`a_003`) | 85.53 | 77.84 | 77.84 (`a_003`) | +0 |
+| `phase3_ep_148` | medium | 3 | 4/6 | 66.67 | 0.44 | 6/6 (`a_002`) | 99.95 | 99.95 | 99.95 (`a_002`) | +2 |
+| `phase3_ep_149` | medium | 5 | 7/8 | 86.04 | 9.02 | 7/8 (`a_003`) | 87.46 | 13.97 | 13.97 (`a_003`) | +0 |
+| `phase3_ep_150` | medium | 2 | 5/9 | 55.52 | 0.05 | 9/9 (`a_001`) | 98.17 | 98.10 | 98.10 (`a_001`) | +4 |
+| `phase3_ep_151` | hard | 5 | 7/9 | 77.77 | 1.16 | 8/9 (`a_003`) | 88.86 | 11.14 | 40.00 (`a_004`) | +1 |
+| `phase3_ep_152` | hard | 4 | 8/10 | 78.29 | 40.43 | 10/10 (`a_003`) | 99.34 | 99.33 | 99.33 (`a_003`) | +2 |
+| `phase3_ep_153` | easy | 1 | 4/4 | 100.00 | 100.00 | 4/4 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_154` | easy | 5 | 3/5 | 62.01 | 3.74 | 3/5 (`a_002`) | 61.28 | 12.84 | 12.84 (`a_002`) | +0 |
+| `phase3_ep_155` | easy | 1 | 6/6 | 98.78 | 98.74 | 6/6 (`a_000`) | 98.78 | 98.74 | 98.74 (`a_000`) | +0 |
+| `phase3_ep_156` | medium | 1 | 6/6 | 100.00 | 100.00 | 6/6 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_157` | medium | 4 | 5/7 | 73.13 | 2.67 | 7/7 (`a_003`) | 92.86 | 90.58 | 90.58 (`a_003`) | +2 |
+| `phase3_ep_158` | medium | 5 | 6/8 | 75.01 | 7.71 | 6/8 (`a_002`) | 74.43 | 14.72 | 14.72 (`a_002`) | +0 |
+| `phase3_ep_159` | hard | 5 | 7/9 | 77.00 | 3.69 | 7/9 (`a_000`) | 77.00 | 3.69 | 44.56 (`a_002`) | +0 |
+| `phase3_ep_160` | hard | 5 | 9/10 | 85.75 | 17.23 | 9/10 (`a_003`) | 83.34 | 18.17 | 20.47 (`a_001`) | +0 |
+| `phase3_ep_161` | easy | 1 | 4/4 | 99.86 | 99.86 | 4/4 (`a_000`) | 99.86 | 99.86 | 99.86 (`a_000`) | +0 |
+| `phase3_ep_162` | easy | 1 | 4/4 | 99.69 | 99.68 | 4/4 (`a_000`) | 99.69 | 99.68 | 99.68 (`a_000`) | +0 |
+| `phase3_ep_163` | easy | 5 | 2/5 | 40.75 | 0.40 | 3/5 (`a_002`) | 60.29 | 1.01 | 2.43 (`a_001`) | +1 |
+| `phase3_ep_164` | medium | 5 | 3/6 | 50.02 | 0.09 | 5/6 (`a_003`) | 83.33 | 12.00 | 12.00 (`a_003`) | +2 |
+| `phase3_ep_165` | medium | 1 | 7/7 | 100.00 | 100.00 | 7/7 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_166` | medium | 2 | 7/8 | 87.50 | 14.70 | 8/8 (`a_001`) | 100.00 | 100.00 | 100.00 (`a_001`) | +1 |
+| `phase3_ep_167` | hard | 5 | 7/9 | 77.94 | 4.52 | 8/9 (`a_004`) | 85.10 | 65.89 | 65.89 (`a_004`) | +1 |
+| `phase3_ep_168` | hard | 5 | 7/10 | 67.09 | 0.47 | 8/10 (`a_004`) | 79.80 | 22.80 | 22.80 (`a_004`) | +1 |
+| `phase3_ep_169` | easy | 3 | 3/4 | 74.81 | 10.13 | 4/4 (`a_002`) | 99.92 | 99.92 | 99.92 (`a_002`) | +1 |
+| `phase3_ep_170` | easy | 1 | 4/4 | 98.71 | 98.68 | 4/4 (`a_000`) | 98.71 | 98.68 | 98.68 (`a_000`) | +0 |
+| `phase3_ep_171` | easy | 5 | 4/6 | 66.66 | 0.10 | 6/6 (`a_004`) | 99.88 | 99.88 | 99.88 (`a_004`) | +2 |
+| `phase3_ep_172` | medium | 1 | 8/8 | 99.25 | 99.23 | 8/8 (`a_000`) | 99.25 | 99.23 | 99.23 (`a_000`) | +0 |
+| `phase3_ep_173` | medium | 3 | 5/7 | 74.76 | 54.66 | 7/7 (`a_002`) | 93.74 | 92.10 | 92.10 (`a_002`) | +2 |
+| `phase3_ep_174` | medium | 5 | 7/8 | 81.82 | 11.22 | 7/8 (`a_002`) | 85.21 | 66.17 | 66.17 (`a_002`) | +0 |
+| `phase3_ep_175` | hard | 1 | 10/10 | 98.51 | 98.41 | 10/10 (`a_000`) | 98.51 | 98.41 | 98.41 (`a_000`) | +0 |
+| `phase3_ep_176` | hard | 5 | 9/10 | 88.45 | 82.07 | 9/10 (`a_000`) | 88.45 | 82.07 | 84.69 (`a_002`) | +0 |
+| `phase3_ep_177` | easy | 5 | 2/4 | 63.39 | 49.25 | 3/4 (`a_003`) | 68.94 | 36.80 | 49.25 (`a_000`) | +1 |
+| `phase3_ep_178` | easy | 5 | 3/4 | 75.02 | 16.14 | 3/4 (`a_000`) | 75.02 | 16.14 | 16.14 (`a_000`) | +0 |
+| `phase3_ep_179` | easy | 1 | 6/6 | 100.00 | 100.00 | 6/6 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_180` | medium | 2 | 5/6 | 83.32 | 12.99 | 6/6 (`a_001`) | 100.00 | 100.00 | 100.00 (`a_001`) | +1 |
+| `phase3_ep_181` | medium | 5 | 6/8 | 70.28 | 3.48 | 7/8 (`a_003`) | 82.81 | 15.93 | 57.60 (`a_004`) | +1 |
+| `phase3_ep_182` | medium | 5 | 7/8 | 87.49 | 7.07 | 7/8 (`a_000`) | 87.49 | 7.07 | 7.07 (`a_000`) | +0 |
+| `phase3_ep_183` | hard | 5 | 7/10 | 70.00 | 5.23 | 8/10 (`a_003`) | 80.00 | 8.68 | 8.68 (`a_003`) | +1 |
+| `phase3_ep_184` | hard | 5 | 6/10 | 56.45 | 1.99 | 8/10 (`a_003`) | 75.37 | 4.66 | 27.61 (`a_002`) | +2 |
+| `phase3_ep_185` | easy | 1 | 4/4 | 96.78 | 96.61 | 4/4 (`a_000`) | 96.78 | 96.61 | 96.61 (`a_000`) | +0 |
+| `phase3_ep_186` | easy | 5 | 3/4 | 75.11 | 26.80 | 4/4 (`a_004`) | 100.00 | 100.00 | 100.00 (`a_004`) | +1 |
+| `phase3_ep_187` | easy | 1 | 6/6 | 99.70 | 99.70 | 6/6 (`a_000`) | 99.70 | 99.70 | 99.70 (`a_000`) | +0 |
+| `phase3_ep_188` | medium | 4 | 5/6 | 83.33 | 13.05 | 6/6 (`a_003`) | 99.93 | 99.93 | 99.93 (`a_003`) | +1 |
+| `phase3_ep_189` | medium | 2 | 7/8 | 87.46 | 13.39 | 8/8 (`a_001`) | 99.63 | 99.62 | 99.62 (`a_001`) | +1 |
+| `phase3_ep_190` | medium | 5 | 6/8 | 74.68 | 1.81 | 7/8 (`a_004`) | 87.32 | 45.67 | 45.67 (`a_004`) | +1 |
+| `phase3_ep_191` | hard | 4 | 7/10 | 67.17 | 11.27 | 10/10 (`a_003`) | 98.31 | 98.27 | 98.27 (`a_003`) | +3 |
+| `phase3_ep_192` | hard | 3 | 9/10 | 89.90 | 10.67 | 10/10 (`a_002`) | 100.00 | 100.00 | 100.00 (`a_002`) | +1 |
+| `phase3_ep_193` | easy | 1 | 4/4 | 99.92 | 99.92 | 4/4 (`a_000`) | 99.92 | 99.92 | 99.92 (`a_000`) | +0 |
+| `phase3_ep_194` | easy | 1 | 4/4 | 99.98 | 99.98 | 4/4 (`a_000`) | 99.98 | 99.98 | 99.98 (`a_000`) | +0 |
+| `phase3_ep_195` | easy | 1 | 6/6 | 100.00 | 100.00 | 6/6 (`a_000`) | 100.00 | 100.00 | 100.00 (`a_000`) | +0 |
+| `phase3_ep_196` | medium | 2 | 4/6 | 70.02 | 38.75 | 6/6 (`a_001`) | 99.56 | 99.55 | 99.55 (`a_001`) | +2 |
+| `phase3_ep_197` | medium | 2 | 7/8 | 86.47 | 26.35 | 8/8 (`a_001`) | 99.51 | 99.50 | 99.50 (`a_001`) | +1 |
+| `phase3_ep_198` | medium | 1 | 8/8 | 96.65 | 96.18 | 8/8 (`a_000`) | 96.65 | 96.18 | 96.18 (`a_000`) | +0 |
+| `phase3_ep_199` | hard | 2 | 7/10 | 73.22 | 1.40 | 10/10 (`a_001`) | 97.22 | 96.81 | 96.81 (`a_001`) | +3 |
+| `phase3_ep_200` | hard | 5 | 7/10 | 70.17 | 2.28 | 7/10 (`a_002`) | 69.15 | 12.48 | 12.48 (`a_002`) | +0 |
+
+## Strategy Evidence From Real Trajectories
+
+The canonical action has no `decision_summary`, so the statements below show observable input state, selected action, and outcome rather than claiming an unrecorded hidden rationale.
+
+### Direct First-Attempt Success: `phase3_ep_009`
+
+- The fresh generation passed every atom.
+- The Agent submitted it without spending retry budget.
+- Result `a_000`: 4/4 atoms, GM 99.98.
+
+### Observed Constraint Regression: `phase3_ep_003`
+
+- Action: `edit_image` from `a_000`.
+- Fixed atoms: ['c_003'].
+- Regressed atoms: ['c_004'].
+- Reducer best after the full episode: `a_001`.
+- Result `a_001`: 6/7 atoms, GM 83.53.
+
+### Historical-Source Branch: `phase3_ep_001`
+
+- Latest before the action was `a_002`.
+- The Agent deliberately edited historical source `a_001`.
+- Fixed atoms: ['c_003']; regressed atoms: none.
+- Result `a_003`: 4/4 atoms, GM 99.87.
+
+### Source-Free Regeneration After Prior Attempts: `phase3_ep_002`
+
+- The Agent abandoned source-conditioned editing for one source-free root generation.
+- Fixed atoms relative to the prior observation: ['c_001']; regressed atoms: none.
+- Result `a_003`: 4/4 atoms, GM 100.00.
+
+
+## Invariants
+
+Every row passed schema validation, manifest hash closure, fresh-start generation, profile-specific local image-backend provenance and 1024x1024 artifact checks, complete Geneval2 atom coverage, source-based edit lineage, complete RoundRecord suffixes, point-in-time PlannerContext latest/best/budget checks, best-attempt submission, and sanitized GPT-5.5 output checks.

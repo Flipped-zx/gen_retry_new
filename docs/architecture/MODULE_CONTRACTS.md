@@ -16,9 +16,14 @@
 
 **输入**：TaskSpec、canonical episode state、artifact refs、tool/skill manifest。
 
-**输出**：短的 `PlannerContext`；完成图像 round 后可派生并持久化 `RoundRecord` artifact。
+**输出**：版本化 `PlannerContext`；完成图像 round 后可派生并持久化
+`RoundRecord` artifact。新 episode 使用 v0.7，历史 v0.6 按原版本回放。
 
-**负责**：task context、latest attempt、active planning round、last/prior completed image-round memory、deduplicated best/latest refs、budget/control state、source-based atom/GM outcome comparison。
+**负责**：task context、latest attempt、active planning round、last/prior
+completed image-round memory、v0.7 prior executable instructions、deduplicated
+best/latest refs、same-pass historical evidence image refs、budget/control
+state、source-based atom/GM outcome comparison，以及按 persisted hash 恢复
+retrieval-time Skill observation。
 
 **不得做**：调用 LLM；重写 action；生成新环境事实；把 future evaluator outcome 注入当前 action target。
 
@@ -29,6 +34,10 @@
 **输入**：system policy + PlannerContext + 可见图片 + tool/skill responses。
 
 **输出**：一个符合 `action_protocol_v0_5` 的 JSON action。
+
+**策略要求**：不得盲目复读已失败干预；相同 action/source/targets 在具体
+视觉干预发生实质变化时可以再次使用。历史 source 选择必须同时受可见图片
+和记录的 atom 证据约束。
 
 **不得输出**：`decision_summary`、`diagnosis_summary`、score、fixed/regressed、best-so-far、路径、seed、API metadata、长诊断报告。
 

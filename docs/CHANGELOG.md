@@ -1,5 +1,154 @@
 # Changelog
 
+## 2026-08-04
+
+- Enabled W&B tracking in the canonical full-SFT and LoRA recipes under the
+  `Gen_retry/gen-retry-sft` project, with deterministic run/group/tag naming,
+  online/offline modes, fail-fast environment checks, and `wandb==0.28.1` in
+  the isolated Tsinghua-mirror bootstrap.
+- Added a local SFT training report generator for `trainer_state.json` that
+  emits loss/eval-loss, learning-rate, gradient, timing/ETA, and optional
+  action-metric plots plus JSON/Markdown/HTML summaries without requiring
+  W&B connectivity.
+- Completed a W&B online connectivity smoke run; credentials remain outside
+  the repository and no formal training was authorized while Gate 3 v9 is
+  open.
+
+## 2026-08-03
+
+- Added an isolated LlamaFactory 0.9.5 SFT environment for Qwen3-VL-8B with
+  full-SFT/ZeRO-3 and LoRA/ZeRO-2 baselines, a Tsinghua-mirror bootstrap, and a
+  version-locked image-only torchaudio compatibility patch for the vendor
+  Torch stack.
+- Added a strict Gen-Retry-to-ShareGPT exporter, provenance manifest, image
+  path/hash and placeholder audit, prompt-group split checks, Gate 3 training
+  guard, runtime-config materializer, and real LLaMA-Factory token-label audit.
+- Converted the existing checkpoint-200 663-target dataset only as a
+  `provisional`, `training_authorized=false` smoke artifact; final v9 Gate 3
+  remains open and no supervision semantics changed.
+- Hardened the adapter after independent review: positive targets are bound to
+  the policy/decision/audit hashes, duplicate prompts are split as one group,
+  images are copied content-addressed into the dataset and rehashed, and a
+  frozen launch requires a structured Gate 3 receipt plus a complete token
+  audit bound to the exact dataset/config. Provisional execution is forbidden.
+- Replaced the system-site overlay with a clean venv that snapshots only the
+  vendor Torch/torchvision/DeepSpeed/FA2 distributions, excludes
+  vLLM/CuPy/Megatron, passes `pip check`, records dependency/patch manifests,
+  and exposes a separate allocated-HCU smoke for bf16, FA2, and ZeRO-2.
+- Closed the final independent-review blockers by deriving authorization again
+  inside the library training entrypoint and comparing real tokenized labels
+  against the exact per-split target sequence, SHA-256 multiset, and action
+  counts. The final read-only re-review returned `PASS`.
+
+## 2026-08-01
+
+- Demoted regex-derived instruction-quality verdicts from a live Qwen
+  execution gate to advisory audit metadata after a bounded subset count repair
+  in `phase3_ep_004` was falsely rejected four times.
+- Kept Action schema/reference, budget, source lineage, and non-best-source
+  evidence checks as hard runtime gates.
+- Persisted prospective image-Action linter reports in the canonical action log
+  as `enforcement=advisory`, `sft_role=environment_metadata`; checker failures
+  record a sanitized `unavailable` verdict and cannot block execution.
+- Updated checkpoint format-error classification to separate current runtime
+  validity from advisory linter findings.
+
+## 2026-08-01
+
+- Selected a fresh 1000-prompt Flow-DPPO cohort with 125 prompts at every
+  official Geneval2 `atom_count` from 3 through 10, local tier counts
+  375/375/250, official-test semantic-family exclusion, and all 220 earlier
+  selected source rows excluded.
+- Added the prospective v9 fresh-8 run plan, including a 20-trajectory
+  admission pilot, 16 logical workers over eight physical HCU locks, eight
+  Teacher slots, fixed-denominator checkpoint reporting, resume rules, and
+  empirical P50/P80 estimates of 27-30/34-40 hours.
+- Optimized the deterministic official-mix selector by incrementally caching
+  selected feature sets. Regenerating the earlier 200 selection remains
+  byte-identical with SHA256
+  `25fd84df1e4aba81c3511bc71ef54d0bb6d061a23a166c82032dca3747b287e8`.
+- Deferred the final v9 SFT export until the rollout policy and equal-budget
+  evidence are frozen; retained all 200 completed trajectories as immutable
+  evidence.
+- Added PlannerContext v0.7. New prepared primary-score episodes retain the
+  full executable instruction in every prior image Round; historical v0.6
+  episodes remain valid replay/resume inputs.
+- Replaced the v8 tuple hard rejection with
+  `teacher_system_prompt_v9_meaningful_retry_verb_retention`: repeated
+  action/source/targets are allowed only with a concrete new visual
+  intervention.
+- Retained `action_pose_relation@2.1.0`, delayed verb retrieval, and historical
+  verb-pass preservation without changing Action Protocol, Qwen, Geneval2,
+  reducer, budget, or submit semantics.
+- Restored Skill guidance from retrieval-time tool observations under the
+  persisted content hash. Verified all 13 PlannerContexts in the earlier
+  `verb_multiround_teacher_v2` runs rebuild exactly after the Skill upgrade.
+- Exposed same-pass historical Attempts with unique atom-pass evidence as
+  visible Teacher image candidates and stopped sending duplicate latest/best
+  pixels when both IDs are equal.
+- Added ADR-0008, a v0.7 fixture/schema, compatibility tests, and the
+  consolidated trajectory-quality, score-claim, verb-adoption, and next
+  evidence plan.
+
+## 2026-07-31
+
+- Added a paired analysis of the user-supplied original-prompt Qwen-Image
+  Best-of-5 results against all 200 fixed retry trajectories.
+- Verified exact prompt/VQA alignment for 200/200 rows. Best-of-5 reaches
+  1042/1419 atoms, Soft-TIFA GM 31.53, and 42/200 all-pass prompts; the Agent
+  leads by 259 atoms, 41.97 GM points, and 69 all-pass prompts.
+- Added a pass-count-first selector sensitivity check, difficulty and
+  atom-type breakdowns, paired bootstrap intervals, a Best-of-K prefix curve,
+  per-prompt failure cases, a reproducible CLI, and focused unit tests.
+- Kept the claim integrated and descriptive because the baseline file omits
+  execution-profile provenance and does not normalize generate/edit cost.
+- Completed a two-HCU, artifact-backed prompt-composition experiment over all
+  12 `chasing` prompts from the final Flow-DPPO 200 cohort.
+- Evaluated six verb formulations and selected `focal_action_anchor`: 3/12
+  chasing passes versus 0/12 initial and 2/12 current submitted.
+- Recorded a paired same-seed improvement on `phase3_ep_098` from 4/5 to 5/5
+  atoms, with chasing confidence 0.002505 -> 0.996891 and no regression.
+- Replayed observed candidates through the frozen comparator; the compatible
+  historical-best result is 1303/1419 atoms, 11/22 verbs, and 112/200
+  all-pass trajectories. This is explicitly not a fresh full-policy rollout.
+- Promoted `action_pose_relation` to `2.0.0` with a targeted chasing focal
+  action anchor, preservation checks, and reducer-best fallback. No protocol,
+  memory, score, or SFT semantics changed.
+- Added a resumable experiment runner, deterministic strategy composition and
+  summaries, unit coverage, and the verb experiment report.
+- Completed two fresh GPT-5.5 Teacher multi-round trajectories on preselected
+  `chasing` failures. Both autonomously retrieved
+  `action_pose_relation@2.0.0`.
+- Improved the paired submitted result from 11/13 to 12/13 atoms, 0/2 to 1/2
+  verb passes, and 0/2 to 1/2 all-pass episodes, using nine images versus the
+  historical ten. `phase3_ep_098` reached 5/5; `phase3_ep_014` tied at 7/8
+  and still failed chasing.
+- Tested and rejected an experiment-only forced verb-route closure: it made
+  `phase3_ep_098` all-pass in three images but regressed `phase3_ep_014` to
+  5/8. The production Teacher remains v8.
+- Added deterministic audits, trajectory analyses, a machine-readable paired
+  comparison, and the multi-round pilot report.
+- Froze the complete 12-episode official-current verb-nonpass cohort and ran a
+  fresh two-HCU multi-round Production-A control plus Candidate-B experiment.
+- On the ten primary episodes, Candidate B improved 54/71 to 56/71 atoms,
+  0/10 to 3/10 verb passes, and mean GM 27.70 to 31.97 with the same 50 image
+  attempts. Across all twelve, it improved Production A from 66/84 and 1/12
+  verbs to 67/84 and 4/12.
+- Promoted `action_pose_relation@2.1.0` with typed chasing, playing-with, and
+  jumping-over action topologies, explicit no-storyboard/no-role-reversal
+  constraints, and verb-pass preservation during peripheral repairs.
+- Promoted
+  `teacher_system_prompt_v8_1_verb_evidence_retention`: action-pose retrieval
+  now occurs after evaluated verb failure/uncertainty, and a same-count
+  historical verb-pass source may be used for local non-verb repair.
+- Verified delayed retrieval in 12/12 Candidate-B episodes versus pre-image
+  retrieval in 12/12 Production-A episodes. `phase3_ep_135` branched from a
+  historical verb-pass source after reducer-best regressed the verb and
+  recovered reducer-best to verb-pass evidence.
+- Added failed-12 rollout audits, trajectory analyses, a machine-readable
+  comparison, and the multi-round A/B report. No action schema, reducer,
+  score, memory, or SFT semantics changed.
+
 ## 2026-07-30
 
 - Completed all 200 fixed fresh trajectories with 684 evaluated images; the

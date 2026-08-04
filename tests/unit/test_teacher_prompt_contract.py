@@ -15,6 +15,7 @@ from gen_retry.agent.teacher_client import (
 from gen_retry.phase3.live_runner import (
     Phase3LiveRunner,
     RuntimeActionError,
+    _advisory_instruction_quality,
     _execution_instruction,
 )
 from gen_retry.phase3.model_config import TeacherConfig
@@ -177,12 +178,25 @@ def test_teacher_messages_label_actual_latest_and_best_images(tmp_path: Path) ->
     assert content[4]["image_url"]["url"].startswith("data:image/png;base64,")
 
 
-def test_teacher_prompt_versions_retry_closure_policy() -> None:
-    assert TEACHER_SYSTEM_PROMPT_VERSION == "teacher_system_prompt_v8_retry_closure_policy"
-    assert "do not repeat the same action, source attempt, and target constraint set" in (
+def test_teacher_prompt_versions_meaningful_retry_and_verb_retention_policy() -> None:
+    assert (
+        TEACHER_SYSTEM_PROMPT_VERSION
+        == "teacher_system_prompt_v9_meaningful_retry_verb_retention"
+    )
+    assert "not perform a blind retry" in (
+        TEACHER_SYSTEM_PROMPT_TEXT
+    )
+    assert "Reusing the same action, source attempt, or target constraint set is allowed" in (
         TEACHER_SYSTEM_PROMPT_TEXT
     )
     assert "default source_attempt_id to the reducer-best attempt" in TEACHER_SYSTEM_PROMPT_TEXT
+    assert "Do not query action_pose_relation before any evaluated image exists" in (
+        TEACHER_SYSTEM_PROMPT_TEXT
+    )
+    assert "matches the reducer-best passed-atom count" in TEACHER_SYSTEM_PROMPT_TEXT
+    assert "Include the passed verb in preserve_constraint_ids" in (
+        TEACHER_SYSTEM_PROMPT_TEXT
+    )
 
 
 def test_sanitized_request_records_prompt_hash_and_redacts_paths(tmp_path: Path) -> None:
@@ -477,26 +491,86 @@ def test_instruction_quality_allows_operation_count_plus_final_count() -> None:
     assert report.contradiction_flags == []
 
 
-def test_live_runner_rejects_nonpassing_instruction_quality_before_execution() -> None:
-    runner = Phase3LiveRunner.__new__(Phase3LiveRunner)
-    state = type("State", (), {"attempt_order": ["a_000"]})()
+def test_bounded_subset_count_repair_remains_an_advisory_linter_finding() -> None:
+    task_spec = {
+        "original_prompt": "six kangaroos in front of one croissant",
+        "constraints": [
+            {
+                "constraint_id": "c_003",
+                "constraint_type": "position",
+                "requirement": "Expected answer: Yes",
+                "evaluator_question": "Are the kangaroos in front of the croissant?",
+            },
+            {
+                "constraint_id": "c_004",
+                "constraint_type": "count",
+                "requirement": "Expected answer: six",
+                "evaluator_question": "How many kangaroos are shown?",
+            },
+        ],
+    }
     action = {
         "schema_version": "0.5",
         "action": "edit_image",
         "arguments": {
-            "source_attempt_id": "a_000",
-            "target_constraint_ids": ["c_001", "c_002"],
+            "source_attempt_id": "a_002",
+            "target_constraint_ids": ["c_004"],
             "preserve_constraint_ids": ["c_003"],
-            "instruction": "Modify only the failed parts and preserve all correct evidence.",
+            "instruction": (
+                "Edit attempt a_002 only in the kangaroo group so exactly six "
+                "kangaroos remain. Preserve the five clear kangaroos unchanged, "
+                "replace one ambiguous doubled kangaroo cluster with one solid sixth "
+                "kangaroo, and keep all kangaroos in front of the croissant. Do not "
+                "add a seventh kangaroo or redraw unrelated objects."
+            ),
         },
     }
 
-    try:
-        runner._validate_instruction_quality(action, _task_spec(), state)
-    except RuntimeActionError as exc:
-        assert exc.error_code == "instruction_quality_rejected"
-    else:
-        raise AssertionError("expected instruction quality rejection")
+    quality = _advisory_instruction_quality(
+        action,
+        task_spec,
+        known_attempt_ids=["a_000", "a_001", "a_002"],
+    )
+
+    assert quality is not None
+    assert quality["enforcement"] == "advisory"
+    assert quality["sft_role"] == "environment_metadata"
+    assert quality["report"]["preserve_modify_conflict_flags"] == [
+        "kangaroos is requested as both unchanged and modified"
+    ]
+    assert quality["report"]["verdict"] == "reject"
+    assert not hasattr(Phase3LiveRunner, "_validate_instruction_quality")
+
+
+def test_advisory_linter_failure_cannot_block_image_execution(monkeypatch) -> None:
+    def fail_checker(*args, **kwargs):
+        raise RuntimeError("synthetic checker failure")
+
+    monkeypatch.setattr(
+        "gen_retry.phase3.live_runner.evaluate_instruction_quality",
+        fail_checker,
+    )
+    quality = _advisory_instruction_quality(
+        {
+            "action": "generate_image",
+            "arguments": {
+                "target_constraint_ids": ["c_001"],
+                "preserve_constraint_ids": [],
+                "instruction": "Show exactly two red cats behind a blue cube.",
+            },
+        },
+        _task_spec(),
+        known_attempt_ids=[],
+    )
+
+    assert quality == {
+        "enforcement": "advisory",
+        "sft_role": "environment_metadata",
+        "report": {
+            "verdict": "unavailable",
+            "checker_error_type": "RuntimeError",
+        },
+    }
 
 
 def test_live_runner_reads_native_and_legacy_instruction_fields() -> None:
@@ -513,7 +587,7 @@ def test_live_runner_reads_native_and_legacy_instruction_fields() -> None:
     assert _execution_instruction(legacy) == "legacy v0.4 instruction"
 
 
-def test_retry_closure_rejects_repeated_strategy_after_regression() -> None:
+def test_runtime_allows_same_route_with_new_intervention_after_regression() -> None:
     runner = Phase3LiveRunner.__new__(Phase3LiveRunner)
     previous_action = _edit_action(source_attempt_id="a_000")
     state = _retry_state(
@@ -526,15 +600,15 @@ def test_retry_closure_rejects_repeated_strategy_after_regression() -> None:
         },
     )
 
-    try:
-        runner._validate_retry_closure_policy(previous_action, state)
-    except RuntimeActionError as exc:
-        assert exc.error_code == "repeated_failed_retry_strategy"
-    else:
-        raise AssertionError("expected repeated retry strategy rejection")
+    changed_instruction = _edit_action(source_attempt_id="a_000")
+    changed_instruction["arguments"]["instruction"] = (
+        "Use a different spatial anchor and separation pattern."
+    )
+
+    runner._validate_source_selection_policy(changed_instruction, state)
 
 
-def test_retry_closure_rejects_repeated_strategy_after_strict_no_progress() -> None:
+def test_runtime_does_not_use_action_tuple_as_semantic_equivalence() -> None:
     runner = Phase3LiveRunner.__new__(Phase3LiveRunner)
     previous_action = _edit_action(source_attempt_id="a_000")
     state = _retry_state(
@@ -547,15 +621,10 @@ def test_retry_closure_rejects_repeated_strategy_after_strict_no_progress() -> N
         },
     )
 
-    try:
-        runner._validate_retry_closure_policy(previous_action, state)
-    except RuntimeActionError as exc:
-        assert exc.error_code == "repeated_failed_retry_strategy"
-    else:
-        raise AssertionError("expected repeated no-progress strategy rejection")
+    runner._validate_source_selection_policy(previous_action, state)
 
 
-def test_retry_closure_rejects_nonbest_source_without_relevant_evidence() -> None:
+def test_source_policy_rejects_nonbest_source_without_relevant_evidence() -> None:
     runner = Phase3LiveRunner.__new__(Phase3LiveRunner)
     state = _retry_state(
         previous_action=_edit_action(source_attempt_id="a_000"),
@@ -569,14 +638,14 @@ def test_retry_closure_rejects_nonbest_source_without_relevant_evidence() -> Non
     action = _edit_action(source_attempt_id="a_001")
 
     try:
-        runner._validate_retry_closure_policy(action, state)
+        runner._validate_source_selection_policy(action, state)
     except RuntimeActionError as exc:
         assert exc.error_code == "historical_source_without_constraint_evidence"
     else:
         raise AssertionError("expected historical source evidence rejection")
 
 
-def test_retry_closure_allows_nonbest_source_with_relevant_pass_evidence() -> None:
+def test_source_policy_allows_nonbest_source_with_relevant_pass_evidence() -> None:
     runner = Phase3LiveRunner.__new__(Phase3LiveRunner)
     state = _retry_state(
         previous_action=_edit_action(source_attempt_id="a_000"),
@@ -593,7 +662,7 @@ def test_retry_closure_allows_nonbest_source_with_relevant_pass_evidence() -> No
         preserve_constraint_ids=["c_003"],
     )
 
-    runner._validate_retry_closure_policy(action, state)
+    runner._validate_source_selection_policy(action, state)
 
 
 def _edit_action(

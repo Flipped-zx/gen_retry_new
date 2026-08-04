@@ -6,9 +6,13 @@ Implementation: `src/gen_retry/agent/instruction_quality.py`
 
 ## Purpose
 
-The instruction-quality validator is a deterministic linter for `generate_image` and `edit_image` actions. It reports whether the exact image instruction is concrete enough to send to Qwen-Image-Edit.
+The instruction-quality checker is a deterministic advisory linter for
+`generate_image` and `edit_image` actions. It reports whether the exact image
+instruction follows known prompt-writing heuristics.
 
 It does not rewrite Teacher output and does not change the canonical action schema.
+Its semantic checks are regex-derived and are not authoritative evidence that
+an instruction is executable or useful.
 
 ## Report Fields
 
@@ -37,7 +41,23 @@ For each image action, the linter reports:
 - `warn`: instruction is otherwise executable but contains vague language.
 - `reject`: instruction has missing required entity/attribute/count/prohibition coverage, contradiction, incompatible count, overbroad local edit, preserve/modify conflict, unsupported critical content, missing edit semantic block, or unknown `source_attempt_id`.
 
-In live Phase 3 runtime, every `generate_image` and `edit_image` action must receive `pass` before `action_validated` and before image execution. A `warn` or `reject` verdict produces a structured `instruction_quality_rejected` validation observation through the same repair path as schema/runtime validation failures.
+The verdict is advisory. Live Phase 3 execution does not reject an Action or
+consume a Teacher repair turn because of this verdict. Hard execution gates
+remain the JSON Schema, reference validator, budget and action-order checks,
+source lineage, and non-best-source evidence policy.
+
+For prospective Actions, the linter report is persisted under
+`instruction_quality` in the canonical action log, linked by `action_event_id`,
+with `enforcement=advisory` and `sft_role=environment_metadata`. A checker
+failure is recorded as `verdict=unavailable` and does not block execution. The
+report also remains available to trace export and rollout audit. Harmful,
+ineffective, vague, or semantically repetitive Actions may be excluded from
+positive SFT supervision after their actual evaluator outcome is known.
+
+This boundary avoids false rejection of bounded subset edits such as preserving
+five correct kangaroos while replacing one ambiguous doubled kangaroo to repair
+the total count. Entity-level noun overlap is not proof of a contradictory
+instruction.
 
 The linter must not silently mutate the action.
 

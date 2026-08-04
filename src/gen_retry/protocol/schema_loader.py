@@ -62,7 +62,14 @@ def schema_registry() -> Registry:
     return registry.with_resources(resources)
 
 
+@lru_cache(maxsize=None)
 def validator_for(schema_name: str) -> Draft202012Validator:
+    """Build each named validator once per process.
+
+    Trajectory replay validates the same event schema thousands of times; the
+    schema and registry are immutable during a run, so caching removes repeated
+    schema parsing without changing validation semantics.
+    """
     return Draft202012Validator(load_schema(schema_name), registry=schema_registry())
 
 

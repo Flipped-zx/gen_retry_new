@@ -347,6 +347,7 @@ def _write_empty_jsonl_scaffold(run_dir: Path) -> None:
     for uri in (
         "planner_requests.jsonl",
         "raw_teacher_outputs.jsonl",
+        "raw_planner_outputs.jsonl",
         "canonical_actions.jsonl",
         "tool_observations.jsonl",
         "geneval2_results.jsonl",

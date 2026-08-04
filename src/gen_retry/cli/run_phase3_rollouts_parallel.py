@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from gen_retry.agent.sft_planner import SFTPlannerClient
 from gen_retry.phase3.model_config import (
     load_model_config,
     select_image_execution_profile,
@@ -62,6 +63,20 @@ def main() -> None:
     parser.add_argument("--max-workers", type=int)
     parser.add_argument("--workers-per-device", type=int, default=1)
     parser.add_argument("--teacher-concurrency", type=int, default=8)
+    parser.add_argument(
+        "--planner-provider",
+        choices=["teacher", "sft"],
+        default="teacher",
+    )
+    parser.add_argument("--sft-planner-url")
+    parser.add_argument("--sft-checkpoint", type=Path)
+    parser.add_argument(
+        "--device-id",
+        type=int,
+        action="append",
+        dest="device_ids",
+        help="Use only this physical HCU for image workers; repeatable.",
+    )
     parser.add_argument("--max-start-vram-percent", type=int, default=15)
     parser.add_argument("--allow-cpu", action="store_true")
     parser.add_argument("--allow-low-quality", action="store_true")
@@ -93,7 +108,12 @@ def main() -> None:
         load_model_config(),
         args.execution_profile_id,
     )
-    _preflight_config(config)
+    _preflight_config(
+        config,
+        planner_provider=args.planner_provider,
+        sft_planner_url=args.sft_planner_url,
+        sft_checkpoint=args.sft_checkpoint,
+    )
     episodes = _episode_runs(
         run_root=args.run_root,
         episode_ids=args.episode_ids,
@@ -109,6 +129,18 @@ def main() -> None:
         for device in devices
         if device.vram_percent is None or device.vram_percent <= args.max_start_vram_percent
     ]
+    if args.device_ids:
+        requested_device_ids = set(args.device_ids)
+        known_device_ids = {device.index for device in devices}
+        missing_device_ids = sorted(requested_device_ids - known_device_ids)
+        if missing_device_ids:
+            raise SystemExit(
+                "requested HCU IDs are unavailable: "
+                + ", ".join(str(item) for item in missing_device_ids)
+            )
+        eligible_devices = [
+            device for device in eligible_devices if device.index in requested_device_ids
+        ]
     execution = config.resolved_image_execution
     if {
         execution.generate_backend.provider,
@@ -161,6 +193,9 @@ def main() -> None:
             workers_per_device=args.workers_per_device,
             teacher_concurrency=args.teacher_concurrency,
             stop_admission_file=args.stop_admission_file,
+            planner_provider=args.planner_provider,
+            sft_planner_url=args.sft_planner_url,
+            sft_checkpoint=args.sft_checkpoint,
         )
         results = _execute_worker_plan(
             episodes=episodes,
@@ -176,6 +211,9 @@ def main() -> None:
             execution_profile_id=args.execution_profile_id,
             log_dir=log_dir,
             stop_admission_file=args.stop_admission_file,
+            planner_provider=args.planner_provider,
+            sft_planner_url=args.sft_planner_url,
+            sft_checkpoint=args.sft_checkpoint,
         )
     for result in results:
         print(
@@ -200,12 +238,34 @@ def _enforce_quality_floor(image_steps: int, image_height: int, image_width: int
         )
 
 
-def _preflight_config(config: Any) -> None:
+def _preflight_config(
+    config: Any,
+    *,
+    planner_provider: str = "teacher",
+    sft_planner_url: str | None = None,
+    sft_checkpoint: Path | None = None,
+) -> None:
     api_key_state = "SET" if os.environ.get(config.teacher.api_key_env) else "MISSING"
     base_url_state = "SET" if os.environ.get(config.teacher.base_url_env) else "MISSING"
-    print(f"{config.teacher.api_key_env}={api_key_state}")
-    print(f"{config.teacher.base_url_env}={base_url_state}")
-    print(f"teacher_model_id={config.teacher.model_id}")
+    print(f"planner_provider={planner_provider}")
+    if planner_provider == "teacher":
+        print(f"{config.teacher.api_key_env}={api_key_state}")
+        print(f"{config.teacher.base_url_env}={base_url_state}")
+        print(f"teacher_model_id={config.teacher.model_id}")
+    elif planner_provider == "sft":
+        if not sft_planner_url or sft_checkpoint is None:
+            raise SystemExit(
+                "SFT planner requires --sft-planner-url and --sft-checkpoint"
+            )
+        client = SFTPlannerClient(
+            endpoint_url=sft_planner_url,
+            checkpoint_path=sft_checkpoint,
+        )
+        client.health()
+        print(f"sft_checkpoint={sft_checkpoint.resolve()}")
+        print(f"sft_planner_url={sft_planner_url}")
+    else:
+        raise SystemExit(f"unsupported planner provider: {planner_provider}")
     execution = config.resolved_image_execution
     print(
         "execution_profile="
@@ -218,7 +278,9 @@ def _preflight_config(config: Any) -> None:
         print(f"{operation}_image_provider={backend.provider}")
         print(f"{operation}_image_backend={backend.backend_id}")
         print(f"{operation}_image_model_path_exists={backend.model_path.exists()}")
-    if api_key_state != "SET" or base_url_state != "SET":
+    if planner_provider == "teacher" and (
+        api_key_state != "SET" or base_url_state != "SET"
+    ):
         raise SystemExit("teacher environment is incomplete")
     for operation, backend in (
         ("generate", execution.generate_backend),
@@ -384,6 +446,9 @@ def _run_one_episode(
     teacher_max_completion_tokens: int,
     teacher_concurrency: int = 8,
     execution_profile_id: str | None = None,
+    planner_provider: str = "teacher",
+    sft_planner_url: str | None = None,
+    sft_checkpoint: Path | None = None,
     log_dir: Path,
 ) -> WorkerResult:
     log_path = log_dir / f"{episode.episode_id}.log"
@@ -422,7 +487,14 @@ def _run_one_episode(
         str(image_width),
         "--teacher-max-completion-tokens",
         str(teacher_max_completion_tokens),
+        "--planner-provider",
+        planner_provider,
     ]
+    if planner_provider == "sft":
+        if not sft_planner_url or sft_checkpoint is None:
+            raise ValueError("SFT planner child command is incomplete")
+        command.extend(["--sft-planner-url", sft_planner_url])
+        command.extend(["--sft-checkpoint", str(sft_checkpoint)])
     if generate_image_steps is not None:
         command.extend(["--generate-image-steps", str(generate_image_steps)])
     if edit_image_steps is not None:
@@ -473,6 +545,9 @@ def _execute_worker_plan(
     execution_profile_id: str | None = None,
     log_dir: Path,
     stop_admission_file: Path | None = None,
+    planner_provider: str = "teacher",
+    sft_planner_url: str | None = None,
+    sft_checkpoint: Path | None = None,
 ) -> list[WorkerResult]:
     pending: queue.Queue[EpisodeRun] = queue.Queue()
     for episode in episodes:
@@ -496,6 +571,9 @@ def _execute_worker_plan(
                 execution_profile_id=execution_profile_id,
                 log_dir=log_dir,
                 stop_admission_file=stop_admission_file,
+                planner_provider=planner_provider,
+                sft_planner_url=sft_planner_url,
+                sft_checkpoint=sft_checkpoint,
             )
             for device in worker_devices
         ]
@@ -519,6 +597,9 @@ def _run_device_worker(
     execution_profile_id: str | None = None,
     log_dir: Path,
     stop_admission_file: Path | None = None,
+    planner_provider: str = "teacher",
+    sft_planner_url: str | None = None,
+    sft_checkpoint: Path | None = None,
 ) -> list[WorkerResult]:
     results: list[WorkerResult] = []
     while True:
@@ -543,6 +624,9 @@ def _run_device_worker(
                 teacher_concurrency=teacher_concurrency,
                 execution_profile_id=execution_profile_id,
                 log_dir=log_dir,
+                planner_provider=planner_provider,
+                sft_planner_url=sft_planner_url,
+                sft_checkpoint=sft_checkpoint,
             )
             results.append(result)
         finally:
@@ -616,6 +700,9 @@ def _record_scheduler_profile(
     workers_per_device: int,
     teacher_concurrency: int,
     stop_admission_file: Path | None = None,
+    planner_provider: str = "teacher",
+    sft_planner_url: str | None = None,
+    sft_checkpoint: Path | None = None,
 ) -> None:
     physical_devices = sorted(
         {
@@ -633,6 +720,14 @@ def _record_scheduler_profile(
         "logical_worker_count": len(worker_devices),
         "workers_per_device": workers_per_device,
         "teacher_concurrency": teacher_concurrency,
+        "model_load_concurrency": int(
+            os.environ.get("GEN_RETRY_MODEL_LOAD_CONCURRENCY", "1")
+        ),
+        "planner_provider": planner_provider,
+        "sft_planner_url": sft_planner_url,
+        "sft_checkpoint": (
+            str(sft_checkpoint.resolve()) if sft_checkpoint is not None else None
+        ),
         "resource_lock_version": LOCK_VERSION,
         "device_assignment_order": [
             device.index if device is not None else None

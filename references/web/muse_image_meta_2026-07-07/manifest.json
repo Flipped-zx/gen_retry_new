@@ -1,4 +1,5 @@
 {
+  "manifest_version": 1,
   "source_id": "meta_muse_image_blog_2026_07_07",
   "title": "Introducing Muse Image and Muse Video",
   "publisher": "Meta Superintelligence Labs",
@@ -12,6 +13,16 @@
     "assets_vendored": false,
     "reason": "The page does not publish a reusable content license; the repository stores a source pointer and research-focused paraphrase rather than republishing the page or its media."
   },
+  "local_artifacts": {
+    "source.url": {
+      "sha256": "cdb1ee2fc83cc58da416de19bc2ede5e3ee16d17ed0f87fb5d2234eda6bd14a0",
+      "bytes": 64
+    },
+    "technical_blog_snapshot.md": {
+      "sha256": "1d41cd5ea84d1b43a0b5ff65f0ad230cb88e22074c195bf257f1deab3fad5d35",
+      "bytes": 4864
+    }
+  },
   "relevant_figure_urls": {
     "search_tool_internal_ablation": "https://lookaside.fbsbx.com/elementpath/media/?media_id=1020234107374296&version=1783727678",
     "self_refinement_internal_ablation": "https://lookaside.fbsbx.com/elementpath/media/?media_id=1051639497205607&version=1783727678",
@@ -22,5 +33,9 @@
     "google_muse_2023_disambiguation": "https://muse-model.github.io/",
     "google_richhf_blog": "https://research.google/blog/rich-human-feedback-for-text-to-image-generation/",
     "google_richhf_paper": "https://arxiv.org/abs/2312.10240"
-  }
+  },
+  "grounding_documents": [
+    "docs/SOURCE_LEDGER.md",
+    "docs/research/muse_image_selective_lessons_and_ablation_plan.md"
+  ]
 }

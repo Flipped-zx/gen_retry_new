@@ -16,8 +16,10 @@ from gen_retry.sft.supervision import (
     _execution_profile_for_run,
     _index_identical_records,
     _validate_planner_context_prefix,
+    annotate_skill_utility_labels,
     decide_supervision,
     render_messages,
+    skill_supervision_policy,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -59,6 +61,45 @@ def test_supervision_decision_masks_positive_query_skill() -> None:
     assert decision["include_as_target"] is False
     assert decision["loss_weight"] == 0
     assert decision["decision_reason"] == "query_skill_context_only_until_utility_validated"
+
+
+def test_skill_policy_targets_only_utility_validated_query() -> None:
+    label = _label("query_skill", "trainable_positive")
+    label["behavior_tags"] = ["skill_grounding"]
+    label["skill_utility_validated"] = True
+    decision = decide_supervision(label, skill_supervision_policy())
+
+    assert decision["include_as_target"] is True
+    assert decision["decision_reason"] == "query_skill_utility_validated"
+
+
+def test_skill_utility_annotation_links_next_positive_image_action() -> None:
+    query = _label("query_skill", "trainable_positive")
+    query["turn_id"] = "turn_001"
+    query["behavior_tags"] = ["skill_grounding"]
+    query["canonical_action"] = {
+        "schema_version": "0.5",
+        "action": "query_skill",
+        "arguments": {
+            "skill_ids": ["counting_and_instance_layout"],
+            "target_constraint_ids": ["c_001"],
+        },
+    }
+    image = _label("generate_image", "trainable_positive")
+    image["turn_id"] = "turn_002"
+    image["canonical_action"] = {
+        "schema_version": "0.5",
+        "action": "generate_image",
+        "arguments": {
+            "target_constraint_ids": ["c_001"],
+            "preserve_constraint_ids": [],
+            "instruction": "Create the requested image.",
+        },
+    }
+    annotate_skill_utility_labels([query, image])
+
+    assert query["skill_utility_validated"] is True
+    assert query["skill_utility_linked_action_event_id"] == image["action_event_id"]
 
 
 def test_supervision_decision_excludes_harmful_and_raw_records() -> None:

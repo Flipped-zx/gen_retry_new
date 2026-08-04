@@ -7,10 +7,16 @@ configs/models/local.yaml
 # Generated runtime outputs
 runs/
 reports/
+artifacts/sft/**/images/
+wandb/
 
 # Notebook/editor artifacts
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
+
+# Local convenience copies of externally published papers. Their manifests,
+# checksums, and research summaries are versioned; PDF binaries are not.
+references/papers/**/*.pdf
 
 # Python caches
 __pycache__/

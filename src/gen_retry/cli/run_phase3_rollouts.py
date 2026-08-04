@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from gen_retry.agent.sft_planner import SFTPlannerClient
 from gen_retry.phase3.live_runner import Phase3LiveRunner, RuntimeParams
 from gen_retry.phase3.model_config import (
     load_model_config,
@@ -21,6 +22,13 @@ def main() -> None:
     parser.add_argument("--image-width", type=int, default=1024)
     parser.add_argument("--teacher-max-completion-tokens", type=int, default=1400)
     parser.add_argument(
+        "--planner-provider",
+        choices=["teacher", "sft"],
+        default="teacher",
+    )
+    parser.add_argument("--sft-planner-url")
+    parser.add_argument("--sft-checkpoint", type=Path)
+    parser.add_argument(
         "--execution-profile-id",
         choices=["qwen_dual_backend", "qwen_image_edit_only"],
     )
@@ -29,6 +37,17 @@ def main() -> None:
         load_model_config(),
         args.execution_profile_id,
     )
+    planner = None
+    if args.planner_provider == "sft":
+        if not args.sft_planner_url or args.sft_checkpoint is None:
+            raise SystemExit(
+                "--planner-provider sft requires --sft-planner-url and --sft-checkpoint"
+            )
+        planner = SFTPlannerClient(
+            endpoint_url=args.sft_planner_url,
+            checkpoint_path=args.sft_checkpoint,
+        )
+        planner.health()
     runner = Phase3LiveRunner(
         model_config=model_config,
         runtime_params=RuntimeParams(
@@ -38,7 +57,8 @@ def main() -> None:
             generate_image_steps=args.generate_image_steps,
             edit_image_steps=args.edit_image_steps,
             teacher_max_completion_tokens=args.teacher_max_completion_tokens,
-        )
+        ),
+        planner=planner,
     )
     if args.episode_id:
         results = [runner.run_episode(args.run_root / args.episode_id)]

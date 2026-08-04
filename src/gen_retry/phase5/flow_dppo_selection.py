@@ -577,6 +577,9 @@ def _select_official_mix(
     selected: list[dict[str, Any]] = []
     selected_lines: set[int] = set()
     selected_skill_counts: Counter[str] = Counter()
+    selected_relations: set[str] = set()
+    selected_entities: set[str] = set()
+    selected_types: set[str] = set()
     total_count = sum(atom_count_quotas.values())
     slots = [
         atom_count
@@ -599,7 +602,12 @@ def _select_official_mix(
             candidates.append(
                 (
                     distribution_error,
-                    _score(row, selected)["_selection_score"],
+                    _score_with_selected_features(
+                        row,
+                        selected_relations=selected_relations,
+                        selected_entities=selected_entities,
+                        selected_types=selected_types,
+                    )["_selection_score"],
                     row,
                 )
             )
@@ -611,7 +619,12 @@ def _select_official_mix(
             )
         )
         distribution_error, diversity_score, winner = candidates[0]
-        scored_winner = _score(winner, selected)
+        scored_winner = _score_with_selected_features(
+            winner,
+            selected_relations=selected_relations,
+            selected_entities=selected_entities,
+            selected_types=selected_types,
+        )
         scored_winner["_selection_score"] = -distribution_error
         scored_winner["_selection_reason"] = {
             "official_skill_distribution_error": round(
@@ -623,11 +636,13 @@ def _select_official_mix(
         selected.append(scored_winner)
         selected_lines.add(winner["_source_line"])
         selected_skill_counts.update(str(skill) for skill in winner["skills"])
+        selected_relations.update(winner["_features"]["relation_phrases"])
+        selected_entities.update(winner["_features"]["entities"])
+        selected_types.update(winner["_features"]["skill_types"])
     return selected
 
 
 def _score(row: dict[str, Any], selected: list[dict[str, Any]]) -> dict[str, Any]:
-    features = row["_features"]
     selected_relations = {
         relation
         for item in selected
@@ -643,6 +658,22 @@ def _score(row: dict[str, Any], selected: list[dict[str, Any]]) -> dict[str, Any
         for item in selected
         for skill in item["_features"]["skill_types"]
     }
+    return _score_with_selected_features(
+        row,
+        selected_relations=selected_relations,
+        selected_entities=selected_entities,
+        selected_types=selected_types,
+    )
+
+
+def _score_with_selected_features(
+    row: dict[str, Any],
+    *,
+    selected_relations: set[str],
+    selected_entities: set[str],
+    selected_types: set[str],
+) -> dict[str, Any]:
+    features = row["_features"]
     base = (
         int(row.get("atom_count", 0)) * 6
         + len(row["vqa_list"]) * 4

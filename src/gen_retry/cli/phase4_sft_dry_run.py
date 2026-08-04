@@ -3,7 +3,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from gen_retry.sft.supervision import run_phase4_sft_dry_run
+from gen_retry.sft.supervision import (
+    run_phase4_sft_dry_run,
+    skill_supervision_policy,
+)
 
 
 def main() -> None:
@@ -20,12 +23,18 @@ def main() -> None:
         type=Path,
         default=Path("docs/phase4/sft_export_dry_run_report.md"),
     )
+    parser.add_argument(
+        "--skill-supervision",
+        action="store_true",
+        help="enable utility-linked positive query_skill targets",
+    )
     args = parser.parse_args()
     audit = run_phase4_sft_dry_run(
         run_root=args.run_root,
         labels_path=args.labels_path,
         output_root=args.output_root,
         report_path=args.report_path,
+        policy=skill_supervision_policy() if args.skill_supervision else None,
     )
     status = "PASS" if audit["gate2_validation_experiment_passed"] else "FAIL"
     print(

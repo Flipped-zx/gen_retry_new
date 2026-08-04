@@ -1,0 +1,23 @@
+--- a/llamafactory/data/mm_plugin.py
++++ b/llamafactory/data/mm_plugin.py
+@@ -27,7 +27,10 @@
+ 
+ import numpy as np
+ import torch
+-import torchaudio
++try:
++    import torchaudio
++except (ImportError, OSError):
++    torchaudio = None
+ from transformers.image_utils import get_image_size, is_valid_image, make_flat_list_of_images, to_numpy_array
+ from transformers.models.mllama.processing_mllama import (
+     convert_sparse_cross_attention_mask_to_dense,
+@@ -313,6 +316,8 @@
+         results, sampling_rates = [], []
+         for audio in audios:
+             if not isinstance(audio, np.ndarray):
++                if torchaudio is None:
++                    raise RuntimeError("torchaudio is required only for audio datasets")
+                 audio, sr = torchaudio.load(audio)
+                 if audio.shape[0] > 1:
+                     audio = audio.mean(dim=0, keepdim=True)

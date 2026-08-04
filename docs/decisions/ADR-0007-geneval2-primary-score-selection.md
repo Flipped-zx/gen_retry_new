@@ -6,6 +6,11 @@
 - Score policy: `geneval2_pass_count_then_gm@1`
 - Primary metric: `geneval2_soft_tifa_gm@flow_dppo_v1`
 
+Compatibility note: ADR-0008 adds PlannerContext v0.7 without changing this
+score policy. Historical v0.6 and prospective v0.7 contexts are both valid
+for `geneval2_pass_count_then_gm@1`; each episode remains locked to its
+persisted context version.
+
 ## Context
 
 PlannerContext v0.5 exposes thresholded atom states, and the reducer selects
