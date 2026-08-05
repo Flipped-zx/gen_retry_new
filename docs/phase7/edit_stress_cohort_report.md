@@ -84,6 +84,6 @@
 
 ## 后续 paired pilot 建议
 
-先执行 18 条冻结 cohort 的全 Attempt paired 重评分，随后按 `U`、`D`、`N` 和 D2/D3+ 分层报告 `ΔHPS`、`ΔGM`、`Δpass`；显著性与置信区间按 episode cluster bootstrap，不能按 Attempt 独立抽样。若资源有限，优先 12 条 U/D 冲突对，再补 6 条 N 对照；但最终结论仍应回填全 623 条多 edit 池的 sidecar coverage。
+先执行 18 条冻结 cohort 的全 Attempt paired 重评分，随后按 `U`、`D`、`N` 和 D2/D3+ 分层报告 `ΔHPS`、`ΔGM`、`Δpass`；显著性与置信区间按 episode cluster bootstrap，不能按 Attempt 独立抽样。阈值冻结后使用与这 18 条不重叠的 60 条 confirmation manifest；历史图片补打 HPS 只做 held-out diagnostic，缓解效果必须重新运行成对 `G`/`G+H` arms。若资源有限，calibration 优先 12 条 U/D 冲突对，再补 6 条 N 对照；但最终一般性结论仍应回填全 623 条多 edit 池的 sidecar coverage。
 
 **当前结论**：edit-stress 候选充足，18 条分层 cohort 已可审计且图像/原始 prompt 全部可配对；HPS 下降结论暂时缺数据，不能用 Geneval2 GM 下降替代 HPS。没有触发 protocol、memory、SFT 或 reviewer gate。

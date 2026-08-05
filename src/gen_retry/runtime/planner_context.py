@@ -6,7 +6,10 @@ from pathlib import Path
 from typing import Any
 
 from gen_retry.domain.artifacts import sha256_bytes
-from gen_retry.domain.auxiliary_quality import compact_quality_fields
+from gen_retry.domain.auxiliary_quality import (
+    QUALITY_DECISION_POLICY_ID,
+    compact_quality_fields,
+)
 from gen_retry.domain.score_policy import (
     PRIMARY_POLICY_ID,
     candidate_is_better,
@@ -115,6 +118,7 @@ def build_planner_context_from_events(
             "runtime_state": _runtime_state(
                 state,
                 include_score_policy=True,
+                include_auxiliary_quality_policy=schema_version == "0.8",
             ),
         }
     validate_instance(context, f"planner_context_v{schema_version.replace('.', '_')}.schema.json")
@@ -894,6 +898,7 @@ def _runtime_state(
     state: EpisodeState,
     *,
     include_score_policy: bool = False,
+    include_auxiliary_quality_policy: bool = False,
 ) -> dict[str, Any]:
     if state.remaining_budget == 0:
         available_actions = ["submit_attempt"] if state.best_attempt_id is not None else []
@@ -907,6 +912,14 @@ def _runtime_state(
     }
     if include_score_policy:
         runtime_state["score_policy"] = deepcopy(state.score_policy)
+    if include_auxiliary_quality_policy:
+        runtime_state["auxiliary_quality_decision"] = {
+            "policy_id": QUALITY_DECISION_POLICY_ID,
+            "application": "planner_context_only",
+            "primary_objective": "geneval2",
+            "intervention_skill_id": "local_edit_preservation",
+            "hidden_source_filter": False,
+        }
     return runtime_state
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Iterable
@@ -12,7 +13,10 @@ from gen_retry.domain.score_policy import (
     score_policy_from_task_payload,
     validate_primary_score,
 )
-from gen_retry.domain.auxiliary_quality import validate_auxiliary_quality_observation
+from gen_retry.domain.auxiliary_quality import (
+    quality_risk_for_source_delta,
+    validate_auxiliary_quality_observation,
+)
 from gen_retry.protocol.reference_validator import validate_action_references
 from gen_retry.protocol.schema_loader import validate_instance
 
@@ -36,6 +40,23 @@ def _duplicates(values: Iterable[str]) -> list[str]:
 
 def _problem(problems: list[ProtocolProblem], code: str, message: str) -> None:
     problems.append(ProtocolProblem(code=code, message=message))
+
+
+def _lineage_root_for_attempt(
+    attempt_id: str,
+    parent_by_attempt_id: dict[str, str | None],
+) -> str | None:
+    """Return the immutable edit-lineage root, or null for a root Attempt."""
+
+    parent_id = parent_by_attempt_id.get(attempt_id)
+    if parent_id is None:
+        return None
+    root_id = parent_id
+    while True:
+        parent_id = parent_by_attempt_id.get(root_id)
+        if parent_id is None:
+            return root_id
+        root_id = parent_id
 
 
 def validate_task_spec_semantics(task_spec: dict[str, Any]) -> None:
@@ -94,7 +115,10 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
     image_artifact_ids: set[str] = set()
     evaluated_attempts: set[str] = set()
     quality_attempts: set[str] = set()
+    quality_observations: dict[str, dict[str, Any]] = {}
+    quality_profiles: set[tuple[Any, ...]] = set()
     artifact_by_attempt_id: dict[str, str] = {}
+    artifact_sha256_by_attempt_id: dict[str, str] = {}
     parent_by_attempt_id: dict[str, str | None] = {}
     completed_request_ids: set[str] = set()
     task_spec: dict[str, Any] | None = None
@@ -258,6 +282,16 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                     f"{actual_context_version} is incompatible with score policy "
                     f"{score_policy['policy_id']}",
                 )
+            if actual_context_version == "0.8":
+                missing_quality = sorted(evaluated_attempts - quality_attempts)
+                if missing_quality:
+                    _problem(
+                        problems,
+                        "planner_context_missing_auxiliary_quality",
+                        "PlannerContext v0.8 requires an explicit success, failed, or "
+                        "missing HPSv3 event for every evaluated Attempt; missing: "
+                        + ", ".join(missing_quality),
+                    )
 
         if event_type == "image_execution_started":
             if payload.get("execution_profile_id"):
@@ -426,6 +460,7 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                 )
             image_artifact_ids.add(image_artifact_id)
             artifact_by_attempt_id[attempt_id] = image_artifact_id
+            artifact_sha256_by_attempt_id[attempt_id] = payload["artifact_sha256"]
             parent_by_attempt_id[attempt_id] = payload["parent_attempt_id"]
 
             if payload["operation"] == "edit":
@@ -501,9 +536,11 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                     _problem(problems, "invalid_primary_score", str(exc))
 
         if event_type == "auxiliary_quality_completed":
+            observation_is_valid = True
             try:
                 validate_auxiliary_quality_observation(payload)
             except Exception as exc:
+                observation_is_valid = False
                 _problem(problems, "invalid_auxiliary_quality", str(exc))
             attempt_id = payload.get("attempt_id")
             if attempt_id in quality_attempts:
@@ -519,6 +556,12 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                     "unknown_auxiliary_quality_attempt",
                     f"auxiliary quality references unknown attempt {attempt_id}",
                 )
+            if attempt_id not in evaluated_attempts:
+                _problem(
+                    problems,
+                    "auxiliary_quality_before_geneval2",
+                    f"auxiliary quality for {attempt_id} must follow its Geneval2 result",
+                )
             if attempt_id in attempts:
                 expected_artifact = artifact_by_attempt_id.get(attempt_id)
                 if expected_artifact is not None and payload.get("image_artifact_id") != expected_artifact:
@@ -526,6 +569,16 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                         problems,
                         "auxiliary_quality_artifact_mismatch",
                         "auxiliary quality image_artifact_id does not match attempt output",
+                    )
+                expected_image_sha256 = artifact_sha256_by_attempt_id.get(attempt_id)
+                if (
+                    expected_image_sha256 is not None
+                    and payload.get("image_sha256") != expected_image_sha256
+                ):
+                    _problem(
+                        problems,
+                        "auxiliary_quality_image_digest_mismatch",
+                        "auxiliary quality image_sha256 does not match the evaluated image artifact",
                     )
                 if payload.get("image_artifact_id") not in event.get("input_refs", []):
                     _problem(
@@ -539,6 +592,17 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                         problems,
                         "auxiliary_quality_source_mismatch",
                         "auxiliary quality source_attempt_id must match attempt parent",
+                    )
+                expected_anchor = _lineage_root_for_attempt(
+                    attempt_id,
+                    parent_by_attempt_id,
+                )
+                if payload.get("quality_anchor_attempt_id") != expected_anchor:
+                    _problem(
+                        problems,
+                        "auxiliary_quality_anchor_mismatch",
+                        "quality_anchor_attempt_id must equal the deterministic lineage root "
+                        "and must be null for a root Attempt",
                     )
             anchor_id = payload.get("quality_anchor_attempt_id")
             if anchor_id is not None and anchor_id not in attempts:
@@ -557,6 +621,73 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                         "auxiliary_quality_prompt_mismatch",
                         "HPSv3 must score every attempt against the immutable original prompt",
                     )
+            if observation_is_valid:
+                quality_profiles.add(
+                    (
+                        payload["evaluator_id"],
+                        payload["evaluator_version"],
+                        payload["checkpoint_sha256"],
+                        payload["preprocess_version"],
+                        payload["prompt_hash_policy_id"],
+                        payload["quality_anchor_policy_id"],
+                        payload["delta_policy_id"],
+                        payload["risk_policy_sha256"],
+                    )
+                )
+                if len(quality_profiles) > 1:
+                    _problem(
+                        problems,
+                        "auxiliary_quality_profile_changed",
+                        "HPSv3 evaluator, checkpoint, preprocessing, or policy changed "
+                        "inside one episode",
+                    )
+
+                for baseline_field, delta_field in (
+                    ("source_attempt_id", "delta_from_source"),
+                    ("quality_anchor_attempt_id", "delta_from_anchor"),
+                ):
+                    baseline_id = payload[baseline_field]
+                    baseline = quality_observations.get(baseline_id)
+                    delta = payload[delta_field]
+                    baseline_has_score = (
+                        baseline is not None
+                        and baseline.get("status") == "success"
+                        and baseline.get("mu") is not None
+                    )
+                    current_has_score = payload["status"] == "success"
+                    if baseline_id is not None and baseline_has_score and current_has_score:
+                        expected_delta = float(payload["mu"]) - float(baseline["mu"])
+                        if delta is None or not math.isclose(
+                            float(delta),
+                            expected_delta,
+                            rel_tol=0.0,
+                            abs_tol=1e-9,
+                        ):
+                            _problem(
+                                problems,
+                                "auxiliary_quality_delta_mismatch",
+                                f"{delta_field} must equal child_mu - baseline_mu",
+                            )
+                    elif delta is not None:
+                        _problem(
+                            problems,
+                            "auxiliary_quality_delta_without_baseline_score",
+                            f"{delta_field} must be null when its baseline has no prior "
+                            "successful HPSv3 score",
+                        )
+
+                expected_risk = quality_risk_for_source_delta(
+                    payload["delta_from_source"],
+                    payload["risk_policy"],
+                )
+                if payload["quality_risk"] != expected_risk:
+                    _problem(
+                        problems,
+                        "auxiliary_quality_risk_mismatch",
+                        "quality_risk does not match delta_from_source and the frozen risk policy",
+                    )
+                if attempt_id not in quality_observations:
+                    quality_observations[attempt_id] = payload
 
         if event_type == "attempt_submitted":
             submit_action_event_id = payload["submit_action_event_id"]

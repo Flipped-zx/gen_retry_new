@@ -262,6 +262,23 @@ class OpenAICompatibleTeacherClient:
                     "Use score deltas as observed action outcomes, never as fields in "
                     "your action."
                 ),
+                *(
+                    [
+                        "PlannerContext v0.8 auxiliary HPSv3 policy: HPSv3 is an "
+                        "environment-owned same-prompt quality-risk signal, never a "
+                        "replacement for Geneval2 and never an action field. Use only "
+                        "the visible auxiliary_quality records; no hidden source filter "
+                        "is active. For watch/high risk, prefer a minimal local edit and "
+                        "query local_edit_preservation first when it is not already "
+                        "active. If an edit has high risk without a Geneval2 pass-count "
+                        "or tie-break gain, consider branching from its declared lineage "
+                        "quality anchor or source-free regeneration. A semantic gain "
+                        "must not be vetoed solely by HPSv3; keep it available and use "
+                        "later budget for a quality-preserving comparison when justified."
+                    ]
+                    if str(context.get("planner_context_schema_version")) == "0.8"
+                    else []
+                ),
                 "The top-level object must have exactly these keys: "
                 "schema_version, action, arguments. Never use a top-level "
                 "instructions field.",

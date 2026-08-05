@@ -107,12 +107,16 @@ probability，以及按冻结公式计算 `geneval2_soft_tifa_gm@flow_dppo_v1`�
 
 ### Auxiliary HPSv3 Observation
 
-HPSv3 is an optional environment-owned evaluator after image execution. It
-emits one `auxiliary_quality_completed` observation per Attempt with immutable
-prompt/image/checkpoint provenance, direct-source and quality-anchor IDs,
-`mu/sigma`, deltas, and status. It may be projected into PlannerContext v0.8
-as compact context, but it never enters an Action, reducer comparator, or SFT
-target. Missing or uncertain HPSv3 output is non-blocking.
+HPSv3 is an optional environment-owned evaluator after image execution and the
+same Attempt's Geneval2 result. It emits at most one
+`auxiliary_quality_completed` observation per Attempt with immutable
+prompt/image/checkpoint provenance, direct-parent source, deterministic
+lineage-root anchor, `mu/sigma`, reproducible delta/risk policies, and status.
+PlannerContext v0.8 exposes a compact advisory view. It never enters an Action,
+reducer comparator, hidden source filter, or SFT target. Failed/missing output
+is non-blocking and exposes no score, delta, or risk other than `unknown`; a
+v0.8 PlannerContext records an explicit failed/missing event rather than
+silently omitting the observation.
 
 ---
 

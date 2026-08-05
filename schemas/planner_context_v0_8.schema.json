@@ -527,6 +527,11 @@
         "attempt_id",
         "source_attempt_id",
         "quality_anchor_attempt_id",
+        "quality_anchor_policy_id",
+        "delta_policy_id",
+        "risk_policy_id",
+        "risk_policy_version",
+        "risk_policy_sha256",
         "status",
         "mu",
         "sigma",
@@ -546,6 +551,14 @@
           "type": ["string", "null"],
           "pattern": "^a_[0-9]{3,}$"
         },
+        "quality_anchor_policy_id": {"const": "lineage_root_v1"},
+        "delta_policy_id": {"const": "child_mu_minus_baseline_mu_v1"},
+        "risk_policy_id": {"const": "hpsv3_source_delta_threshold_v1"},
+        "risk_policy_version": {"type": "string", "minLength": 1},
+        "risk_policy_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
         "status": {"enum": ["success", "failed", "missing"]},
         "mu": {"type": ["number", "null"]},
         "sigma": {"type": ["number", "null"], "minimum": 0},
@@ -560,7 +573,8 @@
       "required": [
         "remaining_image_budget",
         "available_actions",
-        "score_policy"
+        "score_policy",
+        "auxiliary_quality_decision"
       ],
       "properties": {
         "remaining_image_budget": {
@@ -581,6 +595,24 @@
         },
         "score_policy": {
           "$ref": "#/$defs/scorePolicy"
+        },
+        "auxiliary_quality_decision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy_id",
+            "application",
+            "primary_objective",
+            "intervention_skill_id",
+            "hidden_source_filter"
+          ],
+          "properties": {
+            "policy_id": {"const": "planner_context_only_hpsv3_advisory_v1"},
+            "application": {"const": "planner_context_only"},
+            "primary_objective": {"const": "geneval2"},
+            "intervention_skill_id": {"const": "local_edit_preservation"},
+            "hidden_source_filter": {"const": false}
+          }
         }
       }
     },

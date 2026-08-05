@@ -5,8 +5,14 @@
 The `research/hpsv3-quality-guard` branch proposes an additive HPSv3
 auxiliary-quality observation and PlannerContext v0.8. This is an experiment
 branch only: Geneval2 remains the sole best/submission comparator, v0.7 replay
-is unchanged, and promotion is pending GPT-5.6 Sol review plus an edit-stress
-cohort pilot from the completed 1k trajectories.
+is unchanged, and no hidden source filter is introduced. The first GPT-5.6 Sol
+review returned `FAIL_STOP_PILOT`; its event-order, missing-value, anchor,
+fingerprint, policy-isolation, and admission-design blockers have now been
+implemented. The second GPT-5.6 Sol review returned `PASS` for the documented
+GPT-5.5 Teacher paired pilot only. The 18-episode calibration cohort and a
+disjoint 60-episode confirmation manifest are frozen without reading HPS
+results. No live `G+H` pilot, v0.8 SFT use, SFT export, or policy promotion has
+occurred.
 
 The formal Flow-DPPO 1000 v9 cold-start SFT is complete. Gate 3 returned
 `PASS_FREEZE_WITH_MONITORING`, and the frozen export contains 4302 positive
@@ -890,9 +896,16 @@ work resolved that historical block. Details:
 
 ## Last Reviewer Verdict
 
-The latest review is the Flow-DPPO 1000 v9 selective-Skill SFT Gate 3 review.
-GPT-5.6 Sol returned `PASS_FREEZE_WITH_MONITORING`. The reviewed frozen export
-was used unchanged for the completed formal run.
+The latest review is the HPSv3 auxiliary quality guard review. GPT-5.6 Sol
+returned `PASS` for the GPT-5.5 Teacher `G`/`G+H` paired pilot. The verdict does
+not approve PlannerContext v0.8 for the frozen SFT planner, SFT export, or
+policy promotion. The reviewed protocol requires the 18-row calibration,
+disjoint 60-row confirmation set, conjunctive Geneval2/HPS/human gates, and
+episode-cluster analysis.
+
+The earlier Flow-DPPO 1000 v9 selective-Skill SFT Gate 3 review returned
+`PASS_FREEZE_WITH_MONITORING`. The reviewed frozen export was used unchanged
+for the completed formal run.
 
 Earlier active verdicts remain unchanged. Planner I/O native
 `decision_summary` is `FAIL_KEEP_V05`; Gate 3a Skill-v1 Trace I/O Clarity is

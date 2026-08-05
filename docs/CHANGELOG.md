@@ -442,3 +442,18 @@
 - Added a proposed HPSv3 auxiliary-quality observation schema and experimental
   PlannerContext v0.8. Geneval2 best selection and v0.7 replay semantics are
   unchanged.
+- Tightened the HPSv3 proposal after reviewer feedback: quality events now
+  follow Geneval2, failed/missing observations cannot expose scores or deltas,
+  anchors are deterministic lineage roots, and prompt/delta/risk policies are
+  fingerprinted and replay-validated. PlannerContext v0.8 explicitly uses a
+  planner-visible advisory with no hidden source filter.
+- Froze a 60-episode edit-stress confirmation manifest disjoint from the
+  18-episode calibration set. Offline HPS annotation is separated from the
+  paired `G` versus `G+H` mitigation experiment.
+- A v0.8 context now requires an explicit per-Attempt HPS `success`, `failed`,
+  or `missing` event, making late or silently omitted quality observations
+  detectable without making evaluator failure blocking.
+- HPS image provenance now cross-checks `image_sha256` against the execution
+  completion digest. The paired pilot freezes conjunctive semantic, HPS
+  coverage/quality, and blind-human admission gates and uses Teacher v9 because
+  the frozen SFT planner remains PlannerContext v0.7-only.

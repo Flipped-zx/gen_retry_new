@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 
@@ -197,6 +198,34 @@ def test_teacher_prompt_versions_meaningful_retry_and_verb_retention_policy() ->
     assert "Include the passed verb in preserve_constraint_ids" in (
         TEACHER_SYSTEM_PROMPT_TEXT
     )
+
+
+def test_hpsv3_advisory_is_only_added_for_planner_context_v08() -> None:
+    client = _client()
+    v07_context = _planner_context()
+    v07_context["planner_context_schema_version"] = "0.7"
+    v08_context = copy.deepcopy(v07_context)
+    v08_context["planner_context_schema_version"] = "0.8"
+
+    v07_text = client.build_teacher_text_input(
+        planner_context=v07_context,
+        task_spec=_task_spec(),
+        image_refs=[],
+        retrieved_skills=[],
+        extra_observations=[],
+    )
+    v08_text = client.build_teacher_text_input(
+        planner_context=v08_context,
+        task_spec=_task_spec(),
+        image_refs=[],
+        retrieved_skills=[],
+        extra_observations=[],
+    )
+
+    assert "PlannerContext v0.8 auxiliary HPSv3 policy" not in v07_text
+    assert "PlannerContext v0.8 auxiliary HPSv3 policy" in v08_text
+    assert "no hidden source filter is active" in v08_text
+    assert "must not be vetoed solely by HPSv3" in v08_text
 
 
 def test_sanitized_request_records_prompt_hash_and_redacts_paths(tmp_path: Path) -> None:

@@ -9,19 +9,27 @@
     "evaluator_version",
     "checkpoint_ref",
     "checkpoint_sha256",
+    "preprocess_version",
+    "prompt_hash_policy_id",
     "prompt_sha256",
     "attempt_id",
     "image_artifact_id",
     "image_sha256",
     "source_attempt_id",
     "quality_anchor_attempt_id",
+    "quality_anchor_policy_id",
+    "delta_policy_id",
+    "risk_policy",
+    "risk_policy_sha256",
     "status",
     "mu",
     "sigma",
     "delta_from_source",
     "delta_from_anchor",
+    "quality_risk",
     "report_ref",
-    "report_sha256"
+    "report_sha256",
+    "error_code"
   ],
   "properties": {
     "evaluator_id": {
@@ -39,7 +47,11 @@
       "$ref": "#/$defs/sha256"
     },
     "preprocess_version": {
-      "type": ["string", "null"]
+      "type": "string",
+      "minLength": 1
+    },
+    "prompt_hash_policy_id": {
+      "const": "utf8_exact_original_prompt_sha256_v1"
     },
     "prompt_sha256": {
       "$ref": "#/$defs/sha256"
@@ -65,6 +77,18 @@
         {"$ref": "#/$defs/attemptId"},
         {"type": "null"}
       ]
+    },
+    "quality_anchor_policy_id": {
+      "const": "lineage_root_v1"
+    },
+    "delta_policy_id": {
+      "const": "child_mu_minus_baseline_mu_v1"
+    },
+    "risk_policy": {
+      "$ref": "#/$defs/riskPolicy"
+    },
+    "risk_policy_sha256": {
+      "$ref": "#/$defs/sha256"
     },
     "status": {
       "enum": ["success", "failed", "missing"]
@@ -106,6 +130,42 @@
     "sha256": {
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
+    },
+    "riskPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_id",
+        "policy_version",
+        "calibration_ref",
+        "calibration_sha256",
+        "watch_below",
+        "high_below"
+      ],
+      "properties": {
+        "policy_id": {
+          "const": "hpsv3_source_delta_threshold_v1"
+        },
+        "policy_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "calibration_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "calibration_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "watch_below": {
+          "type": "number",
+          "maximum": 0
+        },
+        "high_below": {
+          "type": "number",
+          "maximum": 0
+        }
+      }
     }
   },
   "allOf": [
@@ -115,10 +175,11 @@
         "required": ["status"]
       },
       "then": {
-        "required": ["mu"],
         "properties": {
           "mu": {"type": "number"},
-          "error_code": {"type": "null"}
+          "error_code": {"type": "null"},
+          "report_ref": {"type": "string", "minLength": 1},
+          "report_sha256": {"$ref": "#/$defs/sha256"}
         }
       }
     },
@@ -130,7 +191,23 @@
       "then": {
         "properties": {
           "mu": {"type": "null"},
-          "sigma": {"type": "null"}
+          "sigma": {"type": "null"},
+          "delta_from_source": {"type": "null"},
+          "delta_from_anchor": {"type": "null"},
+          "quality_risk": {"const": "unknown"},
+          "error_code": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"status": {"const": "missing"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "report_ref": {"type": "null"},
+          "report_sha256": {"type": "null"}
         }
       }
     }

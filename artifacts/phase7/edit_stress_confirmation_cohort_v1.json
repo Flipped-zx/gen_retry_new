@@ -1,0 +1,2613 @@
+{
+  "schema_version": "edit_stress_confirmation_cohort_v1",
+  "selection_id": "flow_dppo1000_v9_edit_stress_confirmation_v1",
+  "selection_sha256": "cd2adfecd7a49ae712734cb4bb7db59b633d856ad8285433711e2ae3f58c046e",
+  "source_run_root": "runs/phase7_flow_dppo1000_v9_fresh8_v1",
+  "source_artifacts": {
+    "official_selected_prompts": "artifacts/phase7/flow_dppo1000_v9_official_mix_selected_prompts.json",
+    "official_selected_prompts_sha256": "9f5fca671e42bbb68577cb1513e072f7c020e59131dfa1989bb2c5c5f4fa0eba",
+    "prepared_rollouts": "artifacts/phase7/flow_dppo1000_v9_fresh8_v1_prepared_rollouts.json",
+    "prepared_rollouts_sha256": "6775bcfae049bb825512b7edbfa94884431d03b431f7275e8cbad53725b5b29b"
+  },
+  "calibration_exclusion_episode_ids": [
+    "phase3_ep_970",
+    "phase3_ep_931",
+    "phase3_ep_283",
+    "phase3_ep_926",
+    "phase3_ep_118",
+    "phase3_ep_134",
+    "phase3_ep_296",
+    "phase3_ep_855",
+    "phase3_ep_671",
+    "phase3_ep_177",
+    "phase3_ep_899",
+    "phase3_ep_307",
+    "phase3_ep_461",
+    "phase3_ep_181",
+    "phase3_ep_789",
+    "phase3_ep_783",
+    "phase3_ep_063",
+    "phase3_ep_648"
+  ],
+  "selection_rule": {
+    "episode_unit": "one episode; attempts are paired observations only",
+    "candidate_predicate": "edit_count >= 2 and max_depth >= 2",
+    "depth_strata": {
+      "D2": "max_depth == 2",
+      "D3+": "max_depth >= 3"
+    },
+    "exclusive_conflict_class": {
+      "U": "has pass_count_delta > 0 and primary_gm_delta < 0",
+      "D": "has pass_count_delta < 0 and primary_gm_delta > 0",
+      "N": "neither U nor D",
+      "both_U_and_D": "assign the episode to the class with largest absolute primary_gm_delta; ties resolve U before D, then child_attempt_id"
+    },
+    "within_cell_rank": {
+      "U": "descending absolute primary_gm_delta, descending pass_count_delta, descending edit_count, episode_id",
+      "D": "descending absolute primary_gm_delta, ascending pass_count_delta, descending edit_count, episode_id",
+      "N": "descending edit_count, descending primary pair pass_count_delta, descending primary pair primary_gm_delta, episode_id"
+    },
+    "quota_reallocation": "begin with 3 per D2/D3+ x easy/medium/hard x U/D/N cell; after calibration exclusion, infeasible D2 U seats remain explicit and remaining seats are assigned to D3+ conflict cells as recorded in stratum_summary",
+    "hps_selection_guard": "no HPS score, sidecar, or image quality re-evaluation is read by this selector"
+  },
+  "target_episode_count": 60,
+  "selected_episode_count": 60,
+  "stratum_summary": [
+    {
+      "stratum": "D2_easy_U",
+      "target_quota": 0,
+      "available_after_calibration_exclusion": 0,
+      "selected_episode_count": 0,
+      "equal_three_quota_shortfall": 3
+    },
+    {
+      "stratum": "D2_easy_D",
+      "target_quota": 3,
+      "available_after_calibration_exclusion": 3,
+      "selected_episode_count": 3,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D2_easy_N",
+      "target_quota": 3,
+      "available_after_calibration_exclusion": 59,
+      "selected_episode_count": 3,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D2_medium_U",
+      "target_quota": 2,
+      "available_after_calibration_exclusion": 2,
+      "selected_episode_count": 2,
+      "equal_three_quota_shortfall": 1
+    },
+    {
+      "stratum": "D2_medium_D",
+      "target_quota": 3,
+      "available_after_calibration_exclusion": 8,
+      "selected_episode_count": 3,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D2_medium_N",
+      "target_quota": 3,
+      "available_after_calibration_exclusion": 79,
+      "selected_episode_count": 3,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D2_hard_U",
+      "target_quota": 1,
+      "available_after_calibration_exclusion": 1,
+      "selected_episode_count": 1,
+      "equal_three_quota_shortfall": 2
+    },
+    {
+      "stratum": "D2_hard_D",
+      "target_quota": 3,
+      "available_after_calibration_exclusion": 17,
+      "selected_episode_count": 3,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D2_hard_N",
+      "target_quota": 3,
+      "available_after_calibration_exclusion": 62,
+      "selected_episode_count": 3,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D3+_easy_U",
+      "target_quota": 5,
+      "available_after_calibration_exclusion": 5,
+      "selected_episode_count": 5,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D3+_easy_D",
+      "target_quota": 4,
+      "available_after_calibration_exclusion": 7,
+      "selected_episode_count": 4,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D3+_easy_N",
+      "target_quota": 3,
+      "available_after_calibration_exclusion": 40,
+      "selected_episode_count": 3,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D3+_medium_U",
+      "target_quota": 5,
+      "available_after_calibration_exclusion": 9,
+      "selected_episode_count": 5,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D3+_medium_D",
+      "target_quota": 5,
+      "available_after_calibration_exclusion": 5,
+      "selected_episode_count": 5,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D3+_medium_N",
+      "target_quota": 3,
+      "available_after_calibration_exclusion": 92,
+      "selected_episode_count": 3,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D3+_hard_U",
+      "target_quota": 5,
+      "available_after_calibration_exclusion": 9,
+      "selected_episode_count": 5,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D3+_hard_D",
+      "target_quota": 6,
+      "available_after_calibration_exclusion": 13,
+      "selected_episode_count": 6,
+      "equal_three_quota_shortfall": 0
+    },
+    {
+      "stratum": "D3+_hard_N",
+      "target_quota": 3,
+      "available_after_calibration_exclusion": 69,
+      "selected_episode_count": 3,
+      "equal_three_quota_shortfall": 0
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "phase3_ep_331",
+      "tier": "easy",
+      "source_atom_count": 5,
+      "task_spec_constraint_count": 6,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_easy_D",
+      "conflict_class": "D",
+      "original_prompt": "five cows and a white blue croissant",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_331/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_331/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_331/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_331/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_331/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.06435997510841415,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_005"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_331/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_331/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_331/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_331/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_473",
+      "tier": "easy",
+      "source_atom_count": 3,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_easy_D",
+      "conflict_class": "D",
+      "original_prompt": "a wooden metal horse",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_473/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_473/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_473/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_473/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_473/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.04492903315561135,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_002"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_473/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_473/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_473/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_473/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_874",
+      "tier": "easy",
+      "source_atom_count": 4,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_easy_D",
+      "conflict_class": "D",
+      "original_prompt": "seven wooden green cars",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_874/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_874/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_874/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_874/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_874/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.0013723567677826065,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_002"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_874/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_874/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_874/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_874/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_850",
+      "tier": "easy",
+      "source_atom_count": 4,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_easy_N",
+      "conflict_class": "N",
+      "original_prompt": "six checkered spotted rabbits",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_850/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_850/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_850/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_850/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_850/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.9766117850443821,
+        "fixed_constraint_ids": [
+          "c_003"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_850/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_850/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_850/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_850/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_898",
+      "tier": "easy",
+      "source_atom_count": 4,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_easy_N",
+      "conflict_class": "N",
+      "original_prompt": "seven blue stone koalas",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_898/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_898/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_898/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_898/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_898/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.8207021611810749,
+        "fixed_constraint_ids": [
+          "c_001"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_898/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_898/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_898/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_898/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_955",
+      "tier": "easy",
+      "source_atom_count": 5,
+      "task_spec_constraint_count": 5,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_easy_N",
+      "conflict_class": "N",
+      "original_prompt": "three cats chasing five sheeps",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_955/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_955/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_955/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_955/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_955/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.6358690491240465,
+        "fixed_constraint_ids": [
+          "c_004"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_955/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_955/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_955/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_955/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_173",
+      "tier": "medium",
+      "source_atom_count": 7,
+      "task_spec_constraint_count": 7,
+      "edit_count": 2,
+      "max_depth": 2,
+      "stratum": "D2_medium_U",
+      "conflict_class": "U",
+      "original_prompt": "five brown bears and four green red turtles",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_173/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_173/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_173/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_173/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_173/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.2159743272351815,
+        "fixed_constraint_ids": [
+          "c_005",
+          "c_006"
+        ],
+        "regressed_constraint_ids": [
+          "c_001"
+        ],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_173/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_173/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_173/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_173/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_093",
+      "tier": "medium",
+      "source_atom_count": 7,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_medium_U",
+      "conflict_class": "U",
+      "original_prompt": "six violins in front of four umbrellas in front of a penguin",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_093/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_093/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_093/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_093/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_093/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.005984948579854654,
+        "fixed_constraint_ids": [
+          "c_003"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_093/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_093/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_093/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_093/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_630",
+      "tier": "medium",
+      "source_atom_count": 8,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_medium_D",
+      "conflict_class": "D",
+      "original_prompt": "five kangaroos in front of five birds in front of seven guitars",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_630/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_630/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_630/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_630/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_630/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.22899031972459655,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_006"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_630/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_630/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_630/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_630/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_637",
+      "tier": "medium",
+      "source_atom_count": 7,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_medium_D",
+      "conflict_class": "D",
+      "original_prompt": "seven turtles playing with a raccoon under seven chairs",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_637/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_637/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_637/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_637/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_637/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.21855749695770077,
+        "fixed_constraint_ids": [
+          "c_007"
+        ],
+        "regressed_constraint_ids": [
+          "c_001",
+          "c_003"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_637/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_637/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_637/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_637/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_988",
+      "tier": "medium",
+      "source_atom_count": 6,
+      "task_spec_constraint_count": 6,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_medium_D",
+      "conflict_class": "D",
+      "original_prompt": "seven koalas and five pink plastic bears",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_988/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_988/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_988/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_988/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_988/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.1117913161688485,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_003"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_988/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_988/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_988/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_988/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_733",
+      "tier": "medium",
+      "source_atom_count": 7,
+      "task_spec_constraint_count": 7,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_medium_N",
+      "conflict_class": "N",
+      "original_prompt": "six white turtles and five yellow pink violins",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_733/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_733/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_733/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_733/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_733/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.9132985583728637,
+        "fixed_constraint_ids": [
+          "c_001"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_733/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_733/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_733/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_733/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_573",
+      "tier": "medium",
+      "source_atom_count": 7,
+      "task_spec_constraint_count": 7,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_medium_N",
+      "conflict_class": "N",
+      "original_prompt": "six spotted suitcases and five spotted checkered backpacks",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_573/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_573/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_573/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_573/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_573/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.4831949495720483,
+        "fixed_constraint_ids": [
+          "c_005"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_573/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_573/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_573/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_573/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_332",
+      "tier": "medium",
+      "source_atom_count": 6,
+      "task_spec_constraint_count": 6,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_medium_N",
+      "conflict_class": "N",
+      "original_prompt": "five cars and five red stone motorcycles",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_332/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_332/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_332/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_332/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_332/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.46729883040420994,
+        "fixed_constraint_ids": [
+          "c_005"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_332/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_332/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_332/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_332/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_456",
+      "tier": "hard",
+      "source_atom_count": 10,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_hard_U",
+      "conflict_class": "U",
+      "original_prompt": "four pigs to the left of seven giraffes on top of five white red dogs",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_456/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_456/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_456/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_456/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_456/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": 3,
+        "primary_gm_delta": -0.02532937883471957,
+        "fixed_constraint_ids": [
+          "c_001",
+          "c_006",
+          "c_009"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_456/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_456/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_456/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_456/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_951",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 9,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_hard_D",
+      "conflict_class": "D",
+      "original_prompt": "four dogs on top of seven bagels to the left of six stone guitars",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_951/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_951/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_951/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_951/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_951/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.5919248476201528,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_008"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_951/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_951/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_951/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_951/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_808",
+      "tier": "hard",
+      "source_atom_count": 10,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_hard_D",
+      "conflict_class": "D",
+      "original_prompt": "six green suitcases on top of four bicycles under four blue horses",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_808/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_808/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_808/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_808/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_808/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.5018493662544596,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_007"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_808/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_808/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_808/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_808/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_672",
+      "tier": "hard",
+      "source_atom_count": 10,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_hard_D",
+      "conflict_class": "D",
+      "original_prompt": "seven candles behind five plastic bicycles to the right of seven plastic croissants",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_672/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_672/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_672/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_672/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_672/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.3101909527751894,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_008"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_672/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_672/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_672/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_672/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_376",
+      "tier": "hard",
+      "source_atom_count": 10,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_hard_N",
+      "conflict_class": "N",
+      "original_prompt": "five cows to the right of five plastic spotted rabbits to the right of five guitars",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_376/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_376/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_376/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_376/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_376/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": 2,
+        "primary_gm_delta": 0.15728492211411843,
+        "fixed_constraint_ids": [
+          "c_004",
+          "c_005",
+          "c_006"
+        ],
+        "regressed_constraint_ids": [
+          "c_001"
+        ],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_376/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_376/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_376/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_376/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_335",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 9,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_hard_N",
+      "conflict_class": "N",
+      "original_prompt": "four glass sheeps to the left of four toys on top of six birds",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_335/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_335/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_335/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_335/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_335/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": 2,
+        "primary_gm_delta": 0.030090138483912024,
+        "fixed_constraint_ids": [
+          "c_004",
+          "c_007"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_335/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_335/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_335/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_335/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_167",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 9,
+      "edit_count": 4,
+      "max_depth": 2,
+      "stratum": "D2_hard_N",
+      "conflict_class": "N",
+      "original_prompt": "four pink elephants behind seven dogs in front of six clocks",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_167/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_167/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_167/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_167/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_167/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.6129503762028357,
+        "fixed_constraint_ids": [
+          "c_008"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_167/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_167/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_167/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_167/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_745",
+      "tier": "easy",
+      "source_atom_count": 3,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_easy_U",
+      "conflict_class": "U",
+      "original_prompt": "a stone metal koala",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_745/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_745/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_745/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_745/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_745/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_003",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.14773539418633422,
+        "fixed_constraint_ids": [
+          "c_003"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_003",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_745/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_745/images/img_003.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_745/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_745/geneval2/a_003.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_482",
+      "tier": "easy",
+      "source_atom_count": 4,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 4,
+      "stratum": "D3+_easy_U",
+      "conflict_class": "U",
+      "original_prompt": "five glass metal raccoons",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_482/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_482/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_482/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_482/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_482/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.08996185351947242,
+        "fixed_constraint_ids": [
+          "c_003"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_482/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_482/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_482/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_482/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_779",
+      "tier": "easy",
+      "source_atom_count": 5,
+      "task_spec_constraint_count": 5,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_easy_U",
+      "conflict_class": "U",
+      "original_prompt": "three elephants chasing five raccoons",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_779/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_779/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_779/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_779/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_779/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.02973325351943157,
+        "fixed_constraint_ids": [
+          "c_004"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_779/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_779/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_779/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_779/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_457",
+      "tier": "easy",
+      "source_atom_count": 3,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_easy_U",
+      "conflict_class": "U",
+      "original_prompt": "a metal wooden backpack",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_457/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_457/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_457/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_457/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_457/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_003",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.015717961481610414,
+        "fixed_constraint_ids": [
+          "c_002"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_003",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_457/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_457/images/img_003.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_457/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_457/geneval2/a_003.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_474",
+      "tier": "easy",
+      "source_atom_count": 4,
+      "task_spec_constraint_count": 4,
+      "edit_count": 3,
+      "max_depth": 3,
+      "stratum": "D3+_easy_U",
+      "conflict_class": "U",
+      "original_prompt": "seven blue yellow giraffes",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_474/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_474/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_474/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_474/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_474/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.00044542308188069615,
+        "fixed_constraint_ids": [
+          "c_002"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_474/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_474/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_474/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_474/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_106",
+      "tier": "easy",
+      "source_atom_count": 4,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_easy_D",
+      "conflict_class": "D",
+      "original_prompt": "seven red brown koalas",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_106/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_106/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_106/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_106/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_106/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.27281115233058945,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_003"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_106/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_106/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_106/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_106/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_865",
+      "tier": "easy",
+      "source_atom_count": 3,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_easy_D",
+      "conflict_class": "D",
+      "original_prompt": "a brown white sheep",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_865/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_865/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_865/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_865/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_865/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.19520617679181762,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_002"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_865/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_865/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_865/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_865/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_433",
+      "tier": "easy",
+      "source_atom_count": 3,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_easy_D",
+      "conflict_class": "D",
+      "original_prompt": "a black green raccoon",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_433/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_433/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_433/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_433/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_433/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.16124590052757207,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_002"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_433/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_433/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_433/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_433/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_787",
+      "tier": "easy",
+      "source_atom_count": 5,
+      "task_spec_constraint_count": 5,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_easy_D",
+      "conflict_class": "D",
+      "original_prompt": "four raccoons chasing three pigs",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_787/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_787/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_787/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_787/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_787/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.12246361535007572,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_003"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_787/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_787/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_787/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_787/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_666",
+      "tier": "easy",
+      "source_atom_count": 4,
+      "task_spec_constraint_count": 4,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_easy_N",
+      "conflict_class": "N",
+      "original_prompt": "six black pink donuts",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_666/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_666/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_666/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_666/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_666/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.7726156680368765,
+        "fixed_constraint_ids": [
+          "c_002"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_666/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_666/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_666/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_666/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_835",
+      "tier": "easy",
+      "source_atom_count": 5,
+      "task_spec_constraint_count": 6,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_easy_N",
+      "conflict_class": "N",
+      "original_prompt": "three red white zebras and a bagel",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_835/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_835/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_835/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_835/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_835/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.5269281013077236,
+        "fixed_constraint_ids": [
+          "c_003"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_835/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_835/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_835/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_835/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_131",
+      "tier": "easy",
+      "source_atom_count": 5,
+      "task_spec_constraint_count": 6,
+      "edit_count": 4,
+      "max_depth": 4,
+      "stratum": "D3+_easy_N",
+      "conflict_class": "N",
+      "original_prompt": "six guitars and a striped white zebra",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_131/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_131/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_131/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_131/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_131/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.5159600813097176,
+        "fixed_constraint_ids": [
+          "c_005"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_131/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_131/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_131/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_131/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_742",
+      "tier": "medium",
+      "source_atom_count": 8,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 4,
+      "stratum": "D3+_medium_U",
+      "conflict_class": "U",
+      "original_prompt": "six backpacks behind four raccoons to the right of five sheeps",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_742/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_742/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_742/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_742/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_742/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.30276471249474823,
+        "fixed_constraint_ids": [
+          "c_001"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_742/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_742/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_742/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_742/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_484",
+      "tier": "medium",
+      "source_atom_count": 6,
+      "task_spec_constraint_count": 6,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_medium_U",
+      "conflict_class": "U",
+      "original_prompt": "six spotted striped motorcycles and four umbrellas",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_484/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_484/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_484/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_484/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_484/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.19131125800694215,
+        "fixed_constraint_ids": [
+          "c_002"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_484/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_484/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_484/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_484/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_230",
+      "tier": "medium",
+      "source_atom_count": 8,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_medium_U",
+      "conflict_class": "U",
+      "original_prompt": "six trucks under six chairs under four backpacks",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_230/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_230/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_230/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_230/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_230/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.05927763201874335,
+        "fixed_constraint_ids": [
+          "c_004",
+          "c_006"
+        ],
+        "regressed_constraint_ids": [
+          "c_007"
+        ],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_230/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_230/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_230/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_230/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_558",
+      "tier": "medium",
+      "source_atom_count": 8,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 4,
+      "stratum": "D3+_medium_U",
+      "conflict_class": "U",
+      "original_prompt": "six rabbits behind four trucks on top of six kangaroos",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_558/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_558/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_558/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_558/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_558/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_003",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.03646733662543783,
+        "fixed_constraint_ids": [
+          "c_001"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_003",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_558/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_558/images/img_003.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_558/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_558/geneval2/a_003.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_333",
+      "tier": "medium",
+      "source_atom_count": 7,
+      "task_spec_constraint_count": 7,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_medium_U",
+      "conflict_class": "U",
+      "original_prompt": "four stone glass turtles and seven blue koalas",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_333/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_333/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_333/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_333/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_333/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.02706717280245488,
+        "fixed_constraint_ids": [
+          "c_003"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_333/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_333/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_333/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_333/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_269",
+      "tier": "medium",
+      "source_atom_count": 7,
+      "task_spec_constraint_count": 7,
+      "edit_count": 4,
+      "max_depth": 4,
+      "stratum": "D3+_medium_D",
+      "conflict_class": "D",
+      "original_prompt": "four metal violins and four green wooden bicycles",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_269/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_269/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_269/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_269/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_269/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.4043240959690251,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_006"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_269/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_269/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_269/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_269/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_870",
+      "tier": "medium",
+      "source_atom_count": 8,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_medium_D",
+      "conflict_class": "D",
+      "original_prompt": "five penguins jumping over five turtles to the left of six pigs",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_870/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_870/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_870/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_870/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_870/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.13714630737770528,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_004"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_870/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_870/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_870/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_870/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_981",
+      "tier": "medium",
+      "source_atom_count": 7,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_medium_D",
+      "conflict_class": "D",
+      "original_prompt": "six raccoons playing with five kangaroos on top of a flower",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_981/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_981/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_981/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_981/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_981/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": -2,
+        "primary_gm_delta": 0.12946323721025077,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_001",
+          "c_003"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_981/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_981/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_981/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_981/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_108",
+      "tier": "medium",
+      "source_atom_count": 6,
+      "task_spec_constraint_count": 6,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_medium_D",
+      "conflict_class": "D",
+      "original_prompt": "four spotted glass cookies and five backpacks",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_108/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_108/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_108/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_108/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_108/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.02310558461366636,
+        "fixed_constraint_ids": [
+          "c_003"
+        ],
+        "regressed_constraint_ids": [
+          "c_001",
+          "c_004"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_108/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_108/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_108/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_108/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_470",
+      "tier": "medium",
+      "source_atom_count": 8,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_medium_D",
+      "conflict_class": "D",
+      "original_prompt": "seven bicycles behind six bears playing with seven giraffes",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_470/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_470/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_470/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_470/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_470/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.004933907501820725,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_006"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_470/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_470/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_470/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_470/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_205",
+      "tier": "medium",
+      "source_atom_count": 7,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_medium_N",
+      "conflict_class": "N",
+      "original_prompt": "four suitcases in front of a chair behind six cows",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_205/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_205/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_205/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_205/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_205/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_003",
+        "pass_count_delta": 2,
+        "primary_gm_delta": 0.5759830141178435,
+        "fixed_constraint_ids": [
+          "c_004",
+          "c_005"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_003",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_205/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_205/images/img_003.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_205/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_205/geneval2/a_003.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_214",
+      "tier": "medium",
+      "source_atom_count": 8,
+      "task_spec_constraint_count": 8,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_medium_N",
+      "conflict_class": "N",
+      "original_prompt": "five donuts to the right of five motorcycles to the left of six backpacks",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_214/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_214/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_214/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_214/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_214/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.9172213836413887,
+        "fixed_constraint_ids": [
+          "c_001"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_214/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_214/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_214/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_214/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_396",
+      "tier": "medium",
+      "source_atom_count": 6,
+      "task_spec_constraint_count": 6,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_medium_N",
+      "conflict_class": "N",
+      "original_prompt": "seven spotted checkered koalas and six chairs",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_396/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_396/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_396/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_396/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_396/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": 0.8857744031197632,
+        "fixed_constraint_ids": [
+          "c_005"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_396/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_396/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_396/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_396/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_184",
+      "tier": "hard",
+      "source_atom_count": 10,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 4,
+      "stratum": "D3+_hard_U",
+      "conflict_class": "U",
+      "original_prompt": "four cookies under seven donuts on top of five brown striped motorcycles",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_184/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_184/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_184/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_184/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_184/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_003",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.22950011060863768,
+        "fixed_constraint_ids": [
+          "c_010"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_003",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_184/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_184/images/img_003.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_184/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_184/geneval2/a_003.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_423",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_hard_U",
+      "conflict_class": "U",
+      "original_prompt": "six lions to the right of a penguin playing with six sparkling blue turtles",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_423/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_423/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_423/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_423/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_423/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.2044782441979658,
+        "fixed_constraint_ids": [
+          "c_006"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_423/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_423/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_423/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_423/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_136",
+      "tier": "hard",
+      "source_atom_count": 10,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 4,
+      "stratum": "D3+_hard_U",
+      "conflict_class": "U",
+      "original_prompt": "five umbrellas on top of four sparkling wooden trumpets to the right of six cows",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_136/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_136/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_136/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_136/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_136/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_003",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.16425243774963316,
+        "fixed_constraint_ids": [
+          "c_006"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_003",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_136/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_136/images/img_003.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_136/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_136/geneval2/a_003.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_064",
+      "tier": "hard",
+      "source_atom_count": 10,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_hard_U",
+      "conflict_class": "U",
+      "original_prompt": "seven trumpets to the left of five brown raccoons to the left of six white clocks",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_064/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_064/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_064/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_064/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_064/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.06902468603917968,
+        "fixed_constraint_ids": [
+          "c_007"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_064/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_064/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_064/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_064/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_880",
+      "tier": "hard",
+      "source_atom_count": 10,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_hard_U",
+      "conflict_class": "U",
+      "original_prompt": "seven elephants behind four green motorcycles under five pink turtles",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_880/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_880/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_880/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_880/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_880/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_003",
+        "pass_count_delta": 1,
+        "primary_gm_delta": -0.05712388313334549,
+        "fixed_constraint_ids": [
+          "c_008"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "semantic_up_gm_down",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_003",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_880/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_880/images/img_003.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_880/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_880/geneval2/a_003.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_504",
+      "tier": "hard",
+      "source_atom_count": 10,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_hard_D",
+      "conflict_class": "D",
+      "original_prompt": "five white backpacks behind six wooden donuts under six monkeys",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_504/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_504/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_504/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_504/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_504/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.5829405296016179,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_004"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_504/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_504/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_504/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_504/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_383",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 9,
+      "edit_count": 4,
+      "max_depth": 4,
+      "stratum": "D3+_hard_D",
+      "conflict_class": "D",
+      "original_prompt": "four guitars to the left of five koalas under seven striped mushrooms",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_383/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_383/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_383/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_383/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_383/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_003",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.47710424282438496,
+        "fixed_constraint_ids": [
+          "c_001"
+        ],
+        "regressed_constraint_ids": [
+          "c_006",
+          "c_007"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_003",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_383/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_383/images/img_003.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_383/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_383/geneval2/a_003.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_831",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 9,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_hard_D",
+      "conflict_class": "D",
+      "original_prompt": "five green horses on top of seven trucks under five chairs",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_831/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_831/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_831/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_831/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_831/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.1619104998471781,
+        "fixed_constraint_ids": [
+          "c_005"
+        ],
+        "regressed_constraint_ids": [
+          "c_004",
+          "c_008"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_831/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_831/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_831/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_831/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_631",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_hard_D",
+      "conflict_class": "D",
+      "original_prompt": "a stone cow behind seven backpacks on top of four white koalas",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_631/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_631/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_631/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_631/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_631/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_002",
+        "child_attempt_id": "a_003",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.09116919240597524,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_007"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_002",
+        "child_image_artifact_id": "img_003",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_631/images/img_002.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_631/images/img_003.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_631/geneval2/a_002.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_631/geneval2/a_003.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_319",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 9,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_hard_D",
+      "conflict_class": "D",
+      "original_prompt": "six birds on top of seven blue guitars on top of four candles",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_319/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_319/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_319/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_319/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_319/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.0649922819065584,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_001"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_319/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_319/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_319/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_319/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_535",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_hard_D",
+      "conflict_class": "D",
+      "original_prompt": "six mushrooms to the left of four striped red dogs jumping over a elephant",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_535/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_535/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_535/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_535/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_535/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_001",
+        "child_attempt_id": "a_002",
+        "pass_count_delta": -1,
+        "primary_gm_delta": 0.045430753806647114,
+        "fixed_constraint_ids": [],
+        "regressed_constraint_ids": [
+          "c_004"
+        ],
+        "role": "semantic_down_gm_up",
+        "parent_image_artifact_id": "img_001",
+        "child_image_artifact_id": "img_002",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_535/images/img_001.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_535/images/img_002.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_535/geneval2/a_001.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_535/geneval2/a_002.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_344",
+      "tier": "hard",
+      "source_atom_count": 10,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 4,
+      "stratum": "D3+_hard_N",
+      "conflict_class": "N",
+      "original_prompt": "six sparkling monkeys behind seven plastic guitars under five toys",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_344/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_344/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_344/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_344/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_344/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": 3,
+        "primary_gm_delta": 0.39906957321019026,
+        "fixed_constraint_ids": [
+          "c_001",
+          "c_005",
+          "c_009"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_344/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_344/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_344/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_344/geneval2/a_001.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_231",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 4,
+      "stratum": "D3+_hard_N",
+      "conflict_class": "N",
+      "original_prompt": "six black kangaroos on top of five backpacks to the right of a stone elephant",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_231/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_231/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_231/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_231/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_231/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_003",
+        "child_attempt_id": "a_004",
+        "pass_count_delta": 2,
+        "primary_gm_delta": 0.7843945833094866,
+        "fixed_constraint_ids": [
+          "c_001",
+          "c_005"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_003",
+        "child_image_artifact_id": "img_004",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_231/images/img_003.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_231/images/img_004.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_231/geneval2/a_003.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_231/geneval2/a_004.json"
+      }
+    },
+    {
+      "episode_id": "phase3_ep_815",
+      "tier": "hard",
+      "source_atom_count": 9,
+      "task_spec_constraint_count": 10,
+      "edit_count": 4,
+      "max_depth": 3,
+      "stratum": "D3+_hard_N",
+      "conflict_class": "N",
+      "original_prompt": "seven croissants under a striped chair under seven blue cars",
+      "task_spec_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_815/task_spec.json",
+      "episode_state_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_815/episode_state.json",
+      "manifest_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_815/manifest.json",
+      "images_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_815/images",
+      "geneval2_dir": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_815/geneval2",
+      "attempt_ids": [
+        "a_000",
+        "a_001",
+        "a_002",
+        "a_003",
+        "a_004"
+      ],
+      "primary_hps_rescore_pair": {
+        "parent_attempt_id": "a_000",
+        "child_attempt_id": "a_001",
+        "pass_count_delta": 2,
+        "primary_gm_delta": 0.711671297011485,
+        "fixed_constraint_ids": [
+          "c_001",
+          "c_008"
+        ],
+        "regressed_constraint_ids": [],
+        "role": "other_edit_transition",
+        "parent_image_artifact_id": "img_000",
+        "child_image_artifact_id": "img_001",
+        "parent_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_815/images/img_000.png",
+        "child_image_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_815/images/img_001.png",
+        "parent_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_815/geneval2/a_000.json",
+        "child_geneval2_path": "runs/phase7_flow_dppo1000_v9_fresh8_v1/phase3_ep_815/geneval2/a_001.json"
+      }
+    }
+  ]
+}

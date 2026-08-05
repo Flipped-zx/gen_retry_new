@@ -36,6 +36,13 @@
         "metric_version": "flow_dppo_v1"
       },
       "best_selection_rule": "higher_pass_count_then_higher_primary_score_then_earlier"
+    },
+    "auxiliary_quality_decision": {
+      "policy_id": "planner_context_only_hpsv3_advisory_v1",
+      "application": "planner_context_only",
+      "primary_objective": "geneval2",
+      "intervention_skill_id": "local_edit_preservation",
+      "hidden_source_filter": false
     }
   }
 }
