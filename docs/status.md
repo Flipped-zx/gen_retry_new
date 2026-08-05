@@ -14,6 +14,20 @@ disjoint 60-episode confirmation manifest are frozen without reading HPS
 results. No live `G+H` pilot, v0.8 SFT use, SFT export, or policy promotion has
 occurred.
 
+The six-trajectory HPSv3 mini-pilot decision probe is now complete. The offline
+HPS diagnostic produced a negative child-minus-parent delta for all six selected
+edit pairs (U mean -1.177195, D mean -0.806923, N mean -0.073430). A
+counterfactual GPT-5.5 Teacher call under each arm produced 6/6 parseable
+actions for both `G` and `G+H`; three exact action objects differed, but only
+one changed action type. The clearest mechanism case changed a high-risk U
+continuation from `edit_image` to `query_skill(local_edit_preservation)`;
+the other two differences retained `edit_image` and refined the instruction.
+No image action was executed, so this is decision feasibility evidence rather
+than mitigation evidence. Calls were separate unsampled API requests, so
+action differences also contain Teacher sampling variation. Report:
+`docs/phase7/hpsv3_teacher_decision_probe_report.md`; artifact:
+`artifacts/phase7/hpsv3_teacher_decision_probe_v1.json`.
+
 The formal Flow-DPPO 1000 v9 cold-start SFT is complete. Gate 3 returned
 `PASS_FREEZE_WITH_MONITORING`, and the frozen export contains 4302 positive
 targets split by trajectory into 3450 train, 438 validation, and 414 test

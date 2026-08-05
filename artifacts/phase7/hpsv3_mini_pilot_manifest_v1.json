@@ -1,0 +1,68 @@
+{
+  "schema_version": "hpsv3_edit_stress_mini_manifest_v1",
+  "selection_id": "flow_dppo1000_v9_hpsv3_mini_pilot_v1",
+  "source_run": "runs/phase7_flow_dppo1000_v9_fresh8_v1",
+  "prompt_policy": "original_prompt_exact_utf8_v1",
+  "pairs": [
+    {
+      "episode_id": "phase3_ep_926",
+      "stratum": "U",
+      "depth": "D2",
+      "difficulty": "medium",
+      "parent_attempt_id": "a_000",
+      "child_attempt_id": "a_002",
+      "delta_pass_geneval2": 1,
+      "delta_gm_geneval2": -0.7068403885
+    },
+    {
+      "episode_id": "phase3_ep_461",
+      "stratum": "U",
+      "depth": "D3+",
+      "difficulty": "medium",
+      "parent_attempt_id": "a_001",
+      "child_attempt_id": "a_002",
+      "delta_pass_geneval2": 1,
+      "delta_gm_geneval2": -0.4130941808
+    },
+    {
+      "episode_id": "phase3_ep_855",
+      "stratum": "D",
+      "depth": "D2",
+      "difficulty": "hard",
+      "parent_attempt_id": "a_002",
+      "child_attempt_id": "a_004",
+      "delta_pass_geneval2": -1,
+      "delta_gm_geneval2": 0.6268032809
+    },
+    {
+      "episode_id": "phase3_ep_063",
+      "stratum": "D",
+      "depth": "D3+",
+      "difficulty": "hard",
+      "parent_attempt_id": "a_003",
+      "child_attempt_id": "a_004",
+      "delta_pass_geneval2": -1,
+      "delta_gm_geneval2": 0.6356511685
+    },
+    {
+      "episode_id": "phase3_ep_283",
+      "stratum": "N",
+      "depth": "D2",
+      "difficulty": "easy",
+      "parent_attempt_id": "a_000",
+      "child_attempt_id": "a_001",
+      "delta_pass_geneval2": 2,
+      "delta_gm_geneval2": 0.0217425772
+    },
+    {
+      "episode_id": "phase3_ep_648",
+      "stratum": "N",
+      "depth": "D3+",
+      "difficulty": "hard",
+      "parent_attempt_id": "a_003",
+      "child_attempt_id": "a_004",
+      "delta_pass_geneval2": 4,
+      "delta_gm_geneval2": 0.2440793321
+    }
+  ]
+}

@@ -1,0 +1,535 @@
+{
+  "schema_version": "hpsv3_teacher_decision_probe_v1",
+  "selection_id": "flow_dppo1000_v9_hpsv3_mini_pilot_v1",
+  "intervention_status": "counterfactual_decision_only; no image action executed",
+  "planner_g": "GPT-5.5 Teacher v9 + PlannerContext v0.7",
+  "planner_g_plus_h": "GPT-5.5 Teacher v9 + PlannerContext v0.8 + planner_context_only_hpsv3_advisory_v1",
+  "risk_policy_status": "exploratory-unfrozen; not an admission policy",
+  "risk_policy": {
+    "policy_id": "hpsv3_source_delta_threshold_v1",
+    "policy_version": "exploratory-unfrozen-v1",
+    "calibration_ref": "artifacts/phase7/hpsv3_mini_pilot_manifest_v1.json",
+    "calibration_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "watch_below": -0.5,
+    "high_below": -1.0
+  },
+  "risk_policy_sha256": "00b6a5f67c440b2b15616b70a220d27f24b04b775f781eafdc74cd902d335b7d",
+  "hps_report": "artifacts/phase7/hpsv3_mini_pilot_v1.json",
+  "results": [
+    {
+      "episode_id": "phase3_ep_926",
+      "stratum": "U",
+      "parent_attempt_id": "a_000",
+      "child_attempt_id": "a_002",
+      "prefix_last_event_id": "evt_0027",
+      "context_g_sha256": "c8b0f531db8a8e8f751476bf201bebea34f003802ae4dc543f050ccca8c6f90e",
+      "context_h_sha256": "94e3e8f375d2cf63e1ab36258c97107cff7658afa12010a2be93a547bb738118",
+      "hps_quality_risk_visible": "watch",
+      "g": {
+        "arm": "G",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "c2f6d416b5f68c404cbc16ac9ad5d5111a7acc95dc6780f278d1cfe2326898c3",
+        "response_metadata": {
+          "id": "resp_00c3349e8c103cb5016a73545389ac819b9ea7ec250aa35fd6",
+          "created": 1785943142,
+          "usage": {
+            "completion_tokens": 760,
+            "prompt_tokens": 5358,
+            "total_tokens": 6118,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 444,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "c2f6d416b5f68c404cbc16ac9ad5d5111a7acc95dc6780f278d1cfe2326898c3"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "edit_image",
+          "arguments": {
+            "instruction": "Target operation: Edit attempt a_002 by adding exactly three additional fully visible raccoons so the image contains exactly four raccoons total. Make the raccoon group plainly countable and separate each raccoon enough to distinguish four individual bodies and faces.\nSpatial grounding: Place the raccoons in the far left third of the grassy field, with the existing raccoon remaining at the lower-left and the three new raccoons arranged above and/or slightly to the right of it as a small left-side cluster. Keep every raccoon entirely left of the cows, and keep the cows still left of the bicycles.\nPreservation lock: Preserve the five bicycles on the right, the seven cows in the middle, the grassy field background, the wide composition, the existing object identities, and the fact that bicycles are to the right of cows and cows are to the right of raccoons.\nForbidden changes: Do not alter the counts or visibility of cows or bicycles. Do not remove, crop, fuse, mirror, hide, or replace any existing raccoon. Do not add any extra raccoons beyond four total, and do not introduce background animals, partial animals, or duplicated body parts.",
+            "preserve_constraint_ids": [
+              "c_001",
+              "c_002",
+              "c_003",
+              "c_004",
+              "c_005",
+              "c_006",
+              "c_008"
+            ],
+            "source_attempt_id": "a_002",
+            "target_constraint_ids": [
+              "c_007"
+            ]
+          }
+        },
+        "parse_status": "success"
+      },
+      "g_plus_h": {
+        "arm": "G+H",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "1a1252c9be5c399a72d768cba9fc9c0cc314916eb7f3909148f85ac966bb163c",
+        "response_metadata": {
+          "id": "resp_096c3517563257bb016a73546ede5c8199a0e3fe2efedc55ba",
+          "created": 1785943167,
+          "usage": {
+            "completion_tokens": 793,
+            "prompt_tokens": 6394,
+            "total_tokens": 7187,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 492,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "1a1252c9be5c399a72d768cba9fc9c0cc314916eb7f3909148f85ac966bb163c"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "edit_image",
+          "arguments": {
+            "source_attempt_id": "a_002",
+            "target_constraint_ids": [
+              "c_007"
+            ],
+            "preserve_constraint_ids": [
+              "c_001",
+              "c_002",
+              "c_003",
+              "c_004",
+              "c_005",
+              "c_006",
+              "c_008"
+            ],
+            "instruction": "Target operation: Edit attempt a_002 by adding exactly three new fully visible raccoons so the image contains exactly four raccoons total. Make the raccoons distinct, upright, and clearly countable, with no extra raccoon bodies, tails, or faces beyond four total.\nSpatial grounding: Place the three added raccoons in the far left area with the existing raccoon, forming a clearly separated left-side raccoon group that stays entirely left of the cows. Keep the cows in the middle and the bicycles on the right unchanged in their left-to-right order.\nPreservation lock: Preserve the existing four-cow count, five-bicycle count, the visible cow and bicycle identities, the grassy field background, the wide composition, and all already-passing spatial relations and object-presence evidence.\nForbidden changes: Do not add, remove, crop, fuse, hide, mirror, or substitute any cows or bicycles. Do not change the positions, counts, or visibility of the cow group or bicycle group. Do not create extra background raccoons, partial raccoons, or ambiguous animal shapes."
+          }
+        },
+        "parse_status": "success"
+      },
+      "action_equal": false
+    },
+    {
+      "episode_id": "phase3_ep_461",
+      "stratum": "U",
+      "parent_attempt_id": "a_001",
+      "child_attempt_id": "a_002",
+      "prefix_last_event_id": "evt_0031",
+      "context_g_sha256": "33e27121867b68c78a3003f9299d6b0e2fecba27b6cf24d99cf0a2c780466c49",
+      "context_h_sha256": "f2cf2d4e651abee7d8215d23cd322e13b6a62d5a26240b3b4819494a34026ac5",
+      "hps_quality_risk_visible": "high",
+      "g": {
+        "arm": "G",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "7e21ab24bf04045900b616476f2332df29e158657efa34d0293942a1f4da0092",
+        "response_metadata": {
+          "id": "resp_02c30c90dd4e426e016a73548712088199b420d70c384caeee",
+          "created": 1785943198,
+          "usage": {
+            "completion_tokens": 1133,
+            "prompt_tokens": 5453,
+            "total_tokens": 6586,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 805,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "7e21ab24bf04045900b616476f2332df29e158657efa34d0293942a1f4da0092"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "edit_image",
+          "arguments": {
+            "source_attempt_id": "a_002",
+            "target_constraint_ids": [
+              "c_001"
+            ],
+            "preserve_constraint_ids": [
+              "c_002",
+              "c_003",
+              "c_004",
+              "c_005",
+              "c_006",
+              "c_007",
+              "c_008"
+            ],
+            "instruction": "Target operation: Edit attempt a_002 only to add exactly three additional fully visible birds so the image contains exactly seven birds total, while keeping the birds and koala clearly playing with the shared colorful ball. Spatial grounding: place the three new birds in open, non-overlapping gaps around the existing bird group and koala\u2014one above-left of the colorful ball near the koala's paws, one low on the ground near the koala's front feet, and one to the right of the ball but still left of the truck row\u2014so all seven birds remain fully visible, separated, and oriented toward the koala and ball. Preservation lock: preserve the single koala identity and count, preserve the existing truck row as seven fully visible trucks on the right, preserve the koala-left-of-trucks layout, preserve the forest-road background, and preserve the current playful bird-koala interaction and existing bird identities. Forbidden changes: do not remove, hide, crop, fuse, reflect, or duplicate any bird, koala, or truck; do not add more or fewer than three birds; do not create a second koala; do not change the truck count or move any truck left of the koala; do not redraw the scene as a different composition."
+          }
+        },
+        "parse_status": "success"
+      },
+      "g_plus_h": {
+        "arm": "G+H",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "1a5b06dfa7a5b126c0b6e5d9be7af2e7717fb796abb235d3200150ce2e58e2ac",
+        "response_metadata": {
+          "id": "resp_00ae2a0bbc22b3ac016a7354a49ca4819988ea76827614896c",
+          "created": 1785943249,
+          "usage": {
+            "completion_tokens": 2306,
+            "prompt_tokens": 6477,
+            "total_tokens": 8783,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 2267,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": {
+              "audio_tokens": null,
+              "cached_tokens": 1792
+            }
+          },
+          "raw_text_sha256": "1a5b06dfa7a5b126c0b6e5d9be7af2e7717fb796abb235d3200150ce2e58e2ac"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "query_skill",
+          "arguments": {
+            "skill_ids": [
+              "local_edit_preservation"
+            ],
+            "target_constraint_ids": [
+              "c_001"
+            ]
+          }
+        },
+        "parse_status": "success"
+      },
+      "action_equal": false
+    },
+    {
+      "episode_id": "phase3_ep_855",
+      "stratum": "D",
+      "parent_attempt_id": "a_002",
+      "child_attempt_id": "a_004",
+      "prefix_last_event_id": "evt_0043",
+      "context_g_sha256": "8ddec90f9d365bdbf0d8073f26d7c298d9da7227c94ddbe6a9690ad79adb64b1",
+      "context_h_sha256": "d8cd7fa1a24e11bd3bf8f1550ab3948856193cfc7b92a7272c6c317828437ae6",
+      "hps_quality_risk_visible": "high",
+      "g": {
+        "arm": "G",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "4bc83ab46f73ac24aded49eb4e46ac4a24e83dfb03c02576223d55e6dea9f511",
+        "response_metadata": {
+          "id": "resp_035b0baa702eb6e4016a7354e07088819ba2302aa03167d056",
+          "created": 1785943267,
+          "usage": {
+            "completion_tokens": 138,
+            "prompt_tokens": 7503,
+            "total_tokens": 7641,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 101,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "4bc83ab46f73ac24aded49eb4e46ac4a24e83dfb03c02576223d55e6dea9f511"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "submit_attempt",
+          "arguments": {
+            "reason_code": "best_available_under_budget",
+            "selected_attempt_id": "a_002"
+          }
+        },
+        "parse_status": "success"
+      },
+      "g_plus_h": {
+        "arm": "G+H",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "4bc83ab46f73ac24aded49eb4e46ac4a24e83dfb03c02576223d55e6dea9f511",
+        "response_metadata": {
+          "id": "resp_0521b7383923a7c4016a7354f0a71c81988ed95500bb1f1b37",
+          "created": 1785943284,
+          "usage": {
+            "completion_tokens": 100,
+            "prompt_tokens": 9123,
+            "total_tokens": 9223,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 63,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "4bc83ab46f73ac24aded49eb4e46ac4a24e83dfb03c02576223d55e6dea9f511"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "submit_attempt",
+          "arguments": {
+            "reason_code": "best_available_under_budget",
+            "selected_attempt_id": "a_002"
+          }
+        },
+        "parse_status": "success"
+      },
+      "action_equal": true
+    },
+    {
+      "episode_id": "phase3_ep_063",
+      "stratum": "D",
+      "parent_attempt_id": "a_003",
+      "child_attempt_id": "a_004",
+      "prefix_last_event_id": "evt_0043",
+      "context_g_sha256": "d0a303af431f6872bcabcd4235592c0d878a6e4aec3249fc6aa9f11f2ae6a0c7",
+      "context_h_sha256": "ccaab2f746648e80165a06caf7e4502e241c2d587ef78e6d016ec49b66d29383",
+      "hps_quality_risk_visible": "low",
+      "g": {
+        "arm": "G",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "d7d3a1593b31417357a4c52b15e8fe97e4eb8fe1fac45e759da2dddd5b866e53",
+        "response_metadata": {
+          "id": "resp_01d895ca6fbfd856016a7354fe796881998d9df9ee4bf466ef",
+          "created": 1785943297,
+          "usage": {
+            "completion_tokens": 94,
+            "prompt_tokens": 7870,
+            "total_tokens": 7964,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 57,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "d7d3a1593b31417357a4c52b15e8fe97e4eb8fe1fac45e759da2dddd5b866e53"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "submit_attempt",
+          "arguments": {
+            "selected_attempt_id": "a_003",
+            "reason_code": "best_available_under_budget"
+          }
+        },
+        "parse_status": "success"
+      },
+      "g_plus_h": {
+        "arm": "G+H",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "b2c2596a547ec8330fe63b67366f71a2ca014d11cba16565f43037ec063e57a6",
+        "response_metadata": {
+          "id": "resp_0c9eda4e17524da8016a73550caab48199a78b504ca740982c",
+          "created": 1785943311,
+          "usage": {
+            "completion_tokens": 106,
+            "prompt_tokens": 9490,
+            "total_tokens": 9596,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 69,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "b2c2596a547ec8330fe63b67366f71a2ca014d11cba16565f43037ec063e57a6"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "submit_attempt",
+          "arguments": {
+            "reason_code": "best_available_under_budget",
+            "selected_attempt_id": "a_003"
+          }
+        },
+        "parse_status": "success"
+      },
+      "action_equal": true
+    },
+    {
+      "episode_id": "phase3_ep_283",
+      "stratum": "N",
+      "parent_attempt_id": "a_000",
+      "child_attempt_id": "a_001",
+      "prefix_last_event_id": "evt_0019",
+      "context_g_sha256": "a1998c07028f746adbeea433c6b2fb325345282ee17048f07864b38a746a5ecb",
+      "context_h_sha256": "49cc7864e6a5fb49cabbc8187803412b1b6ef4fdde2561c520c0cd1c63ce4768",
+      "hps_quality_risk_visible": "low",
+      "g": {
+        "arm": "G",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "d5a3645e03a662dcb4272a27673a6cc6d8f012e7a377d036e6f3baabf673aa2b",
+        "response_metadata": {
+          "id": "resp_0ad3c7bfaa286502016a73551657a08198850c79e4eadde79f",
+          "created": 1785943330,
+          "usage": {
+            "completion_tokens": 488,
+            "prompt_tokens": 4648,
+            "total_tokens": 5136,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 177,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "d5a3645e03a662dcb4272a27673a6cc6d8f012e7a377d036e6f3baabf673aa2b"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "edit_image",
+          "arguments": {
+            "source_attempt_id": "a_001",
+            "target_constraint_ids": [
+              "c_005"
+            ],
+            "preserve_constraint_ids": [
+              "c_001",
+              "c_002",
+              "c_003",
+              "c_004",
+              "c_006"
+            ],
+            "instruction": "Target operation: edit attempt a_001 only to increase the horse count from five to exactly six total. Add one new recognizable horse, with visible head, ears, neck, body, legs, and tail, so the final image contains six horses total behind the rabbit.\n\nSpatial grounding: place the new horse in the background horse lineup, using open space between the existing horses or slightly behind the row where it remains fully visible and separated by clear gaps from neighboring horses. Keep it behind the foreground rabbit and not reflected on the tabletop.\n\nPreservation lock: preserve the single foreground rabbit exactly as one white glass rabbit, including its translucent milky-white glass material, long ears, face, whiskers, paws, and foreground position. Preserve the five existing horses, their horse identity, the outdoor field background, tabletop reflection, camera angle, and overall composition.\n\nForbidden changes: do not add or remove rabbits, do not change the rabbit material or color, do not create more or fewer than six horses, do not crop or fuse horses, do not make reflected countable horse duplicates, do not turn the new horse into another animal, and do not redraw unrelated objects or change the scene layout unnecessarily."
+          }
+        },
+        "parse_status": "success"
+      },
+      "g_plus_h": {
+        "arm": "G+H",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "0b7ed469f50bfa04ab6d819eb900ea5526bc7ceb4a0e0d33ab4a28081b3f0867",
+        "response_metadata": {
+          "id": "resp_0eb4aa59e347f71d016a73552898d48199a1cc108aa9190321",
+          "created": 1785943354,
+          "usage": {
+            "completion_tokens": 715,
+            "prompt_tokens": 5496,
+            "total_tokens": 6211,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 355,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "0b7ed469f50bfa04ab6d819eb900ea5526bc7ceb4a0e0d33ab4a28081b3f0867"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "edit_image",
+          "arguments": {
+            "source_attempt_id": "a_001",
+            "target_constraint_ids": [
+              "c_005"
+            ],
+            "preserve_constraint_ids": [
+              "c_001",
+              "c_002",
+              "c_003",
+              "c_004",
+              "c_006"
+            ],
+            "instruction": "Target operation: edit attempt a_001 only in the background horse group to make the total horse count exactly six. Add one additional recognizable horse while keeping the existing five horses recognizable; the new horse must have a clear horse head, ears, neck, body, four legs, and tail, and must be fully visible and countable as the sixth horse.\n\nSpatial grounding: place the new horse in the background lineup on the open field, slightly smaller and set behind the foreground rabbit, using a clear gap between the existing horses or just beside the lineup so there are visible separations around all six horse bodies and heads. Keep the rabbit in the same foreground position on the reflective surface and do not let the new horse overlap or hide the rabbit.\n\nPreservation lock: preserve the single white glass rabbit exactly as it is, including its translucent milky-white glass material, glossy highlights, long ears, face, whiskers, body, paws, and one-rabbit count. Preserve the existing outdoor field background, reflective foreground surface, camera angle, lighting, and the recognizable identity of all existing horses.\n\nForbidden changes: do not add any rabbits, do not change the rabbit into fur, metal, stone, gray, or opaque material, do not create more or fewer than six horses, do not crop or fuse horses, do not make reflected countable animal duplicates, do not remove existing horses, and do not redraw unrelated parts of the scene."
+          }
+        },
+        "parse_status": "success"
+      },
+      "action_equal": false
+    },
+    {
+      "episode_id": "phase3_ep_648",
+      "stratum": "N",
+      "parent_attempt_id": "a_003",
+      "child_attempt_id": "a_004",
+      "prefix_last_event_id": "evt_0047",
+      "context_g_sha256": "8d9e679e45490122a06fca3ae383c56ad20b29c65f4a3f41a1bf9bcf554b38e5",
+      "context_h_sha256": "ba5a757f2735e45c75546be3cde0d4c848a6b9ecea4be4827f00da3354570ace",
+      "hps_quality_risk_visible": "low",
+      "g": {
+        "arm": "G",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "05e8dbeb905a95d7460c6f762418e88fab3c96929e2a5b488d699364a6b35f69",
+        "response_metadata": {
+          "id": "resp_0cd018aee56c7dbf016a735542e4a481999734745bf3274900",
+          "created": 1785943364,
+          "usage": {
+            "completion_tokens": 35,
+            "prompt_tokens": 6668,
+            "total_tokens": 6703,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "05e8dbeb905a95d7460c6f762418e88fab3c96929e2a5b488d699364a6b35f69"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "submit_attempt",
+          "arguments": {
+            "selected_attempt_id": "a_004",
+            "reason_code": "best_available_under_budget"
+          }
+        },
+        "parse_status": "success"
+      },
+      "g_plus_h": {
+        "arm": "G+H",
+        "model_id": "gpt-5.5",
+        "finish_reason": "stop",
+        "raw_text_sha256": "9b1b858a2557f34157c5a5b9d90e628b58a157938dc62529c2bd0175cbfec782",
+        "response_metadata": {
+          "id": "resp_0a03e4d3dcb7b73f016a73554a6d20819bb6b23fe36e57fac1",
+          "created": 1785943373,
+          "usage": {
+            "completion_tokens": 70,
+            "prompt_tokens": 8076,
+            "total_tokens": 8146,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": null,
+              "audio_tokens": null,
+              "reasoning_tokens": 33,
+              "rejected_prediction_tokens": null
+            },
+            "prompt_tokens_details": null
+          },
+          "raw_text_sha256": "9b1b858a2557f34157c5a5b9d90e628b58a157938dc62529c2bd0175cbfec782"
+        },
+        "action": {
+          "schema_version": "0.5",
+          "action": "submit_attempt",
+          "arguments": {
+            "reason_code": "best_available_under_budget",
+            "selected_attempt_id": "a_004"
+          }
+        },
+        "parse_status": "success"
+      },
+      "action_equal": true
+    }
+  ],
+  "summary": {
+    "episode_count": 6,
+    "g_parse_success": 6,
+    "g_plus_h_parse_success": 6,
+    "action_equal_count": 3,
+    "action_changed_count": 3
+  }
+}
