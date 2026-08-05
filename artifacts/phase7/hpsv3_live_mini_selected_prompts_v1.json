@@ -1,0 +1,475 @@
+{
+  "schema_version": "hpsv3_live_mini_selected_prompts_v1",
+  "selection_id": "hpsv3_live_mini_same_prompt_v1",
+  "selected_prompts": [
+    {
+      "candidate_id": "hpsv3_mini_phase3_ep_926",
+      "prompt_id": "phase3_ep_926",
+      "selection_rank": 926,
+      "original_prompt": "five bicycles to the right of seven cows to the right of four raccoons",
+      "atomic_constraints": [
+        {
+          "constraint_id": "c_001",
+          "constraint_type": "count",
+          "evaluator_question": "How many bicycles are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: five"
+        },
+        {
+          "constraint_id": "c_002",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any bicycles in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_003",
+          "constraint_type": "position",
+          "evaluator_question": "Are the bicycles to the right of the cows?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_004",
+          "constraint_type": "count",
+          "evaluator_question": "How many cows are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: seven"
+        },
+        {
+          "constraint_id": "c_005",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any cows in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_006",
+          "constraint_type": "position",
+          "evaluator_question": "Are the cows to the right of the raccoons?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_007",
+          "constraint_type": "count",
+          "evaluator_question": "How many raccoons are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: four"
+        },
+        {
+          "constraint_id": "c_008",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any raccoons in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        }
+      ],
+      "constraint_type_histogram": {
+        "count": 3,
+        "object": 3,
+        "position": 2
+      },
+      "provenance": {
+        "source": "existing_1k_task_spec",
+        "source_run": "runs/phase7_flow_dppo1000_v9_fresh8_v1",
+        "source_episode_id": "phase3_ep_926"
+      }
+    },
+    {
+      "candidate_id": "hpsv3_mini_phase3_ep_461",
+      "prompt_id": "phase3_ep_461",
+      "selection_rank": 461,
+      "original_prompt": "seven birds playing with a koala to the left of seven trucks",
+      "atomic_constraints": [
+        {
+          "constraint_id": "c_001",
+          "constraint_type": "count",
+          "evaluator_question": "How many birds are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: seven"
+        },
+        {
+          "constraint_id": "c_002",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any birds in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_003",
+          "constraint_type": "verb",
+          "evaluator_question": "Are the birds playing with the koala?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_004",
+          "constraint_type": "count",
+          "evaluator_question": "How many koalas are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: one"
+        },
+        {
+          "constraint_id": "c_005",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any koalas in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_006",
+          "constraint_type": "position",
+          "evaluator_question": "Is the koala to the left of the trucks?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_007",
+          "constraint_type": "count",
+          "evaluator_question": "How many trucks are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: seven"
+        },
+        {
+          "constraint_id": "c_008",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any trucks in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        }
+      ],
+      "constraint_type_histogram": {
+        "count": 3,
+        "object": 3,
+        "verb": 1,
+        "position": 1
+      },
+      "provenance": {
+        "source": "existing_1k_task_spec",
+        "source_run": "runs/phase7_flow_dppo1000_v9_fresh8_v1",
+        "source_episode_id": "phase3_ep_461"
+      }
+    },
+    {
+      "candidate_id": "hpsv3_mini_phase3_ep_855",
+      "prompt_id": "phase3_ep_855",
+      "selection_rank": 855,
+      "original_prompt": "four cats behind seven koalas to the left of five green pigs",
+      "atomic_constraints": [
+        {
+          "constraint_id": "c_001",
+          "constraint_type": "count",
+          "evaluator_question": "How many cats are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: four"
+        },
+        {
+          "constraint_id": "c_002",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any cats in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_003",
+          "constraint_type": "position",
+          "evaluator_question": "Are the cats behind the koalas?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_004",
+          "constraint_type": "count",
+          "evaluator_question": "How many koalas are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: seven"
+        },
+        {
+          "constraint_id": "c_005",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any koalas in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_006",
+          "constraint_type": "position",
+          "evaluator_question": "Are the koalas to the left of the pigs?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_007",
+          "constraint_type": "count",
+          "evaluator_question": "How many pigs are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: five"
+        },
+        {
+          "constraint_id": "c_008",
+          "constraint_type": "attribute",
+          "evaluator_question": "Are the pigs green?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_009",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any pigs in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        }
+      ],
+      "constraint_type_histogram": {
+        "count": 3,
+        "object": 3,
+        "position": 2,
+        "attribute": 1
+      },
+      "provenance": {
+        "source": "existing_1k_task_spec",
+        "source_run": "runs/phase7_flow_dppo1000_v9_fresh8_v1",
+        "source_episode_id": "phase3_ep_855"
+      }
+    },
+    {
+      "candidate_id": "hpsv3_mini_phase3_ep_063",
+      "prompt_id": "phase3_ep_063",
+      "selection_rank": 63,
+      "original_prompt": "six plastic stone turtles to the right of six croissants to the left of a cat",
+      "atomic_constraints": [
+        {
+          "constraint_id": "c_001",
+          "constraint_type": "count",
+          "evaluator_question": "How many turtles are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: six"
+        },
+        {
+          "constraint_id": "c_002",
+          "constraint_type": "attribute",
+          "evaluator_question": "Are the turtles plastic?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_003",
+          "constraint_type": "attribute",
+          "evaluator_question": "Are the turtles stone?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_004",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any turtles in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_005",
+          "constraint_type": "position",
+          "evaluator_question": "Are the turtles to the right of the croissants?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_006",
+          "constraint_type": "count",
+          "evaluator_question": "How many croissants are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: six"
+        },
+        {
+          "constraint_id": "c_007",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any croissants in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_008",
+          "constraint_type": "position",
+          "evaluator_question": "Are the croissants to the left of the cat?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_009",
+          "constraint_type": "count",
+          "evaluator_question": "How many cats are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: one"
+        },
+        {
+          "constraint_id": "c_010",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any cats in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        }
+      ],
+      "constraint_type_histogram": {
+        "count": 3,
+        "attribute": 2,
+        "object": 3,
+        "position": 2
+      },
+      "provenance": {
+        "source": "existing_1k_task_spec",
+        "source_run": "runs/phase7_flow_dppo1000_v9_fresh8_v1",
+        "source_episode_id": "phase3_ep_063"
+      }
+    },
+    {
+      "candidate_id": "hpsv3_mini_phase3_ep_283",
+      "prompt_id": "phase3_ep_283",
+      "selection_rank": 283,
+      "original_prompt": "a glass white rabbit and six horses",
+      "atomic_constraints": [
+        {
+          "constraint_id": "c_001",
+          "constraint_type": "count",
+          "evaluator_question": "How many rabbits are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: one"
+        },
+        {
+          "constraint_id": "c_002",
+          "constraint_type": "attribute",
+          "evaluator_question": "Is the rabbit glass?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_003",
+          "constraint_type": "attribute",
+          "evaluator_question": "Is the rabbit white?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_004",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any rabbits in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_005",
+          "constraint_type": "count",
+          "evaluator_question": "How many horses are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: six"
+        },
+        {
+          "constraint_id": "c_006",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any horses in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        }
+      ],
+      "constraint_type_histogram": {
+        "count": 2,
+        "attribute": 2,
+        "object": 2
+      },
+      "provenance": {
+        "source": "existing_1k_task_spec",
+        "source_run": "runs/phase7_flow_dppo1000_v9_fresh8_v1",
+        "source_episode_id": "phase3_ep_283"
+      }
+    },
+    {
+      "candidate_id": "hpsv3_mini_phase3_ep_648",
+      "prompt_id": "phase3_ep_648",
+      "selection_rank": 648,
+      "original_prompt": "five yellow zebras on top of five suitcases to the right of six checkered horses",
+      "atomic_constraints": [
+        {
+          "constraint_id": "c_001",
+          "constraint_type": "count",
+          "evaluator_question": "How many zebras are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: five"
+        },
+        {
+          "constraint_id": "c_002",
+          "constraint_type": "attribute",
+          "evaluator_question": "Are the zebras yellow?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_003",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any zebras in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_004",
+          "constraint_type": "position",
+          "evaluator_question": "Are the zebras on top of the suitcases?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_005",
+          "constraint_type": "count",
+          "evaluator_question": "How many suitcases are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: five"
+        },
+        {
+          "constraint_id": "c_006",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any suitcases in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_007",
+          "constraint_type": "position",
+          "evaluator_question": "Are the suitcases to the right of the horses?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_008",
+          "constraint_type": "count",
+          "evaluator_question": "How many horses are in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: six"
+        },
+        {
+          "constraint_id": "c_009",
+          "constraint_type": "attribute",
+          "evaluator_question": "Are the horses checkered?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        },
+        {
+          "constraint_id": "c_010",
+          "constraint_type": "object",
+          "evaluator_question": "Are there any horses in the image?",
+          "priority": 3,
+          "requirement": "Expected answer: Yes"
+        }
+      ],
+      "constraint_type_histogram": {
+        "count": 3,
+        "attribute": 2,
+        "object": 3,
+        "position": 2
+      },
+      "provenance": {
+        "source": "existing_1k_task_spec",
+        "source_run": "runs/phase7_flow_dppo1000_v9_fresh8_v1",
+        "source_episode_id": "phase3_ep_648"
+      }
+    }
+  ]
+}

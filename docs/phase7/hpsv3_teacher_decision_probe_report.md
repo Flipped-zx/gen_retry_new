@@ -20,8 +20,9 @@ modified.
   They are not calibrated admission thresholds.
 - Both arms saw the same historical prefix and visible images for each pair.
 
-The HPS diagnostic itself showed a negative child-minus-parent delta for all
-six edit pairs:
+The HPS diagnostic reported a lower child-minus-parent `mu` for all six edit
+pairs. This is an uncalibrated model-score change, not a human-validated claim
+that perceptual quality dropped:
 
 | Episode | Stratum | HPS delta | Risk | Geneval2 context |
 | --- | --- | ---: | --- | --- |
@@ -55,18 +56,25 @@ preservation-skill query before another edit.
 
 ## Interpretation
 
-The probe supports two narrow claims:
+The probe supports two narrow feasibility observations:
 
-1. HPSv3 detects a same-prompt quality drop after edit in this selected set.
-2. The v0.8 field design is sufficient for the Teacher to use that signal in a
-   way that can alter retry behavior without changing reducer best selection or
-   the canonical Action protocol.
+1. HPSv3 reports a lower same-prompt score after edit in this selected set.
+2. The v0.8 field design is sufficient for the Teacher to propose a different
+   retry behavior without changing reducer best selection or the canonical
+   Action protocol.
 
 It does **not** establish mitigation. The probe neither generated a new image
 nor measured a post-intervention Geneval2/HPS result. In addition, the Teacher
-API calls were separate requests without a fixed sampling seed; action
-differences therefore combine context effect with ordinary Teacher sampling
-variation. The result is a feasibility/mechanism probe, not a causal estimate.
+API calls were separate requests without a fixed sampling seed and were always
+issued in `G` then `G+H` order; action differences therefore combine context
+effect with ordinary Teacher sampling/provider and time-order variation. The
+reported `query_skill` is only a proposed Action: this probe did not execute
+the query, emit its Skill response, or request the following Action. The
+offline context also includes synthetic `missing` HPS records for historical
+attempts outside each selected parent/child pair. Finally, one G+H instruction
+contained an action-quality typo (it said four cows although the TaskSpec
+requires seven). The result is a qualitative feasibility probe, not a causal
+estimate.
 
 ## Next experiment
 
@@ -84,5 +92,6 @@ Run the pre-registered paired intervention in
   conservative rather than imputing low risk.
 
 Until that paired rerun is complete, the defensible conclusion is: **HPSv3 is
-a useful auxiliary decision signal and the integration path is viable; it has
-not yet been shown to preserve image quality while retaining Geneval2 gains.**
+a plausible auxiliary decision signal and the field integration is
+implementable; it has not yet been shown to preserve image quality while
+retaining Geneval2 gains.**

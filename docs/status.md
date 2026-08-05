@@ -11,12 +11,13 @@ fingerprint, policy-isolation, and admission-design blockers have now been
 implemented. The second GPT-5.6 Sol review returned `PASS` for the documented
 GPT-5.5 Teacher paired pilot only. The 18-episode calibration cohort and a
 disjoint 60-episode confirmation manifest are frozen without reading HPS
-results. No live `G+H` pilot, v0.8 SFT use, SFT export, or policy promotion has
-occurred.
+results. The live HPS-aware image mini-pilot below is experiment-only; there
+has been no v0.8 SFT use, SFT export, or policy promotion.
 
 The six-trajectory HPSv3 mini-pilot decision probe is now complete. The offline
-HPS diagnostic produced a negative child-minus-parent delta for all six selected
-edit pairs (U mean -1.177195, D mean -0.806923, N mean -0.073430). A
+HPS diagnostic reported a lower child-minus-parent `mu` for all six selected
+edit pairs (U mean -1.177195, D mean -0.806923, N mean -0.073430); this is not
+human-calibrated perceptual evidence. A
 counterfactual GPT-5.5 Teacher call under each arm produced 6/6 parseable
 actions for both `G` and `G+H`; three exact action objects differed, but only
 one changed action type. The clearest mechanism case changed a high-risk U
@@ -27,6 +28,18 @@ than mitigation evidence. Calls were separate unsampled API requests, so
 action differences also contain Teacher sampling variation. Report:
 `docs/phase7/hpsv3_teacher_decision_probe_report.md`; artifact:
 `artifacts/phase7/hpsv3_teacher_decision_probe_v1.json`.
+
+One actual image-level HPS-aware fresh rerun has also completed for
+`phase3_ep_926`, using the exact existing TaskSpec/prompt as its 1k baseline.
+The live event order was validated for 58 events, including
+`Geneval2 -> HPSv3 -> PlannerContext v0.8` before each next Teacher call and a
+real `query_skill -> skill_returned -> edit_image` interaction. The fresh arm
+submitted 7/8 Geneval2 atoms at GM 0.095201 versus the existing submitted
+baseline's 7/8 at GM 0.066457, but its HPS mu was 3.808064 versus baseline
+child mu 7.101077. This is wiring/mechanism evidence, not quality-mitigation
+evidence. The other five fresh scaffolds were stopped before image generation
+because this one five-attempt episode consumed about 38 minutes on one HCU.
+Report: `docs/phase7/hpsv3_live_mini_pilot_report.md`.
 
 The formal Flow-DPPO 1000 v9 cold-start SFT is complete. Gate 3 returned
 `PASS_FREEZE_WITH_MONITORING`, and the frozen export contains 4302 positive
