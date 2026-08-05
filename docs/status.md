@@ -2,6 +2,12 @@
 
 ## Current Phase
 
+The `research/hpsv3-quality-guard` branch proposes an additive HPSv3
+auxiliary-quality observation and PlannerContext v0.8. This is an experiment
+branch only: Geneval2 remains the sole best/submission comparator, v0.7 replay
+is unchanged, and promotion is pending GPT-5.6 Sol review plus an edit-stress
+cohort pilot from the completed 1k trajectories.
+
 The formal Flow-DPPO 1000 v9 cold-start SFT is complete. Gate 3 returned
 `PASS_FREEZE_WITH_MONITORING`, and the frozen export contains 4302 positive
 targets split by trajectory into 3450 train, 438 validation, and 414 test

@@ -437,3 +437,8 @@
     once.
   - each `attempt_submitted` event must link to a validated `submit_attempt`
     action with matching selected attempt and reason code.
+# Unreleased
+
+- Added a proposed HPSv3 auxiliary-quality observation schema and experimental
+  PlannerContext v0.8. Geneval2 best selection and v0.7 replay semantics are
+  unchanged.

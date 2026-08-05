@@ -105,6 +105,15 @@ probability，以及按冻结公式计算 `geneval2_soft_tifa_gm@flow_dppo_v1`�
 
 **不得做**：决定 edit/regenerate；修改 planner action。
 
+### Auxiliary HPSv3 Observation
+
+HPSv3 is an optional environment-owned evaluator after image execution. It
+emits one `auxiliary_quality_completed` observation per Attempt with immutable
+prompt/image/checkpoint provenance, direct-source and quality-anchor IDs,
+`mu/sigma`, deltas, and status. It may be projected into PlannerContext v0.8
+as compact context, but it never enters an Action, reducer comparator, or SFT
+target. Missing or uncertain HPSv3 output is non-blocking.
+
 ---
 
 ## 8. Event Store

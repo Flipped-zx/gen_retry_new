@@ -4,6 +4,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Iterable
 
+from gen_retry.domain.artifacts import sha256_bytes
 from gen_retry.domain.score_policy import (
     PRIMARY_POLICY_ID,
     legacy_score_policy,
@@ -11,6 +12,7 @@ from gen_retry.domain.score_policy import (
     score_policy_from_task_payload,
     validate_primary_score,
 )
+from gen_retry.domain.auxiliary_quality import validate_auxiliary_quality_observation
 from gen_retry.protocol.reference_validator import validate_action_references
 from gen_retry.protocol.schema_loader import validate_instance
 
@@ -91,6 +93,9 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
     attempts: set[str] = set()
     image_artifact_ids: set[str] = set()
     evaluated_attempts: set[str] = set()
+    quality_attempts: set[str] = set()
+    artifact_by_attempt_id: dict[str, str] = {}
+    parent_by_attempt_id: dict[str, str | None] = {}
     completed_request_ids: set[str] = set()
     task_spec: dict[str, Any] | None = None
     episode_id: str | None = None
@@ -420,6 +425,8 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                     f"duplicate image_artifact_id {image_artifact_id}",
                 )
             image_artifact_ids.add(image_artifact_id)
+            artifact_by_attempt_id[attempt_id] = image_artifact_id
+            parent_by_attempt_id[attempt_id] = payload["parent_attempt_id"]
 
             if payload["operation"] == "edit":
                 source_attempt_id = payload["source_attempt_id"]
@@ -492,6 +499,64 @@ def validate_trajectory_events(events: list[dict[str, Any]]) -> None:
                     )
                 except ValueError as exc:
                     _problem(problems, "invalid_primary_score", str(exc))
+
+        if event_type == "auxiliary_quality_completed":
+            try:
+                validate_auxiliary_quality_observation(payload)
+            except Exception as exc:
+                _problem(problems, "invalid_auxiliary_quality", str(exc))
+            attempt_id = payload.get("attempt_id")
+            if attempt_id in quality_attempts:
+                _problem(
+                    problems,
+                    "duplicate_auxiliary_quality_result",
+                    f"attempt {attempt_id} has multiple auxiliary quality results",
+                )
+            quality_attempts.add(attempt_id)
+            if attempt_id not in attempts:
+                _problem(
+                    problems,
+                    "unknown_auxiliary_quality_attempt",
+                    f"auxiliary quality references unknown attempt {attempt_id}",
+                )
+            if attempt_id in attempts:
+                expected_artifact = artifact_by_attempt_id.get(attempt_id)
+                if expected_artifact is not None and payload.get("image_artifact_id") != expected_artifact:
+                    _problem(
+                        problems,
+                        "auxiliary_quality_artifact_mismatch",
+                        "auxiliary quality image_artifact_id does not match attempt output",
+                    )
+                if payload.get("image_artifact_id") not in event.get("input_refs", []):
+                    _problem(
+                        problems,
+                        "auxiliary_quality_image_ref",
+                        "auxiliary quality input_refs must include the evaluated image artifact",
+                    )
+                expected_source = parent_by_attempt_id.get(attempt_id)
+                if payload.get("source_attempt_id") != expected_source:
+                    _problem(
+                        problems,
+                        "auxiliary_quality_source_mismatch",
+                        "auxiliary quality source_attempt_id must match attempt parent",
+                    )
+            anchor_id = payload.get("quality_anchor_attempt_id")
+            if anchor_id is not None and anchor_id not in attempts:
+                _problem(
+                    problems,
+                    "unknown_quality_anchor",
+                    f"auxiliary quality anchor {anchor_id} is not a known attempt",
+                )
+            if task_spec is not None:
+                expected_prompt_sha = sha256_bytes(
+                    task_spec.get("original_prompt", "").encode("utf-8")
+                )
+                if payload.get("prompt_sha256") != expected_prompt_sha:
+                    _problem(
+                        problems,
+                        "auxiliary_quality_prompt_mismatch",
+                        "HPSv3 must score every attempt against the immutable original prompt",
+                    )
 
         if event_type == "attempt_submitted":
             submit_action_event_id = payload["submit_action_event_id"]

@@ -44,6 +44,7 @@
         "image_execution_started",
         "image_execution_completed",
         "geneval2_completed",
+        "auxiliary_quality_completed",
         "memory_reduced",
         "round_record_persisted",
         "attempt_submitted",
@@ -251,6 +252,31 @@
         "properties": {
           "payload": {
             "$ref": "#/$defs/geneval2CompletedPayload"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "auxiliary_quality_completed"
+          }
+        },
+        "required": [
+          "event_type"
+        ]
+      },
+      "then": {
+        "required": ["turn_id"],
+        "properties": {
+          "input_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "payload": {
+            "$ref": "#/$defs/auxiliaryQualityCompletedPayload"
           }
         }
       }
@@ -499,7 +525,8 @@
           "enum": [
             "0.5",
             "0.6",
-            "0.7"
+            "0.7",
+            "0.8"
           ]
         },
         "planner_view_ref": {
@@ -1138,6 +1165,9 @@
           "$ref": "#/$defs/sha256"
         }
       }
+    },
+    "auxiliaryQualityCompletedPayload": {
+      "$ref": "https://local/gen-retry/auxiliary-quality-observation-v0.1.schema.json"
     },
     "transition": {
       "type": "object",

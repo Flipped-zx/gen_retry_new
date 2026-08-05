@@ -1,0 +1,41 @@
+{
+  "planner_context_schema_version": "0.8",
+  "task_context": {
+    "original_prompt": "one red cat",
+    "max_image_attempts": 5,
+    "atom_constraints": [
+      {
+        "constraint_id": "c_001",
+        "constraint_type": "object",
+        "requirement": "A cat is present.",
+        "evaluator_question": "Is there a cat?"
+      }
+    ]
+  },
+  "latest_attempt": null,
+  "skill_context": {
+    "active_skills": []
+  },
+  "episode_memory": {
+    "last_completed_image_round": null,
+    "prior_image_rounds": [],
+    "best_attempt": null,
+    "quality_history": []
+  },
+  "runtime_state": {
+    "remaining_image_budget": 5,
+    "available_actions": [
+      "query_skill",
+      "generate_image"
+    ],
+    "score_policy": {
+      "policy_id": "geneval2_pass_count_then_gm",
+      "policy_version": "1",
+      "primary_metric": {
+        "metric_id": "geneval2_soft_tifa_gm",
+        "metric_version": "flow_dppo_v1"
+      },
+      "best_selection_rule": "higher_pass_count_then_higher_primary_score_then_earlier"
+    }
+  }
+}

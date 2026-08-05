@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/gen-retry/auxiliary-quality-observation-v0.1.schema.json",
+  "title": "Gen-Retry auxiliary image quality observation v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evaluator_id",
+    "evaluator_version",
+    "checkpoint_ref",
+    "checkpoint_sha256",
+    "prompt_sha256",
+    "attempt_id",
+    "image_artifact_id",
+    "image_sha256",
+    "source_attempt_id",
+    "quality_anchor_attempt_id",
+    "status",
+    "mu",
+    "sigma",
+    "delta_from_source",
+    "delta_from_anchor",
+    "report_ref",
+    "report_sha256"
+  ],
+  "properties": {
+    "evaluator_id": {
+      "const": "hpsv3"
+    },
+    "evaluator_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "checkpoint_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "checkpoint_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "preprocess_version": {
+      "type": ["string", "null"]
+    },
+    "prompt_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "attempt_id": {
+      "$ref": "#/$defs/attemptId"
+    },
+    "image_artifact_id": {
+      "type": "string",
+      "pattern": "^img_[0-9]{3,}$"
+    },
+    "image_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "source_attempt_id": {
+      "anyOf": [
+        {"$ref": "#/$defs/attemptId"},
+        {"type": "null"}
+      ]
+    },
+    "quality_anchor_attempt_id": {
+      "anyOf": [
+        {"$ref": "#/$defs/attemptId"},
+        {"type": "null"}
+      ]
+    },
+    "status": {
+      "enum": ["success", "failed", "missing"]
+    },
+    "mu": {
+      "type": ["number", "null"]
+    },
+    "sigma": {
+      "type": ["number", "null"],
+      "minimum": 0
+    },
+    "delta_from_source": {
+      "type": ["number", "null"]
+    },
+    "delta_from_anchor": {
+      "type": ["number", "null"]
+    },
+    "quality_risk": {
+      "enum": ["low", "watch", "high", "unknown"]
+    },
+    "report_ref": {
+      "type": ["string", "null"]
+    },
+    "report_sha256": {
+      "anyOf": [
+        {"$ref": "#/$defs/sha256"},
+        {"type": "null"}
+      ]
+    },
+    "error_code": {
+      "type": ["string", "null"]
+    }
+  },
+  "$defs": {
+    "attemptId": {
+      "type": "string",
+      "pattern": "^a_[0-9]{3,}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"const": "success"}},
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["mu"],
+        "properties": {
+          "mu": {"type": "number"},
+          "error_code": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"status": {"enum": ["failed", "missing"]}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "mu": {"type": "null"},
+          "sigma": {"type": "null"}
+        }
+      }
+    }
+  ]
+}

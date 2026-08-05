@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from gen_retry.domain.artifacts import sha256_bytes
+from gen_retry.domain.auxiliary_quality import compact_quality_fields
 from gen_retry.domain.score_policy import (
     PRIMARY_POLICY_ID,
     candidate_is_better,
@@ -57,7 +58,7 @@ def build_planner_context_from_events(
 
     if not events:
         raise ValueError("cannot build PlannerContext without events")
-    if schema_version not in {"0.4", "0.5", "0.6", "0.7"}:
+    if schema_version not in {"0.4", "0.5", "0.6", "0.7", "0.8"}:
         raise ValueError(f"unsupported PlannerContext schema version: {schema_version}")
     state = reduce_events(events)
     timeline = _round_timeline(events, skill_observations=skill_observations)
@@ -99,12 +100,17 @@ def build_planner_context_from_events(
                 state.latest_attempt_id,
                 include_status=True,
                 include_primary_score=True,
+                include_auxiliary_quality=schema_version == "0.8",
             ),
             "skill_context": _skill_context(timeline),
             "episode_memory": (
-                _episode_memory_v07(timeline["completed_rounds"], state)
-                if schema_version == "0.7"
-                else _episode_memory_v06(timeline["completed_rounds"], state)
+                _episode_memory_v08(timeline["completed_rounds"], state)
+                if schema_version == "0.8"
+                else (
+                    _episode_memory_v07(timeline["completed_rounds"], state)
+                    if schema_version == "0.7"
+                    else _episode_memory_v06(timeline["completed_rounds"], state)
+                )
             ),
             "runtime_state": _runtime_state(
                 state,
@@ -567,6 +573,7 @@ def _observation(
     *,
     include_status: bool,
     include_primary_score: bool = False,
+    include_auxiliary_quality: bool = False,
 ) -> dict[str, Any] | None:
     if attempt_id is None:
         return None
@@ -579,6 +586,10 @@ def _observation(
         if attempt.primary_score is None:
             raise ValueError("PlannerContext v0.6 requires attempt primary scores")
         observation["primary_score"] = attempt.primary_score
+    if include_auxiliary_quality:
+        quality = compact_quality_fields(attempt.auxiliary_quality)
+        if quality is not None:
+            observation["auxiliary_quality"] = quality
     return observation
 
 
@@ -679,6 +690,25 @@ def _episode_memory_v07(
         "last_completed_image_round": last_completed,
         "prior_image_rounds": prior,
         "best_attempt": _best_attempt_memory_v06(state),
+    }
+
+
+def _episode_memory_v08(
+    rounds: list[dict[str, Any]],
+    state: EpisodeState,
+) -> dict[str, Any]:
+    last_completed = _last_completed_image_round_v06(rounds[-1]) if rounds else None
+    prior = [_prior_image_round_v07(round_record, state) for round_record in rounds[:-1]]
+    return {
+        "last_completed_image_round": last_completed,
+        "prior_image_rounds": prior,
+        "best_attempt": _best_attempt_memory_v08(state),
+        "quality_history": [
+            quality
+            for attempt_id in state.attempt_order
+            if (quality := compact_quality_fields(state.attempts[attempt_id].auxiliary_quality))
+            is not None
+        ],
     }
 
 
@@ -846,6 +876,18 @@ def _best_attempt_memory_v06(state: EpisodeState) -> dict[str, Any] | None:
         "primary_score": best_attempt.primary_score,
         "constraint_results": _constraint_results(best_attempt, include_status=True),
     }
+
+
+def _best_attempt_memory_v08(state: EpisodeState) -> dict[str, Any] | None:
+    result = _best_attempt_memory_v06(state)
+    if result is None or state.best_attempt_id == state.latest_attempt_id:
+        return result
+    quality = compact_quality_fields(
+        state.attempts[state.best_attempt_id].auxiliary_quality
+    )
+    if quality is not None:
+        result["auxiliary_quality"] = quality
+    return result
 
 
 def _runtime_state(

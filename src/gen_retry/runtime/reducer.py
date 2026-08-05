@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from gen_retry.domain.score_policy import (
@@ -24,6 +24,7 @@ class AttemptRecord:
     image_artifact_id: str
     constraint_results: dict[str, dict[str, Any]]
     primary_score: float | None = None
+    auxiliary_quality: dict[str, Any] | None = None
 
     @property
     def passed_constraint_ids(self) -> list[str]:
@@ -82,7 +83,7 @@ class EpisodeState:
 
 
 def attempt_to_dict(attempt: AttemptRecord) -> dict[str, Any]:
-    return {
+    result = {
         "attempt_id": attempt.attempt_id,
         "parent_attempt_id": attempt.parent_attempt_id,
         "action_event_id": attempt.action_event_id,
@@ -97,6 +98,9 @@ def attempt_to_dict(attempt: AttemptRecord) -> dict[str, Any]:
         "passed_constraint_ids": attempt.passed_constraint_ids,
         "failed_constraint_ids": attempt.failed_constraint_ids,
     }
+    if attempt.auxiliary_quality is not None:
+        result["auxiliary_quality"] = attempt.auxiliary_quality
+    return result
 
 
 def build_transition(
@@ -216,6 +220,16 @@ def reduce_events(events: list[dict[str, Any]]) -> EpisodeState:
             state.best_attempt_id = choose_best_attempt(state, attempt)
             state.remaining_budget = max(
                 0, task_spec["max_image_attempts"] - len(state.attempt_order)
+            )
+        elif event_type == "auxiliary_quality_completed":
+            attempt_id = payload["attempt_id"]
+            if attempt_id not in state.attempts:
+                raise ValueError(
+                    f"auxiliary quality references unknown attempt {attempt_id}"
+                )
+            state.attempts[attempt_id] = replace(
+                state.attempts[attempt_id],
+                auxiliary_quality=payload,
             )
         elif event_type == "memory_reduced":
             if payload["latest_attempt_id"] != state.latest_attempt_id:

@@ -68,7 +68,10 @@ def validate_fixture_tree(root: Path = PROJECT_ROOT) -> int:
         directory = root / rel_dir
         for path in sorted(directory.glob("*.json")):
             record = _load_json(path)
-            validate_instance(record, schema_name)
+            record_schema = schema_name
+            if rel_dir == "tests/fixtures/planner_contexts" and path.name.startswith("v0_8"):
+                record_schema = "planner_context_v0_8.schema.json"
+            validate_instance(record, record_schema)
             if schema_name == "task_spec_v0_2.schema.json":
                 validate_task_spec_semantics(record)
             if schema_name == "artifact_manifest_v0_2.schema.json":
