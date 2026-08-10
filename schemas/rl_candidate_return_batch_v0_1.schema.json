@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gen-retry.local/schemas/rl_candidate_return_batch_v0_1.schema.json",
+  "title": "Gen-Retry RL Candidate Return Batch v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "batch_id", "reward_policy_id", "groups"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "batch_id": {"type": "string", "minLength": 1},
+    "reward_policy_id": {
+      "enum": [
+        "geneval2_atomic_branch_credit@0.1",
+        "geneval2_terminal_outcome@0.1"
+      ]
+    },
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/group"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "sample_sha256",
+        "rollout_sample_sha256",
+        "reward_components_sha256",
+        "trainable_token_count",
+        "on_policy",
+        "outcome_kind",
+        "local_return",
+        "episode_return"
+      ],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "sample_sha256": {"$ref": "#/$defs/sha256"},
+        "rollout_sample_sha256": {"$ref": "#/$defs/sha256"},
+        "reward_components_sha256": {"$ref": "#/$defs/sha256"},
+        "trainable_token_count": {"type": "integer", "minimum": 1},
+        "on_policy": {"const": true},
+        "outcome_kind": {"enum": ["success", "policy_invalid"]},
+        "local_return": {"type": "number"},
+        "episode_return": {"type": "number"}
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group_id",
+        "group_kind",
+        "state_id",
+        "sampling_policy_id",
+        "rollout_group_sha256",
+        "candidates"
+      ],
+      "properties": {
+        "group_id": {"type": "string", "minLength": 1},
+        "group_kind": {"enum": ["episode", "pivot"]},
+        "state_id": {"type": "string", "minLength": 1},
+        "sampling_policy_id": {"type": "string", "minLength": 1},
+        "rollout_group_sha256": {"$ref": "#/$defs/sha256"},
+        "candidates": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"$ref": "#/$defs/candidate"}
+        }
+      }
+    }
+  }
+}

@@ -19,6 +19,8 @@ FIXTURE_SCHEMA_MAP = {
     "tests/fixtures/planner_views": "planner_view_v0_2.schema.json",
     "tests/fixtures/planner_contexts": "planner_context_v0_7.schema.json",
     "tests/fixtures/artifacts": "artifact_manifest_v0_2.schema.json",
+    "tests/fixtures/rl_prompt_manifests": "rl_prompt_manifest_v0_1.schema.json",
+    "tests/fixtures/rl_experiment_declarations": "rl_experiment_declaration_v0_1.schema.json",
 }
 
 

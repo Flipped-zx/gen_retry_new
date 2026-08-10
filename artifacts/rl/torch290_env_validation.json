@@ -1,0 +1,32 @@
+{
+  "date": "2026-08-10",
+  "device_count": 1,
+  "device_name": "BW",
+  "status": "PASS_WITH_PACKAGING_GAPS",
+  "checks": {
+    "torch_import": "PASS",
+    "vllm_model_smoke": "PASS",
+    "cupy_device_arithmetic": "PASS",
+    "ray_smoke": "PASS",
+    "wandb_offline_smoke": "PASS",
+    "amdsmi_init": "PASS",
+    "module_imports": {
+      "amdsmi": "PASS",
+      "flash_attn": "PASS",
+      "lmslim": "PASS",
+      "lightop": "PASS",
+      "numa": "PASS"
+    },
+    "flash_mla_sourcefind_wheel": "NO_TORCH290_CP311_WHEEL_FOUND",
+    "flash_mla_source_install": "FAILED_WITH_BUILD_ERRORS",
+    "pip_check": [
+      "missing flash-mla",
+      "flash_attn metadata expects 2.6.1 but installed dist metadata is 2.8.3+das.opt1.dtk2604.torch290",
+      "lmslim metadata expects 0.3.1 but installed dist metadata is 0.4.0+das.opt1.dtk2604.torch290"
+    ]
+  },
+  "artifacts": {
+    "preflight": "artifacts/rl/naive_grpo_preflight_current.json",
+    "vllm_smoke": "artifacts/rl/torch290_vllm_hcu_smoke.json"
+  }
+}

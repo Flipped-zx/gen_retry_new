@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1",
+  "experiment_id": "naive_geneval2_grpo_fixture",
+  "method": "naive_geneval2_grpo@0.1",
+  "config": {
+    "ref": "configs/rl/naive_geneval2_grpo_v0_1.yaml",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "policy": {
+    "revision": "fixture",
+    "checkpoint_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "planner_context_schema_version": "0.7",
+    "action_protocol_version": "0.5"
+  },
+  "execution_profile": "qwen_dual_backend@1",
+  "reward_policy": "geneval2_terminal_outcome@0.1",
+  "splits": {
+    "train": {
+      "ref": "train.json",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "selected_count": 1000,
+      "manifest_id": "train"
+    },
+    "development": {
+      "ref": "development.json",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "selected_count": 200,
+      "manifest_id": "development"
+    },
+    "confirmation": {
+      "ref": "confirmation.json",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "selected_count": 500,
+      "manifest_id": "confirmation"
+    }
+  },
+  "rollout": {
+    "seed": 42,
+    "rollouts_per_prompt": 4,
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "top_k": -1,
+    "max_image_attempts": 5,
+    "max_action_tokens": 1400,
+    "max_episode_assistant_tokens": 16000
+  },
+  "optimization": {
+    "learning_rate": 0.000001,
+    "ppo_epochs": 1,
+    "train_epochs": 1,
+    "reference_kl_coefficient": 0.02,
+    "clip_ratio_low": 0.2,
+    "clip_ratio_high": 0.28
+  },
+  "stopping_and_scale": {
+    "smoke_prompts": 32,
+    "pilot_prompts": 128,
+    "minimum_trainable_prompts": 250,
+    "first_efficacy_prompts": 500,
+    "conditional_expand_to_prompts": 1000,
+    "minimum_valid_group_fraction": 0.95,
+    "maximum_zero_variance_group_fraction": 0.35,
+    "maximum_policy_invalid_fraction": 0.05,
+    "increase_rollouts_to": 6
+  },
+  "primary_metrics": ["submitted_geneval2_pass_count"],
+  "official_geneval2_800_reserved_for_one_time_external_evaluation": true
+}

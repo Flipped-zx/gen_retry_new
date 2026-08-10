@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gen-retry.local/schemas/rl_terminal_reward_v0_1.schema.json",
+  "title": "Gen-Retry Terminal-Only RL Reward v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "reward_policy_id",
+    "candidate_id",
+    "outcome_kind",
+    "submitted_attempt_id",
+    "submitted_score",
+    "terminal_utility",
+    "invalid_action_penalty",
+    "total_return"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "reward_policy_id": {"const": "geneval2_terminal_outcome@0.1"},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "outcome_kind": {"enum": ["success", "policy_invalid"]},
+    "submitted_attempt_id": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "submitted_score": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/attemptScore"}
+      ]
+    },
+    "terminal_utility": {"type": "number"},
+    "invalid_action_penalty": {"type": "number", "minimum": 0},
+    "total_return": {"type": "number"}
+  },
+  "$defs": {
+    "attemptScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pass_count", "atom_count", "primary_score"],
+      "properties": {
+        "pass_count": {"type": "integer", "minimum": 0},
+        "atom_count": {"type": "integer", "minimum": 1},
+        "primary_score": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    }
+  }
+}

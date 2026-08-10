@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-08-10
+
+- Added a multiprocessing-safe single-HCU vendor-vLLM diagnostic. Vendor Torch
+  2.9, vendor vLLM 0.11, and verl 0.6.1 load the frozen Qwen3-VL SFT checkpoint
+  and pass a real image-aware Action sample.
+- Validated strict Action/reference checks, Transformers/vLLM prompt-token
+  identity, sampled-token masks, persisted old/reference log-probabilities,
+  seeded engine restart/replay, Ray, sanitized W&B offline mode, device
+  release, optimizer admission, and verl `DataProto` tensorization. This is
+  diagnostic evidence only; image execution, Geneval2, and an optimizer step
+  remain outside the claim.
+
+## 2026-08-08
+
+- Added strict naive-GRPO experiment, W&B, resource, admission, and runtime
+  configuration with fail-closed dual-backend and checkpoint checks.
+- Froze result-blind Flow-DPPO prompt manifests with 1,000 train, 200
+  development, and 500 confirmation rows, bound by an experiment declaration.
+- Added terminal-reward, prompt-manifest, rollout, return, advantage, runtime,
+  adapter-evidence, and smoke-report Schemas plus an optimizer bridge that
+  joins sampled tokens, assistant masks, persisted old/reference log-probs,
+  and advantages before verl tensorization.
+- Added an audited rLLM/verl adapter plan with four rollouts, SGLang TP 2,
+  FSDP 8, asymmetric clipping, and active reference KL. It records unresolved
+  custom-workflow and vendor-runtime blockers and is not a stock launcher.
+- Split runtime readiness into control-plane, `READY_FOR_SMOKE`, and
+  `READY_FOR_OPTIMIZATION`; the latter requires a passing hash-bound 32-group
+  interruption/resume/replay report.
+
+## 2026-08-07
+
+- Added the Phase 8 offline scaffold for a terminal-only naive GRPO baseline
+  and the later Atomic Branch Credit GRPO design.
+- Audited the completed 1,000 Teacher trajectories and excluded them from
+  on-policy updates; fresh same-state policy samples are required.
+- Grounded the trainer direction in Gen-Searcher's rLLM/verl implementation
+  and documented that GenEvolve's full training scripts are not released.
+- Added trainer-side provenance admission, terminal reward and same-state
+  advantage builders, and action-token objective replay with active KL.
+
 ## 2026-08-04
 
 - Enabled W&B tracking in the canonical full-SFT and LoRA recipes under the

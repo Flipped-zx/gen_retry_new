@@ -1,7 +1,10 @@
 # ADR-0001：统一使用 Qianwen-Image-Edit 后端
 
-- Status: Accepted
+- Status: Superseded by ADR-0006
 - Version: v0.2
+
+This ADR is retained as the historical v0.2 decision. New episodes use the
+accepted `qwen_dual_backend@1` execution profile defined by ADR-0006.
 
 ## Decision
 

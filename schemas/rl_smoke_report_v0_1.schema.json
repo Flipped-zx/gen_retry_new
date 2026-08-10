@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gen-retry.local/schemas/rl_smoke_report_v0_1.schema.json",
+  "title": "Gen-Retry RL 32-Group Smoke Report v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "stage",
+    "status",
+    "config",
+    "adapter_evidence",
+    "rollout_batch",
+    "advantage_batch",
+    "artifact_root",
+    "planned_group_count",
+    "valid_group_count",
+    "excluded_group_count",
+    "zero_variance_group_count",
+    "policy_invalid_candidate_count",
+    "total_candidate_count",
+    "checks"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "report_id": {"type": "string", "minLength": 1},
+    "stage": {"const": "smoke_32"},
+    "status": {"const": "PASS"},
+    "config": {"$ref": "#/$defs/ref"},
+    "adapter_evidence": {"$ref": "#/$defs/ref"},
+    "rollout_batch": {"$ref": "#/$defs/ref"},
+    "advantage_batch": {"$ref": "#/$defs/ref"},
+    "artifact_root": {"type": "string", "minLength": 1},
+    "planned_group_count": {"type": "integer", "minimum": 1},
+    "valid_group_count": {"type": "integer", "minimum": 1},
+    "excluded_group_count": {"type": "integer", "minimum": 0},
+    "zero_variance_group_count": {"type": "integer", "minimum": 0},
+    "policy_invalid_candidate_count": {"type": "integer", "minimum": 0},
+    "total_candidate_count": {"type": "integer", "minimum": 1},
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interruption_resume_replay",
+        "infrastructure_retry_exclusion",
+        "active_reference_kl",
+        "action_mask_alignment",
+        "terminal_reward_event_replay",
+        "service_release_before_fsdp"
+      ],
+      "properties": {
+        "interruption_resume_replay": {"$ref": "#/$defs/ref"},
+        "infrastructure_retry_exclusion": {"$ref": "#/$defs/ref"},
+        "active_reference_kl": {"$ref": "#/$defs/ref"},
+        "action_mask_alignment": {"$ref": "#/$defs/ref"},
+        "terminal_reward_event_replay": {"$ref": "#/$defs/ref"},
+        "service_release_before_fsdp": {"$ref": "#/$defs/ref"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256"],
+      "properties": {
+        "ref": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

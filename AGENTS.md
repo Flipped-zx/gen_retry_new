@@ -33,12 +33,17 @@ When these conflict, stop and report the conflict. Do not silently invent a prot
 
 ## Fixed backend semantics
 
-- The only image execution backend in v0.2 is **Qianwen-Image-Edit**.
+- The accepted execution profile is `qwen_dual_backend@1` from ADR-0006,
+  which supersedes the edit-only v0.2 decision in ADR-0001.
 - `generate_image` and `edit_image` remain separate logical actions.
-- Both actions are executed through one adapter: `QianwenImageEditAdapter`.
-- `generate_image` uses generation/regeneration mode without a source attempt.
-- `edit_image` requires a valid `source_attempt_id` and source image artifact.
-- Never reintroduce a separate Qwen-Image generator unless an ADR explicitly changes this decision.
+- `generate_image` is routed to Qwen-Image-2512 without a source attempt and
+  creates a root Attempt.
+- `edit_image` is routed to Qwen-Image-Edit-2511 and requires a valid
+  `source_attempt_id` and source image artifact.
+- The Planner never selects a backend, model, pipeline, or execution mode;
+  routing and provenance are environment-owned.
+- Do not collapse the two routes or change their models without a superseding
+  ADR and the required schema, fixture, parser, test, and changelog updates.
 
 ## Core invariants
 

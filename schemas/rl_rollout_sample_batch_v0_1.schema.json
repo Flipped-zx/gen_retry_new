@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gen-retry.local/schemas/rl_rollout_sample_batch_v0_1.schema.json",
+  "title": "Gen-Retry RL Rollout Sample Batch v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "batch_id",
+    "planned_group_count",
+    "excluded_groups",
+    "groups"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "batch_id": {"type": "string", "minLength": 1},
+    "planned_group_count": {"type": "integer", "minimum": 1},
+    "excluded_groups": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/excludedGroup"}
+    },
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/group"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256"],
+      "properties": {
+        "ref": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "samplingConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "temperature",
+        "top_p",
+        "top_k",
+        "max_action_tokens",
+        "max_episode_assistant_tokens",
+        "seed"
+      ],
+      "properties": {
+        "temperature": {"type": "number", "minimum": 0},
+        "top_p": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "top_k": {"type": "integer", "minimum": -1},
+        "max_action_tokens": {"type": "integer", "minimum": 1},
+        "max_episode_assistant_tokens": {"type": "integer", "minimum": 1},
+        "seed": {"type": "integer", "minimum": 0}
+      }
+    },
+    "excludedGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group_id",
+        "prompt_id",
+        "failure_kind",
+        "component",
+        "failure_record"
+      ],
+      "properties": {
+        "group_id": {"type": "string", "minLength": 1},
+        "prompt_id": {"type": "string", "minLength": 1},
+        "failure_kind": {"const": "infrastructure_failure"},
+        "component": {
+          "enum": ["planner_transport", "image_backend", "geneval2"]
+        },
+        "failure_record": {"$ref": "#/$defs/artifact"}
+      }
+    },
+    "infrastructureRetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "semantic_request_id",
+        "retry_count",
+        "disposition"
+      ],
+      "properties": {
+        "component": {
+          "enum": ["planner_transport", "image_backend", "geneval2"]
+        },
+        "semantic_request_id": {"type": "string", "minLength": 1},
+        "retry_count": {"type": "integer", "minimum": 1},
+        "disposition": {"const": "recovered_same_request"}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "sample_sha256",
+        "outcome_kind",
+        "trainable_token_count",
+        "assistant_action_token_counts",
+        "sampled_response",
+        "sampled_token_ids",
+        "assistant_action_mask",
+        "old_log_probs",
+        "reference_log_probs",
+        "rollout_events",
+        "reward_components",
+        "infrastructure_retries"
+      ],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "sample_sha256": {"$ref": "#/$defs/sha256"},
+        "outcome_kind": {"enum": ["success", "policy_invalid"]},
+        "trainable_token_count": {"type": "integer", "minimum": 1},
+        "assistant_action_token_counts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "integer", "minimum": 1}
+        },
+        "sampled_response": {"$ref": "#/$defs/artifact"},
+        "sampled_token_ids": {"$ref": "#/$defs/artifact"},
+        "assistant_action_mask": {"$ref": "#/$defs/artifact"},
+        "old_log_probs": {"$ref": "#/$defs/artifact"},
+        "reference_log_probs": {"$ref": "#/$defs/artifact"},
+        "rollout_events": {"$ref": "#/$defs/artifact"},
+        "reward_components": {"$ref": "#/$defs/artifact"},
+        "infrastructure_retries": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/infrastructureRetry"}
+        }
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group_id",
+        "group_kind",
+        "state_id",
+        "prompt_id",
+        "prompt_sha256",
+        "atom_set_sha256",
+        "canonical_state_sha256",
+        "sampling_policy_id",
+        "policy_checkpoint",
+        "policy_revision",
+        "sampling_config",
+        "sampling_config_sha256",
+        "candidates"
+      ],
+      "properties": {
+        "group_id": {"type": "string", "minLength": 1},
+        "group_kind": {"enum": ["episode", "pivot"]},
+        "state_id": {"type": "string", "minLength": 1},
+        "prompt_id": {"type": "string", "minLength": 1},
+        "prompt_sha256": {"$ref": "#/$defs/sha256"},
+        "atom_set_sha256": {"$ref": "#/$defs/sha256"},
+        "canonical_state_sha256": {"$ref": "#/$defs/sha256"},
+        "sampling_policy_id": {"type": "string", "minLength": 1},
+        "policy_checkpoint": {"$ref": "#/$defs/artifact"},
+        "policy_revision": {"type": "string", "minLength": 1},
+        "sampling_config": {"$ref": "#/$defs/samplingConfig"},
+        "sampling_config_sha256": {"$ref": "#/$defs/sha256"},
+        "candidates": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"$ref": "#/$defs/candidate"}
+        }
+      }
+    }
+  }
+}

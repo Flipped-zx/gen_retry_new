@@ -1,0 +1,13 @@
+{
+  "device_count": 1,
+  "model": "/root/private_data/agentic_image/gen_retry_new/runs/sft_checkpoints/flow1000_v9_selective_skill_full_s42",
+  "model_load_seconds": 192.364,
+  "output_text": "OK",
+  "probe_type": "vendor_vllm_single_device_model_smoke",
+  "status": "PASS",
+  "torch": "2.9.0",
+  "torch_hip": "6.3.26093",
+  "total_seconds": 193.258,
+  "verl": "0.6.1",
+  "vllm": "0.11.0+das.opt1.dtk2604.torch290"
+}

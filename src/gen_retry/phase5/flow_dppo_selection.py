@@ -10,6 +10,9 @@ from typing import Any
 
 FLOW_DPPO_COMMIT = "e1a814ff9de6de644b093c6ed0106869c1881e53"
 FLOW_DPPO_DATASET_REF = "datasets/geneval2/synthetic/train.jsonl"
+FLOW_DPPO_DATASET_SHA256 = (
+    "1822f92dbf848f66d0dbe6b1f9d10114496b104d12b5c32b48e01a83e66b4fe7"
+)
 DEFAULT_TIER_COUNTS = {"hard": 12, "medium": 5, "easy": 3}
 OFFICIAL_ATOM_COUNTS = tuple(range(3, 11))
 
@@ -369,6 +372,42 @@ def selection_report(payload: dict[str, Any]) -> str:
         ]
     )
     return "\n".join(lines)
+
+
+def load_flow_dppo_rows(
+    dataset_path: Path,
+) -> tuple[list[dict[str, Any]], str]:
+    """Load canonical Flow-DPPO rows for downstream frozen selectors."""
+
+    return _load_rows(dataset_path)
+
+
+def build_flow_dppo_heldout_boundary(
+    rows: list[dict[str, Any]], heldout_dataset_path: Path
+) -> dict[str, Any]:
+    return _heldout_boundary(rows, heldout_dataset_path)
+
+
+def flow_dppo_candidate_from_row(
+    row: dict[str, Any],
+    *,
+    selection_rank: int,
+    source_commit: str,
+    source_file_sha256: str,
+) -> dict[str, Any]:
+    return _candidate_from_row(
+        row,
+        selection_rank=selection_rank,
+        source_commit=source_commit,
+        source_file_sha256=source_file_sha256,
+        difficulty_tier=_official_difficulty_tier(int(row["atom_count"])),
+    )
+
+
+def flow_dppo_selection_coverage(
+    selected: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return _coverage(selected)
 
 
 def _load_rows(dataset_path: Path) -> tuple[list[dict[str, Any]], str]:

@@ -1,0 +1,71 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "rollout_batch_fixture_001",
+  "planned_group_count": 1,
+  "excluded_groups": [],
+  "groups": [
+    {
+      "group_id": "episode_prompt_001",
+      "group_kind": "episode",
+      "state_id": "planner_context_sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "prompt_id": "flow_prompt_001",
+      "prompt_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "atom_set_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "canonical_state_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "sampling_policy_id": "sft_final_s42",
+      "policy_checkpoint": {
+        "ref": "runs/sft_checkpoints/flow1000_v9_selective_skill_full_s42",
+        "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "policy_revision": "flow1000_v9_s42_final",
+      "sampling_config": {
+        "temperature": 0.7,
+        "top_p": 0.95,
+        "top_k": -1,
+        "max_action_tokens": 1400,
+        "max_episode_assistant_tokens": 16000,
+        "seed": 42
+      },
+      "sampling_config_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "candidates": [
+        {
+          "candidate_id": "candidate_001",
+          "sample_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+          "outcome_kind": "success",
+          "trainable_token_count": 96,
+          "assistant_action_token_counts": [48, 48],
+          "sampled_response": {"ref": "responses/c001.json", "sha256": "6666666666666666666666666666666666666666666666666666666666666666"},
+          "sampled_token_ids": {"ref": "tokens/c001.ids", "sha256": "7777777777777777777777777777777777777777777777777777777777777777"},
+          "assistant_action_mask": {"ref": "tokens/c001.mask", "sha256": "8888888888888888888888888888888888888888888888888888888888888888"},
+          "old_log_probs": {"ref": "tokens/c001.old", "sha256": "9999999999999999999999999999999999999999999999999999999999999999"},
+          "reference_log_probs": {"ref": "tokens/c001.ref", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+          "rollout_events": {"ref": "events/c001.jsonl", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+          "reward_components": {"ref": "rewards/c001.json", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+          "infrastructure_retries": []
+        },
+        {
+          "candidate_id": "candidate_002",
+          "sample_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "outcome_kind": "success",
+          "trainable_token_count": 84,
+          "assistant_action_token_counts": [42, 42],
+          "sampled_response": {"ref": "responses/c002.json", "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"},
+          "sampled_token_ids": {"ref": "tokens/c002.ids", "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"},
+          "assistant_action_mask": {"ref": "tokens/c002.mask", "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
+          "old_log_probs": {"ref": "tokens/c002.old", "sha256": "1212121212121212121212121212121212121212121212121212121212121212"},
+          "reference_log_probs": {"ref": "tokens/c002.ref", "sha256": "1313131313131313131313131313131313131313131313131313131313131313"},
+          "rollout_events": {"ref": "events/c002.jsonl", "sha256": "1414141414141414141414141414141414141414141414141414141414141414"},
+          "reward_components": {"ref": "rewards/c002.json", "sha256": "1515151515151515151515151515151515151515151515151515151515151515"},
+          "infrastructure_retries": [
+            {
+              "component": "image_backend",
+              "semantic_request_id": "episode_prompt_001:candidate_002:image_001",
+              "retry_count": 1,
+              "disposition": "recovered_same_request"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

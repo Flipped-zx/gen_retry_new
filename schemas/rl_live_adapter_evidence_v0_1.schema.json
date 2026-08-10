@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gen-retry.local/schemas/rl_live_adapter_evidence_v0_1.schema.json",
+  "title": "Gen-Retry RL Live Adapter Evidence v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "status",
+    "config",
+    "policy_checkpoint_sha256",
+    "implementation",
+    "runtime_versions",
+    "checks",
+    "evidence_artifacts"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "evidence_id": {"type": "string", "minLength": 1},
+    "status": {"const": "PASS"},
+    "config": {"$ref": "#/$defs/ref"},
+    "policy_checkpoint_sha256": {"$ref": "#/$defs/sha256"},
+    "implementation": {"$ref": "#/$defs/ref"},
+    "runtime_versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rllm", "verl", "sglang"],
+      "properties": {
+        "rllm": {"type": "string", "minLength": 1},
+        "verl": {"type": "string", "minLength": 1},
+        "sglang": {"type": "string", "minLength": 1}
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strict_json_multi_turn_workflow",
+        "qwen3_vl_multimodal_grid_preservation",
+        "persisted_old_reference_log_probs",
+        "tokenizer_derived_action_mask",
+        "manifest_state_event_semantic_replay",
+        "staged_service_release_handoff"
+      ],
+      "properties": {
+        "strict_json_multi_turn_workflow": {"$ref": "#/$defs/ref"},
+        "qwen3_vl_multimodal_grid_preservation": {"$ref": "#/$defs/ref"},
+        "persisted_old_reference_log_probs": {"$ref": "#/$defs/ref"},
+        "tokenizer_derived_action_mask": {"$ref": "#/$defs/ref"},
+        "manifest_state_event_semantic_replay": {"$ref": "#/$defs/ref"},
+        "staged_service_release_handoff": {"$ref": "#/$defs/ref"}
+      }
+    },
+    "evidence_artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/ref"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256"],
+      "properties": {
+        "ref": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

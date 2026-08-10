@@ -2,6 +2,26 @@
 
 ## Current Phase
 
+Phase 8 Geneval2 RL is at the live-runtime gate. The accepted first experiment
+is terminal-only `naive_geneval2_grpo@0.1`, initialized from the frozen v9 SFT
+checkpoint with four fresh on-policy rollouts per prompt. The existing 1,000
+Teacher trajectories remain replay/calibration evidence and are not treated as
+policy-gradient samples. Result-blind 1,000 train, 200 development, and 500
+confirmation prompt manifests are frozen and SHA-bound to the experiment
+declaration.
+
+The offline scaffold now includes rollout/return/advantage Schemas, terminal
+reward construction, fail-closed group admission, action-token-only objective
+replay, persisted old/reference-logprob joins, a verl `DataProto` bridge,
+runtime preflight, and typed adapter/smoke gates. A one-HCU vendor Torch 2.9 +
+vLLM 0.11 diagnostic passed real image-aware Qwen3-VL sampling, strict Action
+validation, tokenizer identity, token/mask/logprob alignment, seeded engine
+restart replay, Ray/W&B checks, and optimizer-batch tensorization. It did not
+execute image backends, Geneval2, or an optimizer step. The accepted formal
+plan remains blocked on its custom multi-turn live adapter, eight-HCU staged
+topology, and hash-bound 32-group interruption/resume/replay smoke. The current
+SGLang/rLLM plan has not been superseded by the diagnostic vLLM result.
+
 The formal Flow-DPPO 1000 v9 cold-start SFT is complete. Gate 3 returned
 `PASS_FREEZE_WITH_MONITORING`, and the frozen export contains 4302 positive
 targets split by trajectory into 3450 train, 438 validation, and 414 test

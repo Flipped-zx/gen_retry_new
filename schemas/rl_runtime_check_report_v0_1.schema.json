@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gen-retry.local/schemas/rl_runtime_check_report_v0_1.schema.json",
+  "title": "Gen-Retry RL Runtime Check Report v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "check_id",
+    "status",
+    "runner",
+    "command",
+    "exit_code",
+    "assertion_count",
+    "runtime_versions",
+    "bindings",
+    "output"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "check_id": {
+      "enum": [
+        "strict_json_multi_turn_workflow",
+        "qwen3_vl_multimodal_grid_preservation",
+        "persisted_old_reference_log_probs",
+        "tokenizer_derived_action_mask",
+        "manifest_state_event_semantic_replay",
+        "staged_service_release_handoff",
+        "interruption_resume_replay",
+        "infrastructure_retry_exclusion",
+        "active_reference_kl",
+        "action_mask_alignment",
+        "terminal_reward_event_replay",
+        "service_release_before_fsdp"
+      ]
+    },
+    "status": {"const": "PASS"},
+    "runner": {"enum": ["pytest", "integration_harness"]},
+    "command": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "exit_code": {"const": 0},
+    "assertion_count": {"type": "integer", "minimum": 1},
+    "runtime_versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rllm", "verl", "sglang"],
+      "properties": {
+        "rllm": {"type": "string", "minLength": 1},
+        "verl": {"type": "string", "minLength": 1},
+        "sglang": {"type": "string", "minLength": 1}
+      }
+    },
+    "bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "config_sha256",
+        "implementation_sha256",
+        "policy_checkpoint_sha256",
+        "adapter_evidence_sha256",
+        "rollout_batch_sha256",
+        "advantage_batch_sha256"
+      ],
+      "properties": {
+        "config_sha256": {"$ref": "#/$defs/sha256"},
+        "implementation_sha256": {"$ref": "#/$defs/sha256"},
+        "policy_checkpoint_sha256": {"$ref": "#/$defs/sha256"},
+        "adapter_evidence_sha256": {
+          "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+        },
+        "rollout_batch_sha256": {
+          "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+        },
+        "advantage_batch_sha256": {
+          "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+        }
+      }
+    },
+    "output": {"$ref": "#/$defs/ref"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256"],
+      "properties": {
+        "ref": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gen-retry.local/schemas/rl_experiment_declaration_v0_1.schema.json",
+  "title": "Gen-Retry RL Experiment Declaration v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "method",
+    "config",
+    "policy",
+    "execution_profile",
+    "reward_policy",
+    "splits",
+    "rollout",
+    "optimization",
+    "stopping_and_scale",
+    "primary_metrics",
+    "official_geneval2_800_reserved_for_one_time_external_evaluation"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "experiment_id": {"type": "string", "minLength": 1},
+    "method": {"const": "naive_geneval2_grpo@0.1"},
+    "config": {"$ref": "#/$defs/ref"},
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "revision",
+        "checkpoint_sha256",
+        "planner_context_schema_version",
+        "action_protocol_version"
+      ],
+      "properties": {
+        "revision": {"type": "string", "minLength": 1},
+        "checkpoint_sha256": {"$ref": "#/$defs/sha256"},
+        "planner_context_schema_version": {"const": "0.7"},
+        "action_protocol_version": {"const": "0.5"}
+      }
+    },
+    "execution_profile": {"const": "qwen_dual_backend@1"},
+    "reward_policy": {"const": "geneval2_terminal_outcome@0.1"},
+    "splits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["train", "development", "confirmation"],
+      "properties": {
+        "train": {"$ref": "#/$defs/split_ref"},
+        "development": {"$ref": "#/$defs/split_ref"},
+        "confirmation": {"$ref": "#/$defs/split_ref"}
+      }
+    },
+    "rollout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "seed",
+        "rollouts_per_prompt",
+        "temperature",
+        "top_p",
+        "top_k",
+        "max_image_attempts",
+        "max_action_tokens",
+        "max_episode_assistant_tokens"
+      ],
+      "properties": {
+        "seed": {"type": "integer", "minimum": 0},
+        "rollouts_per_prompt": {"type": "integer", "minimum": 2},
+        "temperature": {"type": "number", "exclusiveMinimum": 0},
+        "top_p": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "top_k": {"type": "integer"},
+        "max_image_attempts": {"type": "integer", "minimum": 1},
+        "max_action_tokens": {"type": "integer", "minimum": 1},
+        "max_episode_assistant_tokens": {"type": "integer", "minimum": 1}
+      }
+    },
+    "optimization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "learning_rate",
+        "ppo_epochs",
+        "train_epochs",
+        "reference_kl_coefficient",
+        "clip_ratio_low",
+        "clip_ratio_high"
+      ],
+      "properties": {
+        "learning_rate": {"type": "number", "exclusiveMinimum": 0},
+        "ppo_epochs": {"type": "integer", "minimum": 1},
+        "train_epochs": {"type": "integer", "minimum": 1},
+        "reference_kl_coefficient": {"type": "number", "exclusiveMinimum": 0},
+        "clip_ratio_low": {"type": "number", "minimum": 0},
+        "clip_ratio_high": {"type": "number", "minimum": 0}
+      }
+    },
+    "stopping_and_scale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "smoke_prompts",
+        "pilot_prompts",
+        "minimum_trainable_prompts",
+        "first_efficacy_prompts",
+        "conditional_expand_to_prompts",
+        "minimum_valid_group_fraction",
+        "maximum_zero_variance_group_fraction",
+        "maximum_policy_invalid_fraction",
+        "increase_rollouts_to"
+      ],
+      "properties": {
+        "smoke_prompts": {"type": "integer", "minimum": 1},
+        "pilot_prompts": {"type": "integer", "minimum": 1},
+        "minimum_trainable_prompts": {"type": "integer", "minimum": 1},
+        "first_efficacy_prompts": {"type": "integer", "minimum": 1},
+        "conditional_expand_to_prompts": {"type": "integer", "minimum": 1},
+        "minimum_valid_group_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "maximum_zero_variance_group_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "maximum_policy_invalid_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "increase_rollouts_to": {"type": "integer", "minimum": 2}
+      }
+    },
+    "primary_metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "official_geneval2_800_reserved_for_one_time_external_evaluation": {
+      "const": true
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256"],
+      "properties": {
+        "ref": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "split_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256", "selected_count", "manifest_id"],
+      "properties": {
+        "ref": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "selected_count": {"type": "integer", "minimum": 1},
+        "manifest_id": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

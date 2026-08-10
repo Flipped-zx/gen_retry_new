@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gen-retry.local/schemas/rl_advantage_batch_v0_1.schema.json",
+  "title": "Gen-Retry RL Advantage Batch v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "batch_id",
+    "reward_policy",
+    "source_batch_sha256",
+    "groups"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "batch_id": {"type": "string", "minLength": 1},
+    "reward_policy": {"$ref": "#/$defs/rewardPolicy"},
+    "source_batch_sha256": {"$ref": "#/$defs/sha256"},
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/group"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nonNegativeNumber": {"type": "number", "minimum": 0},
+    "unitNumber": {"type": "number", "minimum": 0, "maximum": 1},
+    "rewardPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reward_policy_id",
+        "reward_policy_version",
+        "gm_tie_break_scale",
+        "fixed_weight",
+        "regression_weight",
+        "gm_transition_weight",
+        "best_progress_weight",
+        "no_progress_penalty",
+        "image_call_cost",
+        "all_pass_bonus",
+        "submit_regret_weight",
+        "query_skill_cost",
+        "repeated_query_penalty",
+        "invalid_action_penalty",
+        "query_delayed_credit_fraction",
+        "episode_group_terminal_weight",
+        "pivot_group_terminal_weight"
+      ],
+      "properties": {
+        "reward_policy_id": {
+          "enum": [
+            "geneval2_atomic_branch_credit",
+            "geneval2_terminal_outcome"
+          ]
+        },
+        "reward_policy_version": {"const": "0.1"},
+        "gm_tie_break_scale": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1},
+        "fixed_weight": {"$ref": "#/$defs/nonNegativeNumber"},
+        "regression_weight": {"$ref": "#/$defs/nonNegativeNumber"},
+        "gm_transition_weight": {"$ref": "#/$defs/nonNegativeNumber"},
+        "best_progress_weight": {"$ref": "#/$defs/nonNegativeNumber"},
+        "no_progress_penalty": {"$ref": "#/$defs/nonNegativeNumber"},
+        "image_call_cost": {"$ref": "#/$defs/nonNegativeNumber"},
+        "all_pass_bonus": {"$ref": "#/$defs/nonNegativeNumber"},
+        "submit_regret_weight": {"$ref": "#/$defs/nonNegativeNumber"},
+        "query_skill_cost": {"$ref": "#/$defs/nonNegativeNumber"},
+        "repeated_query_penalty": {"$ref": "#/$defs/nonNegativeNumber"},
+        "invalid_action_penalty": {"$ref": "#/$defs/nonNegativeNumber"},
+        "query_delayed_credit_fraction": {"$ref": "#/$defs/unitNumber"},
+        "episode_group_terminal_weight": {"$ref": "#/$defs/unitNumber"},
+        "pivot_group_terminal_weight": {"$ref": "#/$defs/unitNumber"}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "sample_sha256",
+        "rollout_sample_sha256",
+        "reward_components_sha256",
+        "trainable_token_count",
+        "on_policy",
+        "outcome_kind",
+        "local_return",
+        "episode_return",
+        "local_advantage",
+        "episode_advantage",
+        "combined_advantage"
+      ],
+      "properties": {
+        "candidate_id": {"type": "string", "minLength": 1},
+        "sample_sha256": {"$ref": "#/$defs/sha256"},
+        "rollout_sample_sha256": {"$ref": "#/$defs/sha256"},
+        "reward_components_sha256": {"$ref": "#/$defs/sha256"},
+        "trainable_token_count": {"type": "integer", "minimum": 1},
+        "on_policy": {"const": true},
+        "outcome_kind": {"enum": ["success", "policy_invalid"]},
+        "local_return": {"type": "number"},
+        "episode_return": {"type": "number"},
+        "local_advantage": {"type": "number"},
+        "episode_advantage": {"type": "number"},
+        "combined_advantage": {"type": "number"}
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group_id",
+        "group_kind",
+        "state_id",
+        "sampling_policy_id",
+        "rollout_group_sha256",
+        "advantage_stats",
+        "candidates"
+      ],
+      "properties": {
+        "group_id": {"type": "string", "minLength": 1},
+        "group_kind": {"enum": ["episode", "pivot"]},
+        "state_id": {"type": "string", "minLength": 1},
+        "sampling_policy_id": {"type": "string", "minLength": 1},
+        "rollout_group_sha256": {"$ref": "#/$defs/sha256"},
+        "advantage_stats": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "local_return_std",
+            "episode_return_std",
+            "combined_advantage_std",
+            "terminal_weight",
+            "eligible_for_policy_loss"
+          ],
+          "properties": {
+            "local_return_std": {"$ref": "#/$defs/nonNegativeNumber"},
+            "episode_return_std": {"$ref": "#/$defs/nonNegativeNumber"},
+            "combined_advantage_std": {"$ref": "#/$defs/nonNegativeNumber"},
+            "terminal_weight": {"$ref": "#/$defs/unitNumber"},
+            "eligible_for_policy_loss": {"type": "boolean"}
+          }
+        },
+        "candidates": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"$ref": "#/$defs/candidate"}
+        }
+      }
+    }
+  }
+}

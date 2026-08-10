@@ -118,7 +118,10 @@ exact_paths:
 - path: `model_index.json`
   symbol: `_class_name = QwenImageEditPlusPipeline`
 borrowed_idea: One local Qianwen-Image-Edit backend can support edit-style calls.
-local_adaptation: v3 exposes logical `generate_image` and `edit_image` through one `QianwenImageEditAdapter`.
+local_adaptation: Historical v0.2 routed both logical actions through
+  `QianwenImageEditAdapter`. ADR-0006 superseded that design: current
+  `qwen_dual_backend@1` routes source-free `generate_image` to Qwen-Image-2512
+  and source-conditioned `edit_image` to Qwen-Image-Edit-2511.
 copy_code: no
 notes: Do not vendor weights or store secrets in config.
 
@@ -977,6 +980,94 @@ notes: Gen-Searcher and GenEvolve train assistant reasoning and tool-call text,
   by moving torchaudio to an audio extra. Audio still fails explicitly when
   unavailable. No Action, memory, score, target selection, harmful/recovery,
   or query-skill supervision rule changed.
+
+### GenEvolve RL And Visual Experience Distillation
+
+source_id: `genevolve_rl_design_2026_08_07`
+source_name: GenEvolve paper and local repository
+repository_path: `/root/private_data/agentic_image/GenEvolve`
+repository_commit: `23c847c559ccc0f95bbf4b3d8925898463822f4c`
+repository_license: Apache-2.0
+paper: `GenEvolve: Self-Evolving Image Generation Agents via Tool-Orchestrated Visual Experience Distillation`
+arxiv_url: `https://arxiv.org/abs/2605.21605v2`
+accessed_date: `2026-08-07`
+evidence_type: repository-grounded and paper-grounded via `source_researcher`
+exact_repository_paths:
+- path: `README.md:374-410`
+  evidence: the release documents 9,000 SFT trajectories and 3,175 RL cases,
+    but explicitly does not release full training scripts.
+- path: `genevolve/agent.py:15-17`
+  evidence: privileged teacher context belongs to an unreleased training path.
+- path: `genevolve/knowledge_tool.py:7-9`
+  evidence: dynamic visual-experience memory belongs to the unreleased path.
+exact_paper_sections:
+- section: `5.3--5.5; Appendices A.5, C.2, D.2, F`
+  evidence: GRPO uses 8 prompts and 6 on-policy rollouts per prompt; outcome
+    reward combines image and program-text reward. Best/worst rollouts are
+    distilled when their gap is at least 0.20, and the reported objective adds
+    a teacher-scored selective distillation loss to GRPO.
+borrowed_idea: Grouped fresh on-policy rollout, assistant-only masking, and a
+  separately auditable auxiliary credit target.
+local_adaptation: Gen-Retry uses immutable Geneval2 transitions and exact
+  same-state branch returns; it does not make teacher experience
+  environment-owned memory or claim a released executable GenEvolve trainer.
+copy_code: no
+notes: Algorithm details above are paper-grounded, not executable repository
+  evidence.
+
+### Gen-Searcher Executable GRPO And Credit Path
+
+source_id: `gen_searcher_executable_rl_2026_08_07`
+source_name: Gen-Searcher local RL subtree
+repository_path: `/root/private_data/agentic_image/Gen-Searcher`
+repository_commit: `e5078d31859bafee6b6b610f0cd40095cc72e2a4`
+license: `Gen-DeepResearch-RL/LICENSE` is MIT
+accessed_date: `2026-08-07`
+evidence_type: repository-grounded via `source_researcher`
+exact_repository_paths:
+- path: `Gen-DeepResearch-RL/rllm/pyproject.toml`
+  evidence: rLLM declares version 0.2.1, Python >=3.10, Transformers >=4.55,
+    and an optional verl dependency requiring torch >=2.8.
+- path: `Gen-DeepResearch-RL/rllm/scripts/install_verl.sh`
+  evidence: the released installer pins torch 2.6.0, embeds verl 0.6.1, and
+    installs SGLang 0.4.6.post5; those pins are not safe for vendor HCU Torch.
+- path: `Gen-DeepResearch-RL/rllm/vision_deepresearch_async_workflow/train_image_deepresearch_workflow_fsdp_gen.py`
+  evidence: `AgentTrainer` wires workflow, tools, reward, and training.
+- path: `Gen-DeepResearch-RL/rllm/vision_deepresearch_async_workflow/run/gen_image_deepresearch_8B_fsdp_8gpu.sh`
+  evidence: launch uses grouped GRPO, FSDP 8, SGLang TP 2, LR 1e-6,
+    temperature 0.7, top-p 0.95, and `seq-mean-token-sum`.
+- path: `Gen-DeepResearch-RL/rllm/rllm/parser/chat_template_parser.py:132-162`
+  evidence: user/tool observations are loss-masked and assistant tokens train.
+- path: `Gen-DeepResearch-RL/rllm/verl/verl/trainer/ppo/core_algos.py:265-328`
+  evidence: scalar group-relative advantage is broadcast across valid
+    assistant tokens; no action-specific credit is implemented.
+- path: `Gen-DeepResearch-RL/rllm/rllm/trainer/verl/agent_workflow_trainer.py:439-450`
+  evidence: KL is inactive unless one of the explicit KL paths is enabled.
+borrowed_idea: Grouped rollout, assistant-only masks, artifact-backed
+  evaluation, error filtering, and prompt-group normalization.
+local_adaptation: Gen-Retry keeps action-level Geneval2 credit, canonical state
+  IDs, infrastructure-failure exclusion, zero-variance masking, staged dual-
+  backend rollout, persisted old/reference log-probs, and active reference KL.
+  Stock rLLM's XML parser and runtime pins are not directly reused.
+copy_code: no
+notes: No code was copied. Gen-DeepResearch-RL/rLLM is MIT; its embedded verl
+  is Apache-2.0.
+
+### User-Provided ABC-GRPO Design Discussion
+
+source_id: `user_chatgpt_share_6a75a336_2026_08_07`
+source_name: user-provided ChatGPT shared discussion
+url: `https://chatgpt.com/share/6a75a336-e5f0-83e8-a3ab-23bd8dee015b`
+accessed_date: `2026-08-07`
+evidence_type: local-design discussion, not external empirical evidence
+borrowed_idea: Geneval2 terminal reward plus atom transition credit and bounded
+  same-state pivot branching.
+local_adaptation: HPSv3 and descendant top-k backup are deferred in v0.1.
+  Source-relative intervention is paired with reducer-best-relative progress,
+  and one-step pivot groups do not fabricate terminal descendant credit.
+copy_code: no
+notes: Claims used by the design were checked against local repositories and
+  papers where applicable.
 
 ## Prior Broad Notes
 

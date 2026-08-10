@@ -1,0 +1,38 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "rl_batch_fixture_001",
+  "reward_policy_id": "geneval2_atomic_branch_credit@0.1",
+  "groups": [
+    {
+      "group_id": "pivot_phase3_ep_001_turn_004",
+      "group_kind": "pivot",
+      "state_id": "planner_context_sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sampling_policy_id": "sft_final_s42",
+      "rollout_group_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "candidates": [
+        {
+          "candidate_id": "candidate_001",
+          "sample_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "rollout_sample_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "reward_components_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "trainable_token_count": 96,
+          "on_policy": true,
+          "outcome_kind": "success",
+          "local_return": 0.75,
+          "episode_return": 3.25
+        },
+        {
+          "candidate_id": "candidate_002",
+          "sample_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "rollout_sample_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "reward_components_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+          "trainable_token_count": 84,
+          "on_policy": true,
+          "outcome_kind": "success",
+          "local_return": -0.40,
+          "episode_return": 2.10
+        }
+      ]
+    }
+  ]
+}

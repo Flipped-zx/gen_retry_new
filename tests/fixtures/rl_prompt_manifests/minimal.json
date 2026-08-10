@@ -1,0 +1,49 @@
+{
+  "schema_version": "0.1",
+  "manifest_id": "naive_grpo_train_fixture",
+  "split": "train",
+  "selection_method": "flow_dppo_result_blind_family_distinct_stratified_hash_v1",
+  "seed": 42,
+  "selected_count": 1,
+  "tier_counts": {"easy": 0, "medium": 1, "hard": 0},
+  "source": {
+    "repository": "Tencent-Hunyuan/UniRL",
+    "commit": "e1a814ff9de6de644b093c6ed0106869c1881e53",
+    "dataset_ref": "datasets/geneval2/synthetic/train.jsonl",
+    "dataset_sha256": "1822f92dbf848f66d0dbe6b1f9d10114496b104d12b5c32b48e01a83e66b4fe7",
+    "dataset_row_count": 20000
+  },
+  "boundaries": {
+    "official_geneval2_held_out": true,
+    "official_geneval2_ref": "geneval2_data.jsonl",
+    "official_geneval2_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "official_geneval2_row_count": 800,
+    "official_semantic_family_rows_excluded": 9650,
+    "prior_selection_records": [],
+    "prior_source_rows_excluded": 1220,
+    "eligible_source_rows": 9130,
+    "eligible_rl_families": 8354,
+    "rl_family_definition": "fixture family definition",
+    "cross_split_rl_family_disjoint": true,
+    "selection_is_image_result_blind": true
+  },
+  "selected_prompts": [
+    {
+      "prompt_id": "flow_dppo_train_fixture",
+      "source_row_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "semantic_family_id": "sf_1111111111111111",
+      "rl_semantic_family_id": "rlsf_2222222222222222",
+      "original_prompt": "a red cup on a table",
+      "difficulty_tier": "medium",
+      "atom_count": 6,
+      "atomic_constraints": [{"constraint_id": "c_001"}],
+      "provenance": {
+        "commit": "e1a814ff9de6de644b093c6ed0106869c1881e53",
+        "source_file_sha256": "1822f92dbf848f66d0dbe6b1f9d10114496b104d12b5c32b48e01a83e66b4fe7",
+        "source_row_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "official_test_set_held_out": true
+      }
+    }
+  ],
+  "coverage": {}
+}

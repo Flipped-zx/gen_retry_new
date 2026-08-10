@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gen-retry.local/schemas/rl_prompt_manifest_v0_1.schema.json",
+  "title": "Gen-Retry RL Prompt Manifest v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "split",
+    "selection_method",
+    "seed",
+    "selected_count",
+    "tier_counts",
+    "source",
+    "boundaries",
+    "selected_prompts",
+    "coverage"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "manifest_id": {"type": "string", "minLength": 1},
+    "split": {"enum": ["train", "development", "confirmation"]},
+    "selection_method": {
+      "const": "flow_dppo_result_blind_family_distinct_stratified_hash_v1"
+    },
+    "seed": {"type": "integer", "minimum": 0},
+    "selected_count": {"type": "integer", "minimum": 1},
+    "tier_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["easy", "medium", "hard"],
+      "properties": {
+        "easy": {"type": "integer", "minimum": 0},
+        "medium": {"type": "integer", "minimum": 0},
+        "hard": {"type": "integer", "minimum": 0}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "commit",
+        "dataset_ref",
+        "dataset_sha256",
+        "dataset_row_count"
+      ],
+      "properties": {
+        "repository": {"const": "Tencent-Hunyuan/UniRL"},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "dataset_ref": {"type": "string", "minLength": 1},
+        "dataset_sha256": {"$ref": "#/$defs/sha256"},
+        "dataset_row_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "official_geneval2_held_out",
+        "official_geneval2_ref",
+        "official_geneval2_sha256",
+        "official_geneval2_row_count",
+        "official_semantic_family_rows_excluded",
+        "prior_selection_records",
+        "prior_source_rows_excluded",
+        "eligible_source_rows",
+        "eligible_rl_families",
+        "rl_family_definition",
+        "cross_split_rl_family_disjoint",
+        "selection_is_image_result_blind"
+      ],
+      "properties": {
+        "official_geneval2_held_out": {"const": true},
+        "official_geneval2_ref": {"type": "string", "minLength": 1},
+        "official_geneval2_sha256": {"$ref": "#/$defs/sha256"},
+        "official_geneval2_row_count": {"const": 800},
+        "official_semantic_family_rows_excluded": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "prior_selection_records": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/artifact_ref"}
+        },
+        "prior_source_rows_excluded": {"type": "integer", "minimum": 0},
+        "eligible_source_rows": {"type": "integer", "minimum": 1},
+        "eligible_rl_families": {"type": "integer", "minimum": 1},
+        "rl_family_definition": {"type": "string", "minLength": 1},
+        "cross_split_rl_family_disjoint": {"const": true},
+        "selection_is_image_result_blind": {"const": true}
+      }
+    },
+    "selected_prompts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/prompt"}
+    },
+    "coverage": {"type": "object"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256", "selected_count"],
+      "properties": {
+        "ref": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "selected_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "prompt": {
+      "type": "object",
+      "required": [
+        "prompt_id",
+        "source_row_sha256",
+        "semantic_family_id",
+        "rl_semantic_family_id",
+        "original_prompt",
+        "difficulty_tier",
+        "atom_count",
+        "atomic_constraints",
+        "provenance"
+      ],
+      "properties": {
+        "prompt_id": {"type": "string", "minLength": 1},
+        "source_row_sha256": {"$ref": "#/$defs/sha256"},
+        "semantic_family_id": {"type": "string", "pattern": "^sf_[0-9a-f]{16}$"},
+        "rl_semantic_family_id": {
+          "type": "string",
+          "pattern": "^rlsf_[0-9a-f]{16}$"
+        },
+        "original_prompt": {"type": "string", "minLength": 1},
+        "difficulty_tier": {"enum": ["easy", "medium", "hard"]},
+        "atom_count": {"type": "integer", "minimum": 1},
+        "atomic_constraints": {"type": "array", "minItems": 1},
+        "provenance": {
+          "type": "object",
+          "required": [
+            "commit",
+            "source_file_sha256",
+            "source_row_sha256",
+            "official_test_set_held_out"
+          ]
+        }
+      }
+    }
+  }
+}

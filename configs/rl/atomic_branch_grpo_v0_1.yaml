@@ -1,0 +1,60 @@
+method_id: atomic_branch_grpo
+method_version: "0.1"
+base_checkpoint: runs/sft_checkpoints/flow1000_v9_selective_skill_full_s42
+planner_context_schema_version: "0.7"
+action_protocol_version: "0.5"
+execution_profile: qwen_dual_backend@1
+
+reward:
+  reward_policy_id: geneval2_atomic_branch_credit
+  reward_policy_version: "0.1"
+  gm_tie_break_scale: 0.25
+  fixed_weight: 1.0
+  regression_weight: 1.25
+  gm_transition_weight: 0.10
+  best_progress_weight: 0.50
+  no_progress_penalty: 0.10
+  image_call_cost: 0.02
+  all_pass_bonus: 0.25
+  submit_regret_weight: 1.0
+  query_skill_cost: 0.01
+  repeated_query_penalty: 0.05
+  invalid_action_penalty: 1.00
+  query_delayed_credit_fraction: 0.20
+  episode_group_terminal_weight: 0.35
+  pivot_group_terminal_weight: 0.0
+
+rollout:
+  prompt_source: fresh_flow_dppo_synthetic_train
+  full_rollouts_per_prompt: 4
+  pivot_groups_per_prompt: 1
+  pivot_candidates: 4
+  pivot_continuation: one_step
+  policy_margin_pivot_enabled: false
+  max_image_attempts: 5
+  require_on_policy_candidates: true
+  allow_forced_action_candidates_for_training: false
+
+optimization:
+  algorithm: grpo
+  clip_ratio_low: 0.20
+  clip_ratio_high: 0.28
+  reference_kl_coefficient: 0.02
+  use_reference_kl: true
+  train_action_tokens_only: true
+  train_tool_responses: false
+  train_environment_observations: false
+
+trainer:
+  learning_rate: 1.0e-6
+  sequence_loss_reduction: seq-mean-token-sum
+  require_persisted_old_log_probs: true
+  require_persisted_reference_log_probs: true
+  mask_zero_variance_groups: true
+
+admission:
+  smoke_prompts: 32
+  pilot_prompts: 128
+  first_efficacy_prompts: 500
+  expand_to_prompts: 1000
+  expand_only_after_predeclared_review: true

@@ -1,0 +1,131 @@
+method_id: naive_geneval2_grpo
+method_version: "0.1"
+base_checkpoint: runs/sft_checkpoints/flow1000_v9_selective_skill_full_s42
+base_checkpoint_fingerprint: sha256:b2377728e0cd748447e27a9583c1456121a20aff84da9468da14e9cb16cd2718
+policy_revision: flow1000_v9_selective_skill_full_s42
+planner_context_schema_version: "0.7"
+action_protocol_version: "0.5"
+execution_profile: qwen_dual_backend@1
+
+reward:
+  reward_policy_id: geneval2_terminal_outcome
+  reward_policy_version: "0.1"
+  gm_tie_break_scale: 0.25
+  fixed_weight: 0.0
+  regression_weight: 0.0
+  gm_transition_weight: 0.0
+  best_progress_weight: 0.0
+  no_progress_penalty: 0.0
+  image_call_cost: 0.0
+  all_pass_bonus: 0.0
+  submit_regret_weight: 0.0
+  query_skill_cost: 0.0
+  repeated_query_penalty: 0.0
+  invalid_action_penalty: 1.0
+  query_delayed_credit_fraction: 0.0
+  episode_group_terminal_weight: 1.0
+  pivot_group_terminal_weight: 0.0
+
+rollout:
+  prompt_source: fresh_flow_dppo_synthetic_train
+  full_rollouts_per_prompt: 4
+  pivot_groups_per_prompt: 0
+  max_image_attempts: 5
+  require_on_policy_candidates: true
+  allow_forced_action_candidates_for_training: false
+  prompt_batch_size: 8
+  temperature: 0.7
+  top_p: 0.95
+  top_k: -1
+  max_context_tokens: 24000
+  max_action_tokens: 1400
+  max_total_assistant_tokens: 16000
+  seed: 42
+
+optimization:
+  algorithm: grpo
+  clip_ratio_low: 0.20
+  clip_ratio_high: 0.28
+  reference_kl_coefficient: 0.02
+  use_reference_kl: true
+  train_action_tokens_only: true
+  train_tool_responses: false
+  train_environment_observations: false
+
+trainer:
+  backend_target: rllm_verl_adapter
+  rollout_engine: sglang
+  dtype: bfloat16
+  actor_strategy: fsdp
+  actor_fsdp_size: 8
+  rollout_tensor_parallel_size: 2
+  rollout_gpu_memory_utilization: 0.60
+  learning_rate: 1.0e-6
+  sequence_loss_reduction: seq-mean-token-sum
+  prompt_mini_batch_size: 8
+  ppo_micro_batch_per_device: 1
+  ppo_epochs: 1
+  train_epochs: 1
+  max_grad_norm: 1.0
+  weight_decay: 0.0
+  warmup_ratio: 0.03
+  entropy_coefficient: 0.0
+  dynamic_batching: true
+  parameter_offload: true
+  optimizer_offload: true
+  checkpoint_every_steps: 20
+  validation_every_steps: 20
+  require_persisted_old_log_probs: true
+  require_persisted_reference_log_probs: true
+  mask_zero_variance_groups: true
+
+# Eight devices are reused in two stages. During rollout, two devices serve
+# the policy, two serve Qwen-Image, two serve Qwen-Image-Edit, and two serve
+# Geneval2. The services are released before all eight devices enter FSDP.
+resources:
+  scheduling_mode: staged_rollout_then_train
+  accelerator_count: 8
+  policy_rollout_devices: 2
+  generate_replicas: 2
+  edit_replicas: 2
+  geneval2_replicas: 2
+  image_replica_tensor_parallel_size: 1
+  trainer_devices: 8
+  allow_generate_edit_rebalance: true
+  edit_share_rebalance_threshold: 0.60
+
+# Secrets never enter this file. Online mode reads WANDB_API_KEY and optional
+# entity from the environment. Start offline until the 32-group smoke passes.
+tracking:
+  provider: wandb
+  mode: offline
+  mode_env: GEN_RETRY_WANDB_MODE
+  api_key_env: WANDB_API_KEY
+  entity_env: WANDB_ENTITY
+  project: gen-retry-rl
+  group: naive-geneval2-grpo-v0-1
+  job_type: grpo-train
+  run_name_prefix: naive-grpo-s42
+  tags: [rl, grpo, geneval2, qwen-dual-backend, phase8]
+  directory: artifacts/rl/wandb
+  resume: allow
+  log_model: false
+  log_artifacts: true
+
+admission:
+  smoke_prompts: 32
+  pilot_prompts: 128
+  minimum_trainable_prompts: 250
+  first_efficacy_prompts: 500
+  expand_to_prompts: 1000
+  expand_only_after_predeclared_review: true
+  minimum_valid_group_fraction: 0.95
+  maximum_zero_variance_group_fraction: 0.35
+  maximum_policy_invalid_fraction: 0.05
+  increase_rollouts_to: 6
+  train_manifest: artifacts/phase8/naive_grpo_train_manifest_v0_1.json
+  development_manifest: artifacts/phase8/naive_grpo_development_manifest_v0_1.json
+  confirmation_manifest: artifacts/phase8/naive_grpo_confirmation_manifest_v0_1.json
+  experiment_declaration: artifacts/phase8/naive_grpo_experiment_declaration_v0_1.json
+  live_adapter_evidence: artifacts/rl/naive_grpo_live_adapter_evidence_v0_1.json
+  smoke_report: artifacts/rl/naive_grpo_smoke_report_v0_1.json

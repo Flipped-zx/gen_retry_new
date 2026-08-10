@@ -9,6 +9,9 @@ runs/
 reports/
 artifacts/sft/**/images/
 wandb/
+artifacts/rl/vendor_wheels/
+artifacts/rl/vendor_sources/
+core.*
 
 # Notebook/editor artifacts
 .ipynb_checkpoints/
