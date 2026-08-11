@@ -4,6 +4,30 @@ This ledger records external evidence that is already grounded. Do not repeat
 broad searches unless a source changes. Code copying still requires file-level
 license evidence and a v3 module-contract adaptation.
 
+## Remote Service Deployment Evidence
+
+### model_deploy_10099 Qwen Generate Service
+
+source_name: model_deploy_10099 sanitized Qwen service export
+repository_url: internal deployment source, no public repository
+absolute_path: `/root/private_data/model_services/qwen_dual_backend/sanitized_export`
+commit_hash: n/a; immutable export archive SHA-256 `4ccbf1ddfa6f28d9b18edfb61177101f2d3f3cf9a5ff207c3e2cfb0f5765d9ea`
+license: internal project code copied with explicit user authorization; no external redistribution license asserted
+evidence_type: repository-grounded deployment implementation
+exact_paths:
+- path: `qwen_dual_backend/*.py`
+  symbol: FastAPI contract, persistent jobs, runtime registry, artifact store
+- path: `bin/*.sh`
+  symbol: bootstrap, preflight, start, status, stop
+- path: `tests/test_service.py`
+  symbol: service contract tests
+- path: `requirements.*.txt`, `service-env.example`, `README.md`
+  symbol: reproducible deployment contract
+borrowed_idea: Complete authorized sanitized service implementation.
+local_adaptation: Stored outside `src/gen_retry` under `remote_service/qwen_dual_backend`; aligned input and normalized source digests with `RemoteQwenImageAdapter` and added a dedicated Edit-host readiness role. Planner/backend ownership is unchanged.
+copy_code: yes, 25-file sanitized export; weights, secrets, host state, logs, caches, images, virtual environments, and backups excluded
+notes: model_deploy_10099 remains Generate-only. The reusable Edit path is not rollout-ready until a separate Edit host has weights and passes the live checklist.
+
 ## Phase 0 Repository Evidence
 
 ### Legacy Gen-Retry

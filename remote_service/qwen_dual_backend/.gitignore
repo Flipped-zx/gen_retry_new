@@ -1,0 +1,13 @@
+.service-env
+.venv/
+backups/
+logs/
+models/
+run/
+state/
+wheelhouse/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.log
+*.pid
