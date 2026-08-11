@@ -1,0 +1,12 @@
+# Copy to .service-env and replace the placeholder before starting.
+export QWEN_BACKEND_BEARER_TOKEN=<generate-a-long-random-token>
+export QWEN_GENERATE_MODEL_PATH="${SERVICE_ROOT}/models/Qwen-Image-2512"
+export QWEN_STATE_ROOT="${SERVICE_ROOT}/state"
+export QWEN_PRELOAD_MODELS=1
+export QWEN_PRELOAD_KIND=generate
+export QWEN_READY_KIND=generate
+export QWEN_MAX_WORKERS=2
+
+# On a dedicated Edit host, set both *_KIND values to edit and configure the
+# Edit model path. Generate and Edit remain separate environment-owned routes.
+# export QWEN_EDIT_MODEL_PATH="${SERVICE_ROOT}/models/Qwen-Image-Edit-2511"
