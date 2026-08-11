@@ -407,24 +407,25 @@ Run in order and stop at the first unexplained mismatch.
 
 ## 9. 10102 Static Comparison Return
 
-On 2026-08-11, 10102 reported the following from a GPU-less inspection
-checkout. Its detailed report is currently uncommitted at
-`docs/operations/ENV_10102_VS_RL_COMPARISON.md`; these results are therefore
-informational until that report and its command outputs are versioned.
+On 2026-08-11, 10102 completed a GPU-less inspection and versioned the detailed
+evidence in `docs/operations/ENV_10102_VS_RL_COMPARISON.md`. That report
+contains the exact wheel, WHEEL/METADATA/RECORD, overlap-hash, `pip check`,
+safe-import, timeout-stack, and stale-lock evidence summarized here.
 
 | Component/check | 10102 report | Status boundary |
 | --- | --- | --- |
 | Python | `3.10.12` | `CPU_OR_STATIC_PASS` |
-| Torch | vendor 2.9, exact suffix/HIP pending | metadata only |
+| Torch | dist `2.9.0+das.opt1.dtk2604.2605281139.gd0fc8c`; runtime `2.9.0`; HIP `6.3.26113`; git `d0fc8c...` | root import only; no device ABI proof |
+| vLLM | `0.15.1+das.opt1.alpha.dtk2604.torch290...` | not imported; dependency closure conflicts |
 | SGLang | `0.5.12` vendor CPython 3.10; root import passes | `CPU_OR_STATIC_PASS`, no HCU/model claim |
-| sglang-kernel | `0.4.2.post2`; root import passes | ownership/ABI unresolved |
-| sgl-kernel | `0.3.21`; root import passes | ownership/ABI unresolved |
+| sglang-kernel | `0.4.2.post2`; loaded namespace and all 29 hashed overlaps match it | SGLang's declared kernel; no kernel launch |
+| sgl-kernel | `0.3.21`; RECORD overlaps 57 paths and conflicts on 15 current hashes | duplicate ownership is `BLOCKED` |
 | verl | `0.6.1`; root import passes after a missing-`libhydmi.so` probe warning | `CPU_OR_STATIC_PASS` |
 | rLLM | `0.2.1`; root import passes | `CPU_OR_STATIC_PASS`, workflow not run |
 | transformers | `5.6.0`; import passes | differs materially from RL `4.57.6` |
 | Ray | `2.55.1`; import passes | differs from RL `2.48.0` |
 | xgrammar | `0.1.32`; import passes | differs from RL `0.1.25` |
-| tvm-ffi | `0.1.0`; waits in Torch cpp-extension `file_baton` during optional C-DLPack JIT | `BLOCKED`, not proven ABI failure |
+| tvm-ffi | `0.1.0`; waits on `/root/.cache/torch_extensions/py310_cpu/c_dlpack/lock` | strongly stale-looking lock, retained untouched; `BLOCKED`, not proven ABI failure |
 | rollout targets | vLLM/SGLang async targets discoverable statically | dynamic deep imports timed out in Transformers scanning |
 
 Before the no-install instruction arrived, 10102 added only the pure-Python
@@ -440,32 +441,33 @@ RL-side disposition:
    are implemented. A GPU-less SGLang root import is not enough to change the
    runtime decision.
 2. Treat the SGLang/kernel/xgrammar/tvm-ffi set as a static compatibility
-   candidate. Vendor support remains unproven until exact wheel tags,
-   `WHEEL`/`METADATA`/`RECORD`, loaded module/native-library ownership, and an
-   HCU smoke are available.
+   candidate. Package provenance is now recorded, but vendor support remains
+   unproven until a clean locked rebuild and HCU smoke are available.
 3. Record the reported SGLang dist-info `das.opt1` versus METADATA `das.opt`
    spelling as packaging provenance inconsistency. Do not edit metadata or
    infer ABI compatibility from either string.
-4. Do not guess which of `sglang-kernel` and `sgl-kernel` is authoritative.
-   Determine it from SGLang `Requires-Dist`, both RECORD files,
-   `importlib.util.find_spec("sgl_kernel").origin`, and the owner of the loaded
-   native extension. Overlapping file ownership is a blocker, not a reason to
-   uninstall one package experimentally.
+4. SGLang declares `sglang-kernel==0.4.2.post2`, and the current loaded files
+   match that distribution. The co-installed `sgl-kernel==0.3.21` still owns
+   overlapping paths in its RECORD, so the environment remains polluted and
+   blocked for formal runtime use. Resolve through a vendor image or locked
+   rebuild, not uninstall trial.
 5. Supersede/migrate the untracked `model_deploy_10099_v1` remote draft. It may
    remain only as an optional legacy generate facade; it does not satisfy the
    accepted dual-route, provenance, idempotency, health, capabilities, or
    structured-error contract.
 6. Add repository-owned fake non-inference API Schemas, fixtures, and contract
-   tests before connecting a real service. They do not exist yet.
+   tests for the accepted API before connecting a real service. The newly
+   observed loopback tests passed 2/2 only for the old `model_deploy_10099_v1`
+   routes and do not cover accepted headers, service idempotency, health,
+   readiness, capabilities, or the full error contract.
 7. When HCU access returns, rerun compiled imports individually, a bounded
    engine/model smoke, one generate/edit idempotency smoke, one real development
    rollout, and eventually the formal 32-group gate.
 
-Still requested from 10102: exact Torch vendor suffix/HIP metadata, SGLang
-wheel filename/tag, both kernel RECORD/module ownership reports, complete
-`pip check`, the read-only `tvm-ffi` file-baton/cache location, dynamic-import
-timeout stacks, and a committed comparison artifact. No cache lock should be
-deleted merely to make the probe pass.
+All requested static evidence is now recorded. Remaining answers require an
+external vendor support matrix, a clean kernel package closure, and HCU access;
+10102 cannot produce them in its current allocation. The stale-looking cache
+lock must not be deleted merely to make the probe pass.
 
 ## 10. Remaining RL-Side Work
 
