@@ -405,7 +405,69 @@ Run in order and stop at the first unexplained mismatch.
 8. Confirmation that no HCU/model/image smoke was claimed on the GPU-less
    10102 host.
 
-## 9. Remaining RL-Side Work
+## 9. 10102 Static Comparison Return
+
+On 2026-08-11, 10102 reported the following from a GPU-less inspection
+checkout. Its detailed report is currently uncommitted at
+`docs/operations/ENV_10102_VS_RL_COMPARISON.md`; these results are therefore
+informational until that report and its command outputs are versioned.
+
+| Component/check | 10102 report | Status boundary |
+| --- | --- | --- |
+| Python | `3.10.12` | `CPU_OR_STATIC_PASS` |
+| Torch | vendor 2.9, exact suffix/HIP pending | metadata only |
+| SGLang | `0.5.12` vendor CPython 3.10; root import passes | `CPU_OR_STATIC_PASS`, no HCU/model claim |
+| sglang-kernel | `0.4.2.post2`; root import passes | ownership/ABI unresolved |
+| sgl-kernel | `0.3.21`; root import passes | ownership/ABI unresolved |
+| verl | `0.6.1`; root import passes after a missing-`libhydmi.so` probe warning | `CPU_OR_STATIC_PASS` |
+| rLLM | `0.2.1`; root import passes | `CPU_OR_STATIC_PASS`, workflow not run |
+| transformers | `5.6.0`; import passes | differs materially from RL `4.57.6` |
+| Ray | `2.55.1`; import passes | differs from RL `2.48.0` |
+| xgrammar | `0.1.32`; import passes | differs from RL `0.1.25` |
+| tvm-ffi | `0.1.0`; waits in Torch cpp-extension `file_baton` during optional C-DLPack JIT | `BLOCKED`, not proven ABI failure |
+| rollout targets | vLLM/SGLang async targets discoverable statically | dynamic deep imports timed out in Transformers scanning |
+
+Before the no-install instruction arrived, 10102 added only the pure-Python
+packages `pyvers==0.1.0` and `omegaconf==2.3.0`; it reported no Torch, SGLang,
+or native-package replacement. This timing must remain in its environment
+provenance.
+
+RL-side disposition:
+
+1. Proceed toward the reviewed `gen_retry_vllm_verl_adapter + vllm` amendment.
+   Keep the existing SGLang/rLLM YAML as the historical accepted binding until
+   the required ADR, config, Schema, hash, fixture, test, and runbook changes
+   are implemented. A GPU-less SGLang root import is not enough to change the
+   runtime decision.
+2. Treat the SGLang/kernel/xgrammar/tvm-ffi set as a static compatibility
+   candidate. Vendor support remains unproven until exact wheel tags,
+   `WHEEL`/`METADATA`/`RECORD`, loaded module/native-library ownership, and an
+   HCU smoke are available.
+3. Record the reported SGLang dist-info `das.opt1` versus METADATA `das.opt`
+   spelling as packaging provenance inconsistency. Do not edit metadata or
+   infer ABI compatibility from either string.
+4. Do not guess which of `sglang-kernel` and `sgl-kernel` is authoritative.
+   Determine it from SGLang `Requires-Dist`, both RECORD files,
+   `importlib.util.find_spec("sgl_kernel").origin`, and the owner of the loaded
+   native extension. Overlapping file ownership is a blocker, not a reason to
+   uninstall one package experimentally.
+5. Supersede/migrate the untracked `model_deploy_10099_v1` remote draft. It may
+   remain only as an optional legacy generate facade; it does not satisfy the
+   accepted dual-route, provenance, idempotency, health, capabilities, or
+   structured-error contract.
+6. Add repository-owned fake non-inference API Schemas, fixtures, and contract
+   tests before connecting a real service. They do not exist yet.
+7. When HCU access returns, rerun compiled imports individually, a bounded
+   engine/model smoke, one generate/edit idempotency smoke, one real development
+   rollout, and eventually the formal 32-group gate.
+
+Still requested from 10102: exact Torch vendor suffix/HIP metadata, SGLang
+wheel filename/tag, both kernel RECORD/module ownership reports, complete
+`pip check`, the read-only `tvm-ffi` file-baton/cache location, dynamic-import
+timeout stacks, and a committed comparison artifact. No cache lock should be
+deleted merely to make the probe pass.
+
+## 10. Remaining RL-Side Work
 
 This handoff does not close the direct-vLLM runtime amendment. RL still needs a
 versioned remote image client/config, fake-service contract tests, the real
