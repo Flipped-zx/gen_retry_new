@@ -916,6 +916,14 @@ validated productive Skill calls for this run.
 
 ## Next Autonomous Action
 
+The repository now also supports the independently reviewed
+`original_geneval_metadata_aware_agent@1` evaluation adapter. It validates all
+553 original GenEval metadata rows, uses the existing Geneval2-compatible VQA
+path only as online proxy feedback, and exports one canonical submitted image
+per prompt for pristine detector scoring. This is an optional evaluation path;
+it does not change the current Phase 8 RL queue, canonical protocol, reducer, or
+frozen SFT checkpoint.
+
 Preserve the completed trajectories, frozen SFT export, formal full-SFT
 checkpoints, and frozen-test-20 production rollout unchanged. The immediate
 paired-evidence step is the prepared same-20 Qwen raw-prompt single/Best-of-5

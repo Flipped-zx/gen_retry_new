@@ -3,7 +3,10 @@ from __future__ import annotations
 import pytest
 
 from gen_retry.protocol.schema_loader import validate_instance
-from gen_retry.protocol.task_spec_builder import task_spec_from_geneval2_row
+from gen_retry.protocol.task_spec_builder import (
+    task_spec_from_geneval2_row,
+    task_spec_from_geneval_row,
+)
 
 
 def test_task_spec_builder_from_geneval2_row() -> None:
@@ -59,3 +62,100 @@ def test_task_spec_builder_preserves_geneval2_list_pair_skills() -> None:
 def test_task_spec_builder_requires_vqa_list() -> None:
     with pytest.raises(ValueError):
         task_spec_from_geneval2_row({"prompt": "missing atoms"}, episode_id="ep_builder_002")
+
+
+@pytest.mark.parametrize(
+    ("row", "types"),
+    [
+        (
+            {
+                "tag": "single_object",
+                "include": [{"class": "bench", "count": 1}],
+                "prompt": "a photo of a bench",
+            },
+            ["object"],
+        ),
+        (
+            {
+                "tag": "two_object",
+                "include": [
+                    {"class": "bench", "count": 1},
+                    {"class": "dog", "count": 1},
+                ],
+                "prompt": "a bench and a dog",
+            },
+            ["object", "object"],
+        ),
+        (
+            {
+                "tag": "colors",
+                "include": [{"class": "bench", "count": 1, "color": "red"}],
+                "prompt": "a red bench",
+            },
+            ["object", "attribute"],
+        ),
+        (
+            {
+                "tag": "position",
+                "include": [
+                    {"class": "bench", "count": 1},
+                    {
+                        "class": "dog",
+                        "count": 1,
+                        "position": ["right of", 0],
+                    },
+                ],
+                "prompt": "a dog right of a bench",
+            },
+            ["object", "object", "position"],
+        ),
+    ],
+)
+def test_task_spec_builder_from_original_geneval_families(row: dict, types: list[str]) -> None:
+    task_spec = task_spec_from_geneval_row(row, episode_id="ep_geneval_001")
+    assert [item["constraint_type"] for item in task_spec["constraints"]] == types
+    validate_instance(task_spec, "task_spec_v0_2.schema.json")
+
+
+def test_original_geneval_exact_count_preserves_include_exclude_bounds() -> None:
+    task_spec = task_spec_from_geneval_row(
+        {
+            "tag": "counting",
+            "include": [{"class": "clock", "count": 2}],
+            "exclude": [{"class": "clock", "count": 3}],
+            "prompt": "two clocks",
+        },
+        episode_id="ep_geneval_002",
+    )
+    assert task_spec["constraints"] == [
+        {
+            "constraint_id": "c_001",
+            "constraint_type": "count",
+            "requirement": "Expected answer: two",
+            "evaluator_question": "How many clock objects are in the image?",
+            "priority": 3,
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        {"tag": "unknown", "include": [{"class": "dog", "count": 1}], "prompt": "dog"},
+        {
+            "tag": "single_object",
+            "include": [{"class": "dog", "count": 1, "answer": True}],
+            "prompt": "dog",
+        },
+        {
+            "tag": "position",
+            "include": [
+                {"class": "dog", "count": 1, "position": ["left of", 0]}
+            ],
+            "prompt": "dog",
+        },
+    ],
+)
+def test_original_geneval_builder_fails_closed(row: dict) -> None:
+    with pytest.raises(ValueError):
+        task_spec_from_geneval_row(row, episode_id="ep_geneval_bad")

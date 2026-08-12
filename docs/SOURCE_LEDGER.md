@@ -173,6 +173,29 @@ local_adaptation: v3 may implement a clean-room Geneval2-compatible synthetic pr
 copy_code: no
 notes: GenEval2 local checkout does not contain an equivalent `create_prompts.py`; it currently exposes a fixed 800-row JSONL benchmark plus evaluator/analysis scripts.
 
+### Original GenEval Metadata And Detector Evaluation Contract
+
+source_name: Original GenEval metadata/evaluator
+repository_url: `https://github.com/djghosh13/geneval.git`
+absolute_path: `/root/private_data/agentic_image/geneval`
+commit_hash: `af4902f24d3ca90ebbb446dd9891a59e0f82725f`
+dirty_status: tracked content unchanged; checkout has mode-bit changes and untracked model/runtime directories
+license: MIT
+evidence_type: repository-grounded via `source_researcher`
+exact_paths:
+- path: `generation/diffusers_generate.py`
+  lines: `100-160`
+  evidence: only `metadata["prompt"]` enters generation; complete metadata is colocated with samples.
+- path: `evaluation/evaluate_images.py`
+  lines: `160-220, 261-280`
+  evidence: include/exclude, count, color, and position semantics plus directory consumption contract.
+- path: `evaluation/summary_scores.py`
+  lines: `22-45`
+  evidence: image/prompt success, per-tag means, and task macro average.
+local_adaptation: `original_geneval_metadata_aware_agent@1` exposes a deterministic metadata-derived rubric to the Planner and uses VQA only as online proxy feedback. Formal scoring uses the pristine detector on one canonical submitted image per prompt.
+copy_code: no
+notes: This protocol is metadata-aware and is not equivalent to upstream prompt-only four-sample generation.
+
 ### Legacy Gen-Retry Diagnostic/Action Records
 
 source_name: Legacy Gen-Retry Phase 3 counterfactual evidence

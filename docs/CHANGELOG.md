@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-12
+
+- Added `original_geneval_metadata_aware_agent@1`: fail-closed conversion of
+  all 553 original GenEval metadata rows into Planner-visible TaskSpecs, with
+  dataset/raw-row/semantic-row provenance and explicitly proxy-only online VQA.
+- Added strict export of exactly the canonical reducer-submitted image and
+  unchanged source metadata into the pristine original GenEval evaluator layout.
+- Documented the one-image metadata-aware protocol, detector scoring commands,
+  reporting disclosures, and independent `PASS_WITH_REQUIRED_CHANGES` review.
+
 ## 2026-08-10
 
 - Added a multiprocessing-safe single-HCU vendor-vLLM diagnostic. Vendor Torch
