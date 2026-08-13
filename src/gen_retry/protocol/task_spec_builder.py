@@ -14,6 +14,16 @@ GENEVAL_TAGS = {
     "color_attr",
 }
 
+GENEVAL_PLUS_PLUS_TAGS = {
+    "color_attr",
+    "spatial_count_attr",
+    "color_spatial_attr",
+    "color_count_attr",
+    "multi_object_count_attr",
+    "size_spatial_attr",
+    "counting",
+}
+
 
 def task_spec_from_geneval2_row(
     row: dict[str, Any],
@@ -171,6 +181,103 @@ def task_spec_from_geneval_row(
     return task_spec
 
 
+def task_spec_from_geneval_plus_plus_row(
+    row: dict[str, Any],
+    *,
+    episode_id: str,
+    max_image_attempts: int = 5,
+) -> dict[str, Any]:
+    """Build a TaskSpec from one Geneval++ metadata row."""
+
+    prompt = _required_nonempty_string(row.get("prompt"), "prompt")
+    tag = _required_nonempty_string(row.get("tag"), "tag")
+    if tag not in GENEVAL_PLUS_PLUS_TAGS:
+        raise ValueError(f"unsupported Geneval++ tag: {tag}")
+    unexpected = set(row) - {"tag", "prompt", "include", "exclude"}
+    if unexpected:
+        raise ValueError(f"unsupported Geneval++ fields: {sorted(unexpected)}")
+
+    include = _geneval_plus_plus_clauses(row.get("include"), field="include")
+    exclude = _geneval_plus_plus_clauses(row.get("exclude", []), field="exclude")
+    constraints: list[dict[str, Any]] = []
+
+    def add(constraint_type: str, requirement: str, question: str) -> None:
+        constraints.append(
+            {
+                "constraint_id": f"c_{len(constraints) + 1:03d}",
+                "constraint_type": constraint_type,
+                "requirement": requirement,
+                "evaluator_question": question,
+                "priority": 3,
+            }
+        )
+
+    for clause in include:
+        classname = clause["class"]
+        count = clause["count"]
+        add(
+            "count",
+            f"Expected answer: {_number_word(count)}",
+            f"How many {classname} objects are in the image?",
+        )
+        if "color" in clause:
+            add(
+                "attribute",
+                "Expected answer: Yes",
+                f"Are the required {classname} objects {clause['color']}?",
+            )
+        if "region" in clause:
+            add(
+                "region",
+                "Expected answer: Yes",
+                _region_question(classname, clause["region"]),
+            )
+
+    for clause in exclude:
+        matching_lower = next(
+            (
+                item["count"]
+                for item in include
+                if item["class"] == clause["class"]
+            ),
+            None,
+        )
+        if matching_lower is not None and clause["count"] == matching_lower + 1:
+            continue
+        add(
+            "count",
+            "Expected answer: No",
+            f"Are there at least {clause['count']} {clause['class']} objects in the image?",
+        )
+
+    sized = [clause for clause in include if "size" in clause]
+    if sized:
+        if len(sized) != 2 or {clause["size"] for clause in sized} != {
+            "larger",
+            "smaller",
+        }:
+            raise ValueError(
+                "Geneval++ size constraints must contain one larger and one smaller object"
+            )
+        larger = next(clause for clause in sized if clause["size"] == "larger")
+        smaller = next(clause for clause in sized if clause["size"] == "smaller")
+        add(
+            "relative_size",
+            "Expected answer: Yes",
+            f"Is the {larger['class']} larger than the {smaller['class']}?",
+        )
+
+    task_spec = {
+        "schema_version": "0.2",
+        "episode_id": episode_id,
+        "original_prompt": prompt,
+        "constraints": constraints,
+        "max_image_attempts": max_image_attempts,
+    }
+    validate_instance(task_spec, "task_spec_v0_2.schema.json")
+    return task_spec
+
+
 def _is_vqa_pair(item: Any) -> bool:
     return (
         isinstance(item, (list, tuple))
@@ -220,6 +327,53 @@ def _clauses(value: Any, *, field: str, allow_position: bool) -> list[dict[str, 
             clause["position"] = [position[0].strip(), position[1]]
         clauses.append(clause)
     return clauses
+
+
+def _geneval_plus_plus_clauses(value: Any, *, field: str) -> list[dict[str, Any]]:
+    if not isinstance(value, list) or (field == "include" and not value):
+        requirement = "non-empty list" if field == "include" else "list"
+        raise ValueError(f"Geneval++ {field} must be a {requirement}")
+    allowed = (
+        {"class", "count", "color", "region", "size"}
+        if field == "include"
+        else {"class", "count"}
+    )
+    clauses: list[dict[str, Any]] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, dict) or set(item) - allowed:
+            raise ValueError(f"unsupported Geneval++ {field}[{index}] clause")
+        classname = _required_nonempty_string(
+            item.get("class"), f"{field}[{index}].class"
+        )
+        count = item.get("count")
+        if not isinstance(count, int) or isinstance(count, bool) or count < 1:
+            raise ValueError(f"{field}[{index}].count must be a positive integer")
+        clause: dict[str, Any] = {"class": classname, "count": count}
+        if "color" in item:
+            clause["color"] = _required_nonempty_string(
+                item["color"], f"{field}[{index}].color"
+            )
+        if "region" in item:
+            region = _required_nonempty_string(
+                item["region"], f"{field}[{index}].region"
+            )
+            if region not in {"left", "right", "above", "below"}:
+                raise ValueError(f"unsupported Geneval++ region: {region}")
+            clause["region"] = region
+        if "size" in item:
+            size = _required_nonempty_string(
+                item["size"], f"{field}[{index}].size"
+            )
+            if size not in {"larger", "smaller"}:
+                raise ValueError(f"unsupported Geneval++ size: {size}")
+            clause["size"] = size
+        clauses.append(clause)
+    return clauses
+
+
+def _region_question(classname: str, region: str) -> str:
+    region_text = {"above": "upper", "below": "lower"}.get(region, region)
+    return f"Are the required {classname} objects in the {region_text} part of the image?"
 
 
 def _required_nonempty_string(value: Any, field: str) -> str:

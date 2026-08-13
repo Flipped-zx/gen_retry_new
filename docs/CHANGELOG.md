@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-14
+
+- Added `geneval_plus_plus_metadata_aware_agent@1`: fail-closed conversion of
+  all 280 balanced Echo-4o Geneval++ rows into exact-count, color, region, and
+  relative-size TaskSpec atoms for proxy-only online retry feedback.
+- Added strict canonical-submission export to the evaluator's required
+  one-based `1.jpg` through `280.jpg` layout, with metadata, event, manifest,
+  digest, JPEG, and coverage audit controls.
+- Documented the complete SFT Planner, dual-backend, export, GPT-4.1 evaluation,
+  and reporting workflow without changing canonical action/reducer semantics.
+
 ## 2026-08-12
 
 - Added `original_geneval_metadata_aware_agent@1`: fail-closed conversion of

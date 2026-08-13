@@ -196,6 +196,33 @@ local_adaptation: `original_geneval_metadata_aware_agent@1` exposes a determinis
 copy_code: no
 notes: This protocol is metadata-aware and is not equivalent to upstream prompt-only four-sample generation.
 
+### Geneval++ Metadata And GPT-4.1 Evaluation Contract
+
+source_name: Echo-4o Geneval++ benchmark
+repository_url: `https://github.com/yejy53/Echo-4o.git`
+absolute_path: `/root/private_data/agentic_image/Echo-4o`
+commit_hash: `28f36d76558e5f53b9deceda78bf025ef0d0ea24`
+license: Apache-2.0 repository license
+evidence_type: repository-grounded read-only inspection
+exact_paths:
+- path: `test_scripts/Geneval++.jsonl`
+  sha256: `9c1216a3f6fe2d99e4ffd63f3a6dba71f3dd7ab30a7c09cb41f03629b35d3e8f`
+  evidence: 280 balanced rows across seven tags; metadata uses class, exact count, color, region, relative size, and counting upper bounds.
+- path: `test_scripts/Geneval++.txt`
+  sha256: `ae6f0e490a7cafaf61b2e506d3df52777a85d13f07e819363f62d3d32aa8511f`
+  evidence: all 280 prompt lines exactly match JSONL prompt order.
+- path: `test_scripts/Eval-gpt-4.1-geneval++.py`
+  sha256: `59329c7db829f4ee9837a33d90b2e111297752348217401c362407b20bdd6f83`
+  lines: `22-44, 65-135, 151-203`
+  evidence: GPT-4.1 consumes prompt, metadata-derived checklist, and one-based JPEG; emits whole-image correct/reason and tag-macro accuracy.
+- path: `Eval.md`
+  lines: `31-79`
+  evidence: official image naming and evaluation workflow.
+borrowed_idea: Preserve Geneval++ metadata semantics and image ordering while adapting them to an image-aware retry Agent.
+local_adaptation: `geneval_plus_plus_metadata_aware_agent@1` derives deterministic exact-count, color, region, and relative-size TaskSpec atoms for proxy-only online VQA; the canonical submitted image is exported as `1.jpg` through `280.jpg` for the separate Echo-4o GPT-4.1 evaluator.
+copy_code: no
+notes: The metadata-aware multi-attempt Agent protocol is not the prompt-only single-generation protocol. Proxy atom metrics are never reported as formal Geneval++ scores.
+
 ### Legacy Gen-Retry Diagnostic/Action Records
 
 source_name: Legacy Gen-Retry Phase 3 counterfactual evidence

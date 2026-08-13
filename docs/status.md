@@ -916,6 +916,13 @@ validated productive Skill calls for this run.
 
 ## Next Autonomous Action
 
+The optional `geneval_plus_plus_metadata_aware_agent@1` evaluation adapter now
+validates all 280 balanced Echo-4o Geneval++ rows, exposes deterministic
+exact-count/color/region/relative-size atoms as proxy-only online feedback, and
+exports one canonical submitted JPEG per prompt for the separate GPT-4.1
+evaluator. It does not change the Phase 8 RL queue, Action Protocol,
+PlannerContext, reducer comparator, execution profile, or frozen checkpoint.
+
 The repository now also supports the independently reviewed
 `original_geneval_metadata_aware_agent@1` evaluation adapter. It validates all
 553 original GenEval metadata rows, uses the existing Geneval2-compatible VQA

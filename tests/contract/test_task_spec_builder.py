@@ -5,6 +5,7 @@ import pytest
 from gen_retry.protocol.schema_loader import validate_instance
 from gen_retry.protocol.task_spec_builder import (
     task_spec_from_geneval2_row,
+    task_spec_from_geneval_plus_plus_row,
     task_spec_from_geneval_row,
 )
 
@@ -159,3 +160,101 @@ def test_original_geneval_exact_count_preserves_include_exclude_bounds() -> None
 def test_original_geneval_builder_fails_closed(row: dict) -> None:
     with pytest.raises(ValueError):
         task_spec_from_geneval_row(row, episode_id="ep_geneval_bad")
+
+
+def test_geneval_plus_plus_preserves_exact_count_color_and_region() -> None:
+    task_spec = task_spec_from_geneval_plus_plus_row(
+        {
+            "tag": "color_spatial_attr",
+            "include": [
+                {"class": "spoon", "count": 1, "color": "blue", "region": "left"},
+                {"class": "couch", "count": 1, "color": "red", "region": "right"},
+            ],
+            "prompt": "A blue spoon on the left and a red couch on the right",
+        },
+        episode_id="ep_geneval_plus_001",
+    )
+    assert [item["constraint_type"] for item in task_spec["constraints"]] == [
+        "count",
+        "attribute",
+        "region",
+        "count",
+        "attribute",
+        "region",
+    ]
+    assert task_spec["constraints"][0]["requirement"] == "Expected answer: one"
+    assert "left part" in task_spec["constraints"][2]["evaluator_question"]
+
+
+def test_geneval_plus_plus_merges_matching_count_upper_bound() -> None:
+    task_spec = task_spec_from_geneval_plus_plus_row(
+        {
+            "tag": "counting",
+            "include": [{"class": "clock", "count": 6}],
+            "exclude": [{"class": "clock", "count": 7}],
+            "prompt": "A photo of six clocks",
+        },
+        episode_id="ep_geneval_plus_002",
+    )
+    assert task_spec["constraints"] == [
+        {
+            "constraint_id": "c_001",
+            "constraint_type": "count",
+            "requirement": "Expected answer: six",
+            "evaluator_question": "How many clock objects are in the image?",
+            "priority": 3,
+        }
+    ]
+
+
+def test_geneval_plus_plus_emits_one_relative_size_atom() -> None:
+    task_spec = task_spec_from_geneval_plus_plus_row(
+        {
+            "tag": "size_spatial_attr",
+            "include": [
+                {"class": "bench", "count": 1, "size": "larger", "region": "above"},
+                {"class": "spoon", "count": 1, "size": "smaller", "region": "below"},
+            ],
+            "prompt": "A larger bench above a smaller spoon",
+        },
+        episode_id="ep_geneval_plus_003",
+    )
+    size_atoms = [
+        item
+        for item in task_spec["constraints"]
+        if item["constraint_type"] == "relative_size"
+    ]
+    assert len(size_atoms) == 1
+    assert size_atoms[0]["evaluator_question"] == (
+        "Is the bench larger than the spoon?"
+    )
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        {
+            "tag": "unknown",
+            "include": [{"class": "dog", "count": 1}],
+            "prompt": "dog",
+        },
+        {
+            "tag": "spatial_count_attr",
+            "include": [{"class": "dog", "count": 1, "region": "center"}],
+            "prompt": "dog",
+        },
+        {
+            "tag": "size_spatial_attr",
+            "include": [
+                {"class": "dog", "count": 1, "size": "larger"},
+                {"class": "cat", "count": 1, "size": "larger"},
+            ],
+            "prompt": "dogs and cats",
+        },
+    ],
+)
+def test_geneval_plus_plus_builder_fails_closed(row: dict) -> None:
+    with pytest.raises(ValueError):
+        task_spec_from_geneval_plus_plus_row(
+            row, episode_id="ep_geneval_plus_bad"
+        )
