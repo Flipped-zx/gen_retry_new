@@ -3,3 +3,4 @@
 ## Evaluation Trajectories
 
 - [Geneval2 rollout trajectory viewer](https://flipped-zx.github.io/geneval2_rollout/)
+- [Teacher rollout trajectory viewer](https://flipped-zx.github.io/teacher_rollout/)
